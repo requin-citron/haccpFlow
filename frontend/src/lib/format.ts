@@ -58,6 +58,20 @@ export function daysBetween(fromIso: string, toIso: string): number {
   return Math.round((to - from) / 86_400_000);
 }
 
+export function formatRelativeDue(nextDue: string, today: string): string {
+  const days = daysBetween(today, nextDue);
+  if (days === 0) {
+    return "aujourd'hui";
+  }
+  if (days === 1) {
+    return "demain";
+  }
+  if (days === -1) {
+    return "hier";
+  }
+  return days < 0 ? `il y a ${-days} jours` : `dans ${days} jours`;
+}
+
 export function formatDayLabel(isoDate: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
