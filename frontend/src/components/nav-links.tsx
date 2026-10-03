@@ -3,21 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { ClipboardIcon, GridIcon } from "@/components/icons";
+import { CheckIcon, ClipboardIcon, DropletIcon, GridIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
   { href: "/equipment", label: "Matériel", icon: GridIcon },
   { href: "/readings", label: "Relevés", icon: ClipboardIcon },
+  { href: "/cleaning", label: "Nettoyage", icon: CheckIcon },
+  { href: "/cleaning/plans", label: "Plan de nettoyage", icon: DropletIcon },
 ];
 
 export function NavLinks() {
   const pathname = usePathname();
+  // Longest matching href wins, so /cleaning/plans does not also light up
+  // the /cleaning entry.
+  const activeHref = NAV_ITEMS.filter(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  ).sort((first, second) => second.href.length - first.href.length)[0]?.href;
 
   return (
     <nav aria-label="Navigation principale" className="space-y-1">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const active = item.href === activeHref;
 
         return (
           <Link

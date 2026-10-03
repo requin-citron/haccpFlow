@@ -1,4 +1,10 @@
-import type { EquipmentType, ReadingSlot, ReadingSource } from "@/lib/types";
+import type {
+  CleaningFrequency,
+  CleaningStatus,
+  EquipmentType,
+  ReadingSlot,
+  ReadingSource,
+} from "@/lib/types";
 
 export const EQUIPMENT_TYPE_LABELS: Record<EquipmentType, string> = {
   fridge: "Réfrigérateur",
@@ -13,6 +19,18 @@ export const SLOT_LABELS: Record<ReadingSlot, string> = {
 export const SOURCE_LABELS: Record<ReadingSource, string> = {
   manual: "Manuel",
   sensor: "Capteur",
+};
+
+export const CLEANING_FREQUENCY_LABELS: Record<CleaningFrequency, string> = {
+  after_each_use: "Après chaque usage",
+  daily: "Quotidien",
+  weekly: "Hebdomadaire",
+};
+
+export const CLEANING_STATUS_LABELS: Record<CleaningStatus, string> = {
+  overdue: "En retard",
+  due_today: "À faire aujourd'hui",
+  upcoming: "À venir",
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -32,6 +50,12 @@ export function addDays(isoDate: string, days: number): string {
   const date = new Date(`${isoDate}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+export function daysBetween(fromIso: string, toIso: string): number {
+  const from = Date.parse(`${fromIso}T12:00:00Z`);
+  const to = Date.parse(`${toIso}T12:00:00Z`);
+  return Math.round((to - from) / 86_400_000);
 }
 
 export function formatDayLabel(isoDate: string): string {

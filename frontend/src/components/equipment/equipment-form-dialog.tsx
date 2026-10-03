@@ -5,18 +5,16 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createEquipmentAction, updateEquipmentAction } from "@/actions/equipment";
 import { AlertIcon, CloseIcon, FridgeIcon, PencilIcon, PlusIcon, SnowflakeIcon } from "@/components/icons";
 import { INITIAL_EQUIPMENT_FORM_STATE } from "@/lib/form-state";
+import {
+  CANCEL_BUTTON_CLASS,
+  FIELD_CLASS,
+  ICON_BUTTON_CLASS,
+  LABEL_CLASS,
+  PRIMARY_TRIGGER_CLASS,
+  SECONDARY_TRIGGER_CLASS,
+  SUBMIT_BUTTON_CLASS,
+} from "@/lib/ui";
 import type { Equipment } from "@/lib/types";
-
-const FIELD_CLASS =
-  "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15";
-
-const LABEL_CLASS = "block text-sm font-medium text-slate-700";
-
-const PRIMARY_TRIGGER_CLASS =
-  "inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/30";
-
-const SECONDARY_TRIGGER_CLASS =
-  "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400";
 
 export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
   const isEdit = equipment !== undefined;
@@ -97,7 +95,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Fermer"
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
               </button>
@@ -237,14 +235,14 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className={CANCEL_BUTTON_CLASS}
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={pending}
-                  className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={SUBMIT_BUTTON_CLASS}
                 >
                   {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer le matériel"}
                 </button>

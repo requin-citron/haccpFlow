@@ -17,3 +17,17 @@ export type ReadingFormState = {
 };
 
 export const INITIAL_READING_FORM_STATE: ReadingFormState = { status: "idle" };
+
+export type CleaningPlanFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_CLEANING_PLAN_FORM_STATE: CleaningPlanFormState = { status: "idle" };
+
+export type CleaningRecordFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_CLEANING_RECORD_FORM_STATE: CleaningRecordFormState = { status: "idle" };

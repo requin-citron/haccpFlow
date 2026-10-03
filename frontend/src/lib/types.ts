@@ -50,3 +50,51 @@ export type TemperatureReadingEdit = {
   changed_by_email: string | null;
   changed_at: string;
 };
+
+export type CleaningFrequency = "after_each_use" | "daily" | "weekly";
+
+export type CleaningStatus = "overdue" | "due_today" | "upcoming";
+
+export type CleaningRecordEditAction = "created" | "updated" | "deleted";
+
+export type CleaningPlan = {
+  id: string;
+  name: string;
+  frequency: CleaningFrequency;
+  products: string | null;
+  last_cleaning_date: string | null;
+  next_due_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CleaningRecord = {
+  id: string;
+  plan_id: string;
+  cleaning_date: string;
+  comment: string | null;
+  performed_by_email: string | null;
+  recorded_at: string;
+  updated_at: string;
+};
+
+export type CleaningRecordEdit = {
+  action: CleaningRecordEditAction;
+  previous_cleaning_date: string | null;
+  new_cleaning_date: string | null;
+  previous_comment: string | null;
+  new_comment: string | null;
+  changed_by_email: string | null;
+  changed_at: string;
+};
+
+export type CleaningScheduleEntry = {
+  plan_id: string;
+  name: string;
+  frequency: CleaningFrequency;
+  products: string | null;
+  last_cleaning_date: string | null;
+  next_due_date: string;
+  status: CleaningStatus;
+  days_late: number;
+};

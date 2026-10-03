@@ -152,3 +152,30 @@ export function PencilIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function DropletIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 2.7 6.6 8.1a7.6 7.6 0 1 0 10.8 0Z" />
+    </Icon>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <path d="M3 10h18" />
+    </Icon>
+  );
+}
+
+export function CheckIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M20 6 9 17l-5-5" />
+    </Icon>
+  );
+}
