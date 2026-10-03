@@ -13,6 +13,13 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/auth/refresh",
     f"{API_V1_PREFIX}/auth/logout",
     f"{API_V1_PREFIX}/auth/me",
+    f"{API_V1_PREFIX}/cleaning-plans",
+    f"{API_V1_PREFIX}/cleaning-plans/{{plan_id}}",
+    f"{API_V1_PREFIX}/cleaning-plans/{{plan_id}}/records",
+    f"{API_V1_PREFIX}/cleaning-plans/{{plan_id}}/records/{{record_id}}",
+    f"{API_V1_PREFIX}/cleaning-plans/{{plan_id}}/records/{{record_id}}/history",
+    f"{API_V1_PREFIX}/cleaning-schedule",
+    f"{API_V1_PREFIX}/cleaning-schedule/overdue",
     f"{API_V1_PREFIX}/equipment",
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}",
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings",
@@ -58,6 +65,27 @@ def test_reading_routes_expose_the_expected_methods() -> None:
     assert set(collection) == {"get"}
     assert set(day) == {"get", "put"}
     assert set(history) == {"get"}
+
+
+def test_cleaning_routes_expose_the_expected_methods() -> None:
+    schema = create_app().openapi()
+    prefix = API_V1_PREFIX
+
+    assert set(schema["paths"][f"{prefix}/cleaning-plans"]) == {"get", "post"}
+    assert set(schema["paths"][f"{prefix}/cleaning-plans/{{plan_id}}"]) == {"delete", "put"}
+    assert set(schema["paths"][f"{prefix}/cleaning-plans/{{plan_id}}/records"]) == {
+        "get",
+        "post",
+    }
+    assert set(schema["paths"][f"{prefix}/cleaning-plans/{{plan_id}}/records/{{record_id}}"]) == {
+        "delete",
+        "put",
+    }
+    assert set(
+        schema["paths"][f"{prefix}/cleaning-plans/{{plan_id}}/records/{{record_id}}/history"]
+    ) == {"get"}
+    assert set(schema["paths"][f"{prefix}/cleaning-schedule"]) == {"get"}
+    assert set(schema["paths"][f"{prefix}/cleaning-schedule/overdue"]) == {"get"}
 
 
 def test_swagger_and_redoc_are_served() -> None:

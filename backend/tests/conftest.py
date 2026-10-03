@@ -33,7 +33,10 @@ os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 UNIT_DATABASE_URL = "postgresql+asyncpg://user:pass@localhost:5432/db"
 
-TABLE_CLEANUP = "TRUNCATE equipment, refresh_tokens, users CASCADE"
+PUBLIC_TABLES_QUERY = (
+    "SELECT string_agg(format('%I', tablename), ', ') "
+    "FROM pg_tables WHERE schemaname = 'public' AND tablename <> 'alembic_version'"
+)
 
 
 @pytest.fixture
@@ -99,7 +102,11 @@ def session_factory(integration_engine: AsyncEngine) -> async_sessionmaker[Async
 def clean_database(integration_engine: AsyncEngine) -> None:
     async def _run() -> None:
         async with integration_engine.begin() as connection:
-            await connection.execute(text(TABLE_CLEANUP))
+            # Truncate every table of the throwaway test database: the list is
+            # discovered, so a new table can never be forgotten here.
+            tables = await connection.scalar(text(PUBLIC_TABLES_QUERY))
+            if tables:
+                await connection.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
 
     asyncio.run(_run())
 

@@ -1,3 +1,11 @@
+from app.models.cleaning_plan import (
+    CleaningFrequency,
+    CleaningPlan,
+    CleaningRecord,
+    CleaningRecordEdit,
+    CleaningRecordEditAction,
+    CleaningStatus,
+)
 from app.models.equipment import Equipment, EquipmentType
 from app.models.refresh_token import RefreshToken
 from app.models.temperature_reading import (
@@ -10,6 +18,12 @@ from app.models.temperature_reading import (
 from app.models.user import User, UserRole, normalize_email
 
 __all__ = [
+    "CleaningFrequency",
+    "CleaningPlan",
+    "CleaningRecord",
+    "CleaningRecordEdit",
+    "CleaningRecordEditAction",
+    "CleaningStatus",
     "Equipment",
     "EquipmentType",
     "ReadingEditAction",

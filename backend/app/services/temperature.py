@@ -6,8 +6,8 @@ from decimal import Decimal
 from app.core.errors import ApiError
 from app.models.temperature_reading import ReadingSlot
 from app.schemas.temperature_reading import TemperatureReadingWrite
+from app.services.dates import ensure_not_in_the_future
 
-MAX_FUTURE_DAYS = 1
 DEFAULT_RANGE_DAYS = 7
 MAX_RANGE_DAYS = 366
 
@@ -40,13 +40,7 @@ def requested_slots(payload: TemperatureReadingWrite) -> dict[ReadingSlot, Decim
 def validate_reading_date(reading_date: date, *, today: date | None = None) -> None:
     """Reject dates clearly in the future, tolerating one day of timezone skew."""
 
-    limit = (today or datetime.now(UTC).date()) + timedelta(days=MAX_FUTURE_DAYS)
-    if reading_date > limit:
-        raise ApiError(
-            422,
-            "reading_date_out_of_range",
-            f"A reading date cannot be later than {limit.isoformat()}",
-        )
+    ensure_not_in_the_future(reading_date, code="reading_date_out_of_range", today=today)
 
 
 def resolve_range(
