@@ -35,6 +35,23 @@ def _payload(code: str, detail: str, context: dict[str, Any] | None = None) -> d
     return {"detail": detail, "code": code, "context": context}
 
 
+def _validation_details(exc: RequestValidationError) -> list[dict[str, Any]]:
+    """Keep only JSON-safe fields: pydantic contexts may hold exception objects."""
+
+    details: list[dict[str, Any]] = []
+    for error in exc.errors():
+        detail: dict[str, Any] = {
+            "loc": [str(part) for part in error.get("loc", ())],
+            "msg": str(error.get("msg", "")),
+            "type": str(error.get("type", "")),
+        }
+        context = error.get("ctx")
+        if context:
+            detail["ctx"] = {str(key): str(value) for key, value in context.items()}
+        details.append(detail)
+    return details
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def _handle_api_error(_: Request, exc: ApiError) -> JSONResponse:
@@ -51,7 +68,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             content=_payload(
                 "validation_error",
                 "Request validation failed",
-                {"errors": exc.errors()},
+                {"errors": _validation_details(exc)},
             ),
         )
 

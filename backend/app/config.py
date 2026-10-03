@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     admin_email: str = ""
     admin_password: SecretStr = SecretStr("")
 
+    # Fallback thresholds in Celsius, used when a new piece of equipment does
+    # not provide its own. Override them from the environment.
+    default_fridge_min_temperature_c: float = 0.0
+    default_fridge_max_temperature_c: float = 4.0
+    default_freezer_min_temperature_c: float = -25.0
+    default_freezer_max_temperature_c: float = -18.0
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

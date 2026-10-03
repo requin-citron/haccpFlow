@@ -6,7 +6,7 @@ import uuid
 from sqlalchemy import Boolean, Enum, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TimestampMixin
+from app.db.base import Base, TimestampMixin, enum_values
 
 
 class UserRole(enum.StrEnum):
@@ -20,12 +20,6 @@ def normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
-def _enum_values(enum_class: type[enum.Enum]) -> list[str]:
-    """Use member values (lowercase) as database labels, not member names."""
-
-    return [str(member.value) for member in enum_class]
-
-
 class User(TimestampMixin, Base):
     __tablename__ = "users"
 
@@ -37,7 +31,7 @@ class User(TimestampMixin, Base):
             UserRole,
             name="user_role",
             native_enum=True,
-            values_callable=_enum_values,
+            values_callable=enum_values,
         ),
         nullable=False,
         default=UserRole.OPERATOR,

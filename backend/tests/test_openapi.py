@@ -13,6 +13,8 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/auth/refresh",
     f"{API_V1_PREFIX}/auth/logout",
     f"{API_V1_PREFIX}/auth/me",
+    f"{API_V1_PREFIX}/equipment",
+    f"{API_V1_PREFIX}/equipment/{{equipment_id}}",
     f"{API_V1_PREFIX}/users",
 }
 
