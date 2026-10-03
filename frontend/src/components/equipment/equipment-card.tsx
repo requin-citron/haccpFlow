@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { DeleteEquipmentButton } from "@/components/equipment/delete-equipment-button";
 import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialog";
 import { FridgeIcon, PinIcon, SnowflakeIcon } from "@/components/icons";
@@ -27,7 +29,12 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold text-slate-900" title={equipment.name}>
-            {equipment.name}
+            <Link
+              href={`/equipment/${equipment.id}`}
+              className="transition hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              {equipment.name}
+            </Link>
           </h3>
           <span
             className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${styles.badge}`}

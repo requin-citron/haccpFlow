@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { GridIcon } from "@/components/icons";
+import { ClipboardIcon, GridIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
   { href: "/equipment", label: "Matériel", icon: GridIcon },
+  { href: "/readings", label: "Relevés", icon: ClipboardIcon },
 ];
 
 export function NavLinks() {
