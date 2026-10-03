@@ -15,6 +15,9 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/auth/me",
     f"{API_V1_PREFIX}/equipment",
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}",
+    f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings",
+    f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}",
+    f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}/history",
     f"{API_V1_PREFIX}/users",
 }
 
@@ -41,6 +44,20 @@ def test_equipment_routes_expose_the_expected_methods() -> None:
 
     assert set(collection) == {"get", "post"}
     assert set(item) == {"delete", "put"}
+
+
+def test_reading_routes_expose_the_expected_methods() -> None:
+    schema = create_app().openapi()
+
+    collection = schema["paths"][f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings"]
+    day = schema["paths"][f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}"]
+    history = schema["paths"][
+        f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}/history"
+    ]
+
+    assert set(collection) == {"get"}
+    assert set(day) == {"get", "put"}
+    assert set(history) == {"get"}
 
 
 def test_swagger_and_redoc_are_served() -> None:

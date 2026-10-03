@@ -13,7 +13,7 @@ from app.core.errors import ApiError
 from app.models.equipment import Equipment
 from app.models.user import UserRole
 from app.schemas.equipment import EquipmentRead, EquipmentWrite
-from app.services.equipment import resolve_thresholds
+from app.services.equipment import get_active_equipment, resolve_thresholds
 
 router = APIRouter(prefix="/equipment", tags=["equipment"])
 
@@ -69,7 +69,7 @@ async def update_equipment(
     payload: EquipmentWrite,
     db: DbSession,
 ) -> Equipment:
-    equipment = await _get_active_equipment(db, equipment_id)
+    equipment = await get_active_equipment(db, equipment_id, for_update=True)
 
     if await _name_is_taken(db, payload.name, exclude_id=equipment_id):
         raise _name_conflict_error(payload.name)
@@ -95,20 +95,9 @@ async def update_equipment(
 
 @router.delete("/{equipment_id}", status_code=204, dependencies=[_ADMIN_ONLY])
 async def delete_equipment(equipment_id: uuid.UUID, db: DbSession) -> None:
-    equipment = await _get_active_equipment(db, equipment_id)
+    equipment = await get_active_equipment(db, equipment_id, for_update=True)
     equipment.deleted_at = datetime.now(UTC)
     await db.commit()
-
-
-async def _get_active_equipment(db: DbSession, equipment_id: uuid.UUID) -> Equipment:
-    equipment = await db.scalar(
-        select(Equipment)
-        .where(Equipment.id == equipment_id, Equipment.deleted_at.is_(None))
-        .with_for_update()
-    )
-    if equipment is None:
-        raise ApiError(404, "equipment_not_found", "Equipment not found")
-    return equipment
 
 
 async def _name_is_taken(

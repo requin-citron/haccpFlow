@@ -60,13 +60,23 @@ def integration_database_url() -> str:
 
 
 @pytest.fixture(scope="session")
-def prepared_database(integration_database_url: str) -> str:
+def prepared_database(integration_database_url: str) -> Iterator[str]:
+    # Each pytest session gets its own database: two runs (or a run started
+    # while another is finishing) can never truncate each other's rows.
+    base = make_url(integration_database_url)
+    if not base.database:
+        pytest.skip("TEST_DATABASE_URL must include a database name")
+    url = base.set(database=f"{base.database}_{os.getpid()}").render_as_string(hide_password=False)
+
     try:
-        asyncio.run(_ensure_database_exists(integration_database_url))
+        asyncio.run(_ensure_database_exists(url))
     except Exception as exc:
         pytest.skip(f"Cannot reach the integration database: {exc}")
-    _run_migrations(integration_database_url)
-    return integration_database_url
+    _run_migrations(url)
+    try:
+        yield url
+    finally:
+        asyncio.run(_drop_database(url))
 
 
 @pytest.fixture
@@ -132,9 +142,6 @@ def operator_headers(
 
 async def _ensure_database_exists(url: str) -> None:
     target = make_url(url)
-    if not target.database:
-        raise RuntimeError("TEST_DATABASE_URL must include a database name")
-
     engine = create_async_engine(
         target.set(database="postgres"),
         isolation_level="AUTOCOMMIT",
@@ -149,6 +156,22 @@ async def _ensure_database_exists(url: str) -> None:
             )
             if not exists:
                 await connection.execute(text(f'CREATE DATABASE "{target.database}"'))
+    finally:
+        await engine.dispose()
+
+
+async def _drop_database(url: str) -> None:
+    target = make_url(url)
+    engine = create_async_engine(
+        target.set(database="postgres"),
+        isolation_level="AUTOCOMMIT",
+        poolclass=NullPool,
+        connect_args={"timeout": 5},
+    )
+    try:
+        async with engine.connect() as connection:
+            statement = f'DROP DATABASE IF EXISTS "{target.database}" WITH (FORCE)'
+            await connection.execute(text(statement))
     finally:
         await engine.dispose()
 
