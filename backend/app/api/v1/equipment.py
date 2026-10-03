@@ -12,7 +12,7 @@ from app.config import get_settings
 from app.core.errors import ApiError
 from app.models.equipment import Equipment
 from app.models.user import UserRole
-from app.schemas.equipment import EquipmentCreate, EquipmentRead
+from app.schemas.equipment import EquipmentRead, EquipmentWrite
 from app.services.equipment import resolve_thresholds
 
 router = APIRouter(prefix="/equipment", tags=["equipment"])
@@ -38,15 +38,8 @@ async def list_equipment(db: DbSession) -> list[Equipment]:
 
 
 @router.post("", response_model=EquipmentRead, status_code=201, dependencies=[_ANY_ROLE])
-async def create_equipment(payload: EquipmentCreate, db: DbSession) -> Equipment:
-    normalized_name = payload.name.lower()
-    existing = await db.scalar(
-        select(Equipment.id).where(
-            Equipment.deleted_at.is_(None),
-            func.lower(Equipment.name) == normalized_name,
-        )
-    )
-    if existing is not None:
+async def create_equipment(payload: EquipmentWrite, db: DbSession) -> Equipment:
+    if await _name_is_taken(db, payload.name):
         raise _name_conflict_error(payload.name)
 
     minimum, maximum = resolve_thresholds(payload, get_settings())
@@ -70,8 +63,44 @@ async def create_equipment(payload: EquipmentCreate, db: DbSession) -> Equipment
     return equipment
 
 
+@router.put("/{equipment_id}", response_model=EquipmentRead, dependencies=[_ANY_ROLE])
+async def update_equipment(
+    equipment_id: uuid.UUID,
+    payload: EquipmentWrite,
+    db: DbSession,
+) -> Equipment:
+    equipment = await _get_active_equipment(db, equipment_id)
+
+    if await _name_is_taken(db, payload.name, exclude_id=equipment_id):
+        raise _name_conflict_error(payload.name)
+
+    minimum, maximum = resolve_thresholds(payload, get_settings())
+    equipment.name = payload.name
+    equipment.type = payload.type
+    equipment.min_temperature_celsius = minimum
+    equipment.max_temperature_celsius = maximum
+    equipment.location = payload.location
+    equipment.notes = payload.notes
+
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        # Backstop for two concurrent updates with diverging names.
+        await db.rollback()
+        raise _name_conflict_error(payload.name) from exc
+
+    await db.refresh(equipment)
+    return equipment
+
+
 @router.delete("/{equipment_id}", status_code=204, dependencies=[_ADMIN_ONLY])
 async def delete_equipment(equipment_id: uuid.UUID, db: DbSession) -> None:
+    equipment = await _get_active_equipment(db, equipment_id)
+    equipment.deleted_at = datetime.now(UTC)
+    await db.commit()
+
+
+async def _get_active_equipment(db: DbSession, equipment_id: uuid.UUID) -> Equipment:
     equipment = await db.scalar(
         select(Equipment)
         .where(Equipment.id == equipment_id, Equipment.deleted_at.is_(None))
@@ -79,6 +108,19 @@ async def delete_equipment(equipment_id: uuid.UUID, db: DbSession) -> None:
     )
     if equipment is None:
         raise ApiError(404, "equipment_not_found", "Equipment not found")
+    return equipment
 
-    equipment.deleted_at = datetime.now(UTC)
-    await db.commit()
+
+async def _name_is_taken(
+    db: DbSession,
+    name: str,
+    *,
+    exclude_id: uuid.UUID | None = None,
+) -> bool:
+    query = select(Equipment.id).where(
+        Equipment.deleted_at.is_(None),
+        func.lower(Equipment.name) == name.lower(),
+    )
+    if exclude_id is not None:
+        query = query.where(Equipment.id != exclude_id)
+    return await db.scalar(query) is not None

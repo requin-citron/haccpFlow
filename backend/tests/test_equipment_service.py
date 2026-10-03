@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from app.config import Settings
 from app.core.errors import ApiError
 from app.models.equipment import EquipmentType
-from app.schemas.equipment import EquipmentCreate
+from app.schemas.equipment import EquipmentWrite
 from app.services.equipment import resolve_thresholds
 
 
@@ -23,7 +23,7 @@ def _settings(**overrides: object) -> Settings:
 
 
 def test_resolve_keeps_explicit_thresholds() -> None:
-    payload = EquipmentCreate(
+    payload = EquipmentWrite(
         name="Frigo",
         type=EquipmentType.FRIDGE,
         min_temperature_celsius=1.5,
@@ -34,7 +34,7 @@ def test_resolve_keeps_explicit_thresholds() -> None:
 
 
 def test_resolve_uses_fridge_defaults() -> None:
-    payload = EquipmentCreate(name="Frigo", type=EquipmentType.FRIDGE)
+    payload = EquipmentWrite(name="Frigo", type=EquipmentType.FRIDGE)
     settings = _settings(
         default_fridge_min_temperature_c=2,
         default_fridge_max_temperature_c=6,
@@ -44,7 +44,7 @@ def test_resolve_uses_fridge_defaults() -> None:
 
 
 def test_resolve_uses_freezer_defaults() -> None:
-    payload = EquipmentCreate(name="Congelateur", type=EquipmentType.FREEZER)
+    payload = EquipmentWrite(name="Congelateur", type=EquipmentType.FREEZER)
     settings = _settings(
         default_freezer_min_temperature_c=-24,
         default_freezer_max_temperature_c=-18,
@@ -54,7 +54,7 @@ def test_resolve_uses_freezer_defaults() -> None:
 
 
 def test_resolve_rejects_inconsistent_default_configuration() -> None:
-    payload = EquipmentCreate(name="Frigo", type=EquipmentType.FRIDGE)
+    payload = EquipmentWrite(name="Frigo", type=EquipmentType.FRIDGE)
     settings = _settings(
         default_fridge_min_temperature_c=6,
         default_fridge_max_temperature_c=2,
@@ -69,12 +69,12 @@ def test_resolve_rejects_inconsistent_default_configuration() -> None:
 
 def test_payload_rejects_a_single_threshold() -> None:
     with pytest.raises(ValidationError):
-        EquipmentCreate(name="Frigo", type=EquipmentType.FRIDGE, min_temperature_celsius=1)
+        EquipmentWrite(name="Frigo", type=EquipmentType.FRIDGE, min_temperature_celsius=1)
 
 
 def test_payload_rejects_min_above_max() -> None:
     with pytest.raises(ValidationError):
-        EquipmentCreate(
+        EquipmentWrite(
             name="Frigo",
             type=EquipmentType.FRIDGE,
             min_temperature_celsius=5,
@@ -84,11 +84,11 @@ def test_payload_rejects_min_above_max() -> None:
 
 def test_payload_rejects_blank_name() -> None:
     with pytest.raises(ValidationError):
-        EquipmentCreate(name="   ", type=EquipmentType.FRIDGE)
+        EquipmentWrite(name="   ", type=EquipmentType.FRIDGE)
 
 
 def test_payload_trims_text_and_blanks_optional_fields() -> None:
-    payload = EquipmentCreate(
+    payload = EquipmentWrite(
         name="  Frigo cuisine  ",
         type=EquipmentType.FRIDGE,
         location="   ",
@@ -102,4 +102,4 @@ def test_payload_trims_text_and_blanks_optional_fields() -> None:
 
 def test_payload_rejects_unknown_fields() -> None:
     with pytest.raises(ValidationError):
-        EquipmentCreate(name="Frigo", type=EquipmentType.FRIDGE, unexpected="nope")  # type: ignore[call-arg]
+        EquipmentWrite(name="Frigo", type=EquipmentType.FRIDGE, unexpected="nope")  # type: ignore[call-arg]

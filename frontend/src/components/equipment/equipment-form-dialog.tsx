@@ -2,20 +2,28 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import { createEquipmentAction } from "@/actions/equipment";
-import { AlertIcon, CloseIcon, FridgeIcon, PlusIcon, SnowflakeIcon } from "@/components/icons";
-import { INITIAL_CREATE_EQUIPMENT_STATE } from "@/lib/form-state";
+import { createEquipmentAction, updateEquipmentAction } from "@/actions/equipment";
+import { AlertIcon, CloseIcon, FridgeIcon, PencilIcon, PlusIcon, SnowflakeIcon } from "@/components/icons";
+import { INITIAL_EQUIPMENT_FORM_STATE } from "@/lib/form-state";
+import type { Equipment } from "@/lib/types";
 
 const FIELD_CLASS =
   "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15";
 
 const LABEL_CLASS = "block text-sm font-medium text-slate-700";
 
-export function CreateEquipmentDialog() {
+const PRIMARY_TRIGGER_CLASS =
+  "inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/30";
+
+const SECONDARY_TRIGGER_CLASS =
+  "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400";
+
+export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
+  const isEdit = equipment !== undefined;
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
-    createEquipmentAction,
-    INITIAL_CREATE_EQUIPMENT_STATE,
+    isEdit ? updateEquipmentAction : createEquipmentAction,
+    INITIAL_EQUIPMENT_FORM_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -41,14 +49,22 @@ export function CreateEquipmentDialog() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/30"
-      >
-        <PlusIcon className="size-4" />
-        Ajouter un matériel
-      </button>
+      {isEdit ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={`Modifier ${equipment.name}`}
+          className={SECONDARY_TRIGGER_CLASS}
+        >
+          <PencilIcon className="size-4" />
+          Modifier
+        </button>
+      ) : (
+        <button type="button" onClick={() => setOpen(true)} className={PRIMARY_TRIGGER_CLASS}>
+          <PlusIcon className="size-4" />
+          Ajouter un matériel
+        </button>
+      )}
 
       {open ? (
         <div
@@ -59,20 +75,22 @@ export function CreateEquipmentDialog() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="create-equipment-title"
+            aria-labelledby="equipment-form-title"
             onClick={(event) => event.stopPropagation()}
             className="animate-fade-in w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-xl"
           >
             <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
               <div>
                 <h2
-                  id="create-equipment-title"
+                  id="equipment-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  Nouveau matériel
+                  {isEdit ? "Modifier le matériel" : "Nouveau matériel"}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Déclare une enceinte réfrigérée à surveiller.
+                  {isEdit
+                    ? "Mets à jour les informations et les seuils réglementaires."
+                    : "Déclare une enceinte réfrigérée à surveiller."}
                 </p>
               </div>
               <button
@@ -86,6 +104,8 @@ export function CreateEquipmentDialog() {
             </header>
 
             <form ref={formRef} action={formAction} className="space-y-5 px-6 py-5">
+              {isEdit ? <input type="hidden" name="id" value={equipment.id} /> : null}
+
               <div className="space-y-1.5">
                 <label htmlFor="name" className={LABEL_CLASS}>
                   Nom du matériel
@@ -96,6 +116,7 @@ export function CreateEquipmentDialog() {
                   required
                   autoFocus
                   maxLength={120}
+                  defaultValue={equipment?.name ?? ""}
                   placeholder="Frigo cuisine"
                   className={FIELD_CLASS}
                 />
@@ -109,7 +130,7 @@ export function CreateEquipmentDialog() {
                       type="radio"
                       name="type"
                       value="fridge"
-                      defaultChecked
+                      defaultChecked={equipment?.type !== "freezer"}
                       className="peer sr-only"
                     />
                     <span className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-medium text-slate-700 transition peer-checked:border-teal-500 peer-checked:bg-teal-50 peer-checked:text-teal-800 peer-focus-visible:ring-4 peer-focus-visible:ring-teal-500/20">
@@ -122,6 +143,7 @@ export function CreateEquipmentDialog() {
                       type="radio"
                       name="type"
                       value="freezer"
+                      defaultChecked={equipment?.type === "freezer"}
                       className="peer sr-only"
                     />
                     <span className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-medium text-slate-700 transition peer-checked:border-teal-500 peer-checked:bg-teal-50 peer-checked:text-teal-800 peer-focus-visible:ring-4 peer-focus-visible:ring-teal-500/20">
@@ -145,6 +167,7 @@ export function CreateEquipmentDialog() {
                       type="number"
                       step="0.5"
                       inputMode="decimal"
+                      defaultValue={equipment?.min_temperature_celsius ?? ""}
                       placeholder="0"
                       className={FIELD_CLASS}
                     />
@@ -159,6 +182,7 @@ export function CreateEquipmentDialog() {
                       type="number"
                       step="0.5"
                       inputMode="decimal"
+                      defaultValue={equipment?.max_temperature_celsius ?? ""}
                       placeholder="4"
                       className={FIELD_CLASS}
                     />
@@ -178,6 +202,7 @@ export function CreateEquipmentDialog() {
                   id="location"
                   name="location"
                   maxLength={120}
+                  defaultValue={equipment?.location ?? ""}
                   placeholder="Cuisine, réserve…"
                   className={FIELD_CLASS}
                 />
@@ -192,6 +217,7 @@ export function CreateEquipmentDialog() {
                   name="notes"
                   rows={3}
                   maxLength={2000}
+                  defaultValue={equipment?.notes ?? ""}
                   placeholder="Sous le plan de travail, à côté de la chambre froide…"
                   className={`${FIELD_CLASS} resize-none`}
                 />
@@ -220,7 +246,7 @@ export function CreateEquipmentDialog() {
                   disabled={pending}
                   className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {pending ? "Enregistrement…" : "Enregistrer"}
+                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer le matériel"}
                 </button>
               </div>
             </form>

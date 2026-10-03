@@ -33,6 +33,16 @@ def test_openapi_keeps_the_oauth2_password_flow() -> None:
     assert scheme["flows"]["password"]["tokenUrl"] == f"{API_V1_PREFIX}/auth/login"
 
 
+def test_equipment_routes_expose_the_expected_methods() -> None:
+    schema = create_app().openapi()
+
+    collection = schema["paths"][f"{API_V1_PREFIX}/equipment"]
+    item = schema["paths"][f"{API_V1_PREFIX}/equipment/{{equipment_id}}"]
+
+    assert set(collection) == {"get", "post"}
+    assert set(item) == {"delete", "put"}
+
+
 def test_swagger_and_redoc_are_served() -> None:
     client = TestClient(create_app())
 

@@ -11,8 +11,8 @@ MIN_ABSOLUTE_CELSIUS = -273.15
 MAX_STORABLE_CELSIUS = 999.99
 
 
-class EquipmentCreate(BaseModel):
-    """Payload accepted by POST /api/v1/equipment."""
+class EquipmentWrite(BaseModel):
+    """Payload accepted by POST and PUT /api/v1/equipment."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -47,7 +47,7 @@ class EquipmentCreate(BaseModel):
         return value.strip() or None
 
     @model_validator(mode="after")
-    def _check_thresholds(self) -> EquipmentCreate:
+    def _check_thresholds(self) -> EquipmentWrite:
         minimum = self.min_temperature_celsius
         maximum = self.max_temperature_celsius
         if (minimum is None) != (maximum is None):

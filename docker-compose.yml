@@ -116,17 +116,27 @@ services:
     profiles: ["app"]
     build:
       context: ./frontend
+      target: development
     restart: unless-stopped
     init: true
     environment:
       TZ: UTC
-      NODE_ENV: production
+      NODE_ENV: development
       # The browser only talks to Next.js: server-side calls stay on the
       # compose network, so there is no CORS setup and no token in the browser.
       API_INTERNAL_URL: http://backend:8000
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      # Set to true when file watching does not work through the bind mount
+      # (Docker Desktop, WSL): it falls back to polling.
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-false}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
+    # Source is mounted for hot reload; the anonymous volumes keep the
+    # container's own node_modules and build cache instead of the host ones.
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/login || exit 1"]
       interval: 30s

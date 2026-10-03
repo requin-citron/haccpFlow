@@ -1,5 +1,5 @@
-import { CreateEquipmentDialog } from "@/components/equipment/create-equipment-dialog";
 import { EquipmentCard } from "@/components/equipment/equipment-card";
+import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialog";
 import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import type { Equipment } from "@/lib/types";
@@ -52,7 +52,7 @@ export default async function EquipmentPage() {
             l&apos;enrôlement des capteurs arriveront ensuite.
           </p>
         </div>
-        <CreateEquipmentDialog />
+        <EquipmentFormDialog />
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3">

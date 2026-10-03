@@ -6,6 +6,13 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --non-interactive
 
+# Development target: the source is bind-mounted by docker compose, so code
+# changes are picked up by Next.js hot reload without rebuilding the image.
+FROM deps AS development
+COPY . .
+EXPOSE 3000
+CMD ["yarn", "dev"]
+
 FROM node:22-alpine AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1

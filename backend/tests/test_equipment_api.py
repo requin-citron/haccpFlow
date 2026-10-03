@@ -221,3 +221,157 @@ def test_create_requires_authentication(api_client: TestClient) -> None:
 
 def test_delete_requires_authentication(api_client: TestClient) -> None:
     assert api_client.delete(f"{EQUIPMENT_URL}/{uuid.uuid4()}").status_code == 401
+
+
+def test_update_replaces_the_equipment(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    created = api_client.post(EQUIPMENT_URL, json=_payload(), headers=admin_headers).json()
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}",
+        json=_payload(
+            name="Congélateur réserve",
+            type="freezer",
+            min_temperature_celsius=-24,
+            max_temperature_celsius=-18,
+            location="Réserve",
+            notes="  sous le plan de travail  ",
+        ),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == created["id"]
+    assert body["name"] == "Congélateur réserve"
+    assert body["type"] == "freezer"
+    assert body["min_temperature_celsius"] == -24
+    assert body["max_temperature_celsius"] == -18
+    assert body["location"] == "Réserve"
+    assert body["notes"] == "sous le plan de travail"
+
+
+def test_update_clears_optional_fields(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    created = api_client.post(
+        EQUIPMENT_URL, json=_payload(location="Cuisine", notes="note"), headers=admin_headers
+    ).json()
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}",
+        json=_payload(location="  ", notes=""),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["location"] is None
+    assert response.json()["notes"] is None
+
+
+def test_update_applies_defaults_when_thresholds_are_omitted(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    created = api_client.post(
+        EQUIPMENT_URL,
+        json=_payload(type="freezer", min_temperature_celsius=-24, max_temperature_celsius=-18),
+        headers=admin_headers,
+    ).json()
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}",
+        json=_payload(type="freezer"),
+        headers=admin_headers,
+    )
+
+    settings = get_settings()
+    assert response.status_code == 200
+    assert response.json()["min_temperature_celsius"] == settings.default_freezer_min_temperature_c
+    assert response.json()["max_temperature_celsius"] == settings.default_freezer_max_temperature_c
+
+
+def test_update_accepts_the_current_name(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    created = api_client.post(EQUIPMENT_URL, json=_payload(), headers=admin_headers).json()
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}",
+        json=_payload(location="Cuisine"),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+
+
+def test_update_rejects_a_name_used_by_another_equipment(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    api_client.post(EQUIPMENT_URL, json=_payload(name="Frigo bar"), headers=admin_headers)
+    created = api_client.post(EQUIPMENT_URL, json=_payload(), headers=admin_headers).json()
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}",
+        json=_payload(name="frigo BAR"),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "equipment_name_conflict"
+
+
+def test_update_rejects_inconsistent_thresholds(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    created = api_client.post(EQUIPMENT_URL, json=_payload(), headers=admin_headers).json()
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}",
+        json=_payload(min_temperature_celsius=6, max_temperature_celsius=2),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_unknown_equipment_returns_404(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{uuid.uuid4()}", json=_payload(), headers=admin_headers
+    )
+
+    assert response.status_code == 404
+    assert response.json()["code"] == "equipment_not_found"
+
+
+def test_update_deleted_equipment_returns_404(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    created = api_client.post(EQUIPMENT_URL, json=_payload(), headers=admin_headers).json()
+    api_client.delete(f"{EQUIPMENT_URL}/{created['id']}", headers=admin_headers)
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}", json=_payload(), headers=admin_headers
+    )
+
+    assert response.status_code == 404
+
+
+def test_operator_can_update(api_client: TestClient, operator_headers: dict[str, str]) -> None:
+    created = api_client.post(EQUIPMENT_URL, json=_payload(), headers=operator_headers).json()
+
+    response = api_client.put(
+        f"{EQUIPMENT_URL}/{created['id']}",
+        json=_payload(location="Cuisine"),
+        headers=operator_headers,
+    )
+
+    assert response.status_code == 200
+
+
+def test_update_requires_authentication(api_client: TestClient) -> None:
+    response = api_client.put(f"{EQUIPMENT_URL}/{uuid.uuid4()}", json=_payload())
+
+    assert response.status_code == 401

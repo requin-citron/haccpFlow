@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
-import type { CreateEquipmentState } from "@/lib/form-state";
+import type { EquipmentFormState } from "@/lib/form-state";
 import type { EquipmentType } from "@/lib/types";
 
 const EQUIPMENT_PATH = "/api/v1/equipment";
@@ -46,39 +46,82 @@ function describeError(error: unknown): string {
   return "Une erreur inattendue est survenue.";
 }
 
-export async function createEquipmentAction(
-  _previous: CreateEquipmentState,
-  formData: FormData,
-): Promise<CreateEquipmentState> {
+type PayloadResult =
+  | { ok: true; payload: Record<string, unknown> }
+  | { ok: false; error: string };
+
+function buildPayload(formData: FormData): PayloadResult {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
-    return { status: "error", message: "Le nom du matériel est obligatoire." };
+    return { ok: false, error: "Le nom du matériel est obligatoire." };
   }
 
   const minimum = readOptionalNumber(formData, "min_temperature_celsius");
   const maximum = readOptionalNumber(formData, "max_temperature_celsius");
   if ((minimum === null) !== (maximum === null)) {
     return {
-      status: "error",
-      message: "Renseigne les deux seuils, ou laisse les deux vides pour utiliser les valeurs par défaut.",
+      ok: false,
+      error:
+        "Renseigne les deux seuils, ou laisse les deux vides pour utiliser les valeurs par défaut.",
     };
   }
 
-  const payload = {
-    name,
-    type: readEquipmentType(formData),
-    location: readOptionalText(formData, "location"),
-    notes: readOptionalText(formData, "notes"),
-    ...(minimum !== null && maximum !== null
-      ? { min_temperature_celsius: minimum, max_temperature_celsius: maximum }
-      : {}),
+  return {
+    ok: true,
+    payload: {
+      name,
+      type: readEquipmentType(formData),
+      location: readOptionalText(formData, "location"),
+      notes: readOptionalText(formData, "notes"),
+      ...(minimum !== null && maximum !== null
+        ? { min_temperature_celsius: minimum, max_temperature_celsius: maximum }
+        : {}),
+    },
   };
+}
+
+export async function createEquipmentAction(
+  _previous: EquipmentFormState,
+  formData: FormData,
+): Promise<EquipmentFormState> {
+  const result = buildPayload(formData);
+  if (!result.ok) {
+    return { status: "error", message: result.error };
+  }
 
   try {
     await apiFetch(EQUIPMENT_PATH, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(result.payload),
+    });
+  } catch (error) {
+    return { status: "error", message: describeError(error) };
+  }
+
+  revalidatePath("/equipment");
+  return { status: "success" };
+}
+
+export async function updateEquipmentAction(
+  _previous: EquipmentFormState,
+  formData: FormData,
+): Promise<EquipmentFormState> {
+  const equipmentId = String(formData.get("id") ?? "").trim();
+  if (!equipmentId) {
+    return { status: "error", message: "Matériel introuvable." };
+  }
+
+  const result = buildPayload(formData);
+  if (!result.ok) {
+    return { status: "error", message: result.error };
+  }
+
+  try {
+    await apiFetch(`${EQUIPMENT_PATH}/${encodeURIComponent(equipmentId)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(result.payload),
     });
   } catch (error) {
     return { status: "error", message: describeError(error) };

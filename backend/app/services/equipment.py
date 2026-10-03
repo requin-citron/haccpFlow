@@ -6,7 +6,7 @@ from typing import assert_never
 from app.config import Settings
 from app.core.errors import ApiError
 from app.models.equipment import EquipmentType
-from app.schemas.equipment import EquipmentCreate
+from app.schemas.equipment import EquipmentWrite
 
 _TWO_DECIMALS = Decimal("0.01")
 
@@ -17,7 +17,7 @@ def as_celsius(value: float) -> Decimal:
     return Decimal(str(value)).quantize(_TWO_DECIMALS)
 
 
-def resolve_thresholds(payload: EquipmentCreate, settings: Settings) -> tuple[Decimal, Decimal]:
+def resolve_thresholds(payload: EquipmentWrite, settings: Settings) -> tuple[Decimal, Decimal]:
     """Return the thresholds to persist: explicit values, or the per-type defaults."""
 
     if payload.min_temperature_celsius is not None and payload.max_temperature_celsius is not None:

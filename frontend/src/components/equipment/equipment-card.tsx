@@ -1,4 +1,5 @@
 import { DeleteEquipmentButton } from "@/components/equipment/delete-equipment-button";
+import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialog";
 import { FridgeIcon, PinIcon, SnowflakeIcon } from "@/components/icons";
 import { EQUIPMENT_TYPE_LABELS, formatDate, formatTemperatureRange } from "@/lib/format";
 import type { Equipment } from "@/lib/types";
@@ -34,7 +35,6 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
             {EQUIPMENT_TYPE_LABELS[equipment.type]}
           </span>
         </div>
-        <DeleteEquipmentButton id={equipment.id} name={equipment.name} />
       </header>
 
       <div className="rounded-xl bg-slate-50 px-4 py-3">
@@ -65,6 +65,11 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
       <p className="mt-auto text-xs text-slate-400">
         Ajouté le {formatDate(equipment.created_at)}
       </p>
+
+      <footer className="flex items-center justify-between gap-2 border-t border-slate-100 pt-4">
+        <EquipmentFormDialog equipment={equipment} />
+        <DeleteEquipmentButton id={equipment.id} name={equipment.name} />
+      </footer>
     </article>
   );
 }
