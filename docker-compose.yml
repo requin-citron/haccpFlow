@@ -1,0 +1,127 @@
+name: haccpflow
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      # Bound to localhost only: reachable for tooling, not from the network.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - haccp
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    # Starts as root so the entrypoint can create the password file, then
+    # mosquitto drops privileges to the `mosquitto` user (see mosquitto.conf).
+    user: "0:0"
+    entrypoint: ["/bin/sh", "/opt/haccp/mosquitto-init.sh"]
+    command: ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME:?MQTT_USERNAME is required}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD is required}
+      TZ: UTC
+    ports:
+      # Bound to localhost only: exposed for debugging (MQTT Explorer, etc.).
+      - "127.0.0.1:${MQTT_PORT:-1883}:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/entrypoint.sh:/opt/haccp/mosquitto-init.sh:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mosquitto_sub -h 127.0.0.1 -p 1883 -u \"$$MQTT_USERNAME\" -P \"$$MQTT_PASSWORD\" -t '$$SYS/broker/uptime' -C 1 -W 5 >/dev/null 2>&1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - haccp
+
+# Zigbee2MQTT runs on-premise next to the sensors, outside this stack. It
+# connects to `mosquitto` over the network and publishes under MQTT_TOPIC_PREFIX.
+  backend:
+    # Requires ./backend/Dockerfile - enable with: docker compose --profile app up
+    profiles: ["app"]
+    build:
+      context: ./backend
+    init: true
+    environment:
+      TZ: UTC
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      MQTT_USERNAME: ${MQTT_USERNAME:?MQTT_USERNAME is required}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD is required}
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-zigbee2mqtt}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    # Uncomment for hot reload once ./backend exists:
+    # volumes:
+    #   - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    networks:
+      - haccp
+
+  frontend:
+    # Requires ./frontend/Dockerfile - enable with: docker compose --profile app up
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      args:
+        # NEXT_PUBLIC_* values are inlined at build time.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    init: true
+    environment:
+      TZ: UTC
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Server-side calls stay on the compose network.
+      API_INTERNAL_URL: http://backend:8000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    # Uncomment for hot reload once ./frontend exists:
+    # volumes:
+    #   - ./frontend:/app
+    #   - /app/node_modules
+    #   - /app/.next
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - haccp
+
+networks:
+  haccp:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mosquitto_data:
+  mosquitto_log:
