@@ -58,7 +58,7 @@ services:
 # Zigbee2MQTT runs on-premise next to the sensors, outside this stack. It
 # connects to `mosquitto` over the network and publishes under MQTT_TOPIC_PREFIX.
   backend:
-    # Requires ./backend/Dockerfile - enable with: docker compose --profile app up
+    # Enable with: docker compose --profile app up
     profiles: ["app"]
     build:
       context: ./backend
@@ -69,6 +69,11 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
+      DOCS_ENABLED: ${DOCS_ENABLED:-true}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
       MQTT_HOST: mosquitto
@@ -78,9 +83,22 @@ services:
       MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-zigbee2mqtt}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
-    # Uncomment for hot reload once ./backend exists:
-    # volumes:
-    #   - ./backend:/app
+    # The venv lives in /opt/venv, so this mount never hides dependencies.
+    # Code changes are picked up by restarting the container.
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
