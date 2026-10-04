@@ -169,55 +169,62 @@ export default async function HistoryPage({
                 </span>
               </h2>
               <ol className="space-y-3">
-                {group.entries.map((entry) => (
-                  <li
-                    key={entry.id}
-                    className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-                  >
-                    <span
-                      className={`h-fit shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${HISTORY_ENTITY_TONES[entry.entity]}`}
+                {group.entries.map((entry) => {
+                  const link = historyEntryLink(entry);
+                  return (
+                    <li
+                      key={entry.id}
+                      className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                     >
-                      {HISTORY_ENTITY_LABELS[entry.entity]}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <Link
-                          href={historyEntryLink(entry)}
-                          className="font-medium text-slate-900 transition hover:text-teal-700"
-                        >
-                          {entry.subject}
-                        </Link>
-                        <span
-                          className={`text-xs font-semibold ${HISTORY_ACTION_TONES[entry.action]}`}
-                        >
-                          {HISTORY_ACTION_LABELS[entry.action]}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {entry.detail}
-                        {entry.actor_email ? ` · ${entry.actor_email}` : ""}
-                      </p>
-                      {entry.changes.length > 0 ? (
-                        <ul className="mt-2 space-y-1">
-                          {entry.changes.map((change) => (
-                            <li
-                              key={change.field}
-                              className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600"
+                      <span
+                        className={`h-fit shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${HISTORY_ENTITY_TONES[entry.entity]}`}
+                      >
+                        {HISTORY_ENTITY_LABELS[entry.entity]}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          {link === null ? (
+                            <span className="font-medium text-slate-900">{entry.subject}</span>
+                          ) : (
+                            <Link
+                              href={link}
+                              className="font-medium text-slate-900 transition hover:text-teal-700"
                             >
-                              <span className="font-medium text-slate-700">{change.label}</span>{" "}
-                              <span className="text-slate-400">{change.previous ?? "—"}</span>
-                              {" → "}
-                              <span className="text-slate-800">{change.new ?? "—"}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                    <span className="shrink-0 text-xs tabular-nums text-slate-400">
-                      {timeFromIso(entry.occurred_at)}
-                    </span>
-                  </li>
-                ))}
+                              {entry.subject}
+                            </Link>
+                          )}
+                          <span
+                            className={`text-xs font-semibold ${HISTORY_ACTION_TONES[entry.action]}`}
+                          >
+                            {HISTORY_ACTION_LABELS[entry.action]}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {entry.detail}
+                          {entry.actor_email ? ` · ${entry.actor_email}` : ""}
+                        </p>
+                        {entry.changes.length > 0 ? (
+                          <ul className="mt-2 space-y-1">
+                            {entry.changes.map((change) => (
+                              <li
+                                key={change.field}
+                                className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600"
+                              >
+                                <span className="font-medium text-slate-700">{change.label}</span>{" "}
+                                <span className="text-slate-400">{change.previous ?? "—"}</span>
+                                {" → "}
+                                <span className="text-slate-800">{change.new ?? "—"}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                      <span className="shrink-0 text-xs tabular-nums text-slate-400">
+                        {timeFromIso(entry.occurred_at)}
+                      </span>
+                    </li>
+                  );
+                })}
               </ol>
             </section>
           ))}

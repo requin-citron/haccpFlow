@@ -24,7 +24,7 @@ docker compose --profile app up -d frontend
 
 | Script | Ce qu'il crée |
 | --- | --- |
-| `seed_equipment.py` | Trois équipements : deux frigos (dont un avec seuils explicites) et un congélateur. |
+| `seed_equipment.py` | Trois équipements : deux frigos (dont un avec seuils explicites) et un congélateur, plus deux véhicules pour le suivi de transport. |
 | `seed_cleaning.py` | Quatre plans de nettoyage couvrant tous les états — un en retard, un à faire aujourd'hui, un à venir, un après chaque usage — avec leurs déclarations et une correction de date pour alimenter le journal. |
 | `seed_pasteurisation.py` | Trois lots de pasteurisation : un complet, un en cours (préchauffage seul) et un vide, pour voir les trois états dans l'interface. |
 
@@ -39,6 +39,7 @@ relancer sans créer de doublon.
 | `check_readings_api.py` | Saisie du matin seul puis complétion du soir sans écraser l'existant, correction tracée dans l'historique, conformité recalculée, date antidatée acceptée, date trop future et température impossible refusées. |
 | `check_cleaning_api.py` | Cycle de vie d'un plan, déclarations multiples le même jour, correction et suppression auditées, calcul du prévisionnel et de la liste du retard. |
 | `check_pasteurisation_api.py` | Cycle de vie d'un lot de pasteurisation, remplissage progressif des trois phases (préchauffage, palier, refroidissement), durée calculée, correction auditée, refus d'une fin antérieure au début, recherche par numéro de lot. |
+| `check_transport_api.py` | Référentiel des véhicules (nom, plaque, doublons) et registre des transports : départ puis arrivée, véhicule du référentiel ou libellé libre, correction auditée, recherche par lot, désactivation. |
 | `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation et Historique rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. |
 | `check_cleaning_tabs.py` | La séparation entre l'onglet opérationnel (déclarer) et l'onglet de gestion (créer, modifier), ainsi que le contenu de l'agenda. |
 

@@ -19,7 +19,9 @@ from app.models.temperature_reading import (
     TemperatureReading,
     TemperatureReadingEdit,
 )
+from app.models.transport import Transport, TransportEdit
 from app.models.user import User
+from app.models.vehicle import Vehicle
 from app.schemas.history import (
     HistoryAction,
     HistoryChangeRead,
@@ -265,10 +267,102 @@ async def _pasteurisation_entries(
     return entries
 
 
+async def _transport_entries(
+    db: AsyncSession,
+    start: datetime | None,
+    end: datetime | None,
+    limit: int,
+) -> list[HistoryEntryRead]:
+    query = (
+        select(
+            TransportEdit,
+            Transport.id,
+            Transport.product_name,
+            Transport.place,
+            Transport.transport_date,
+            Transport.vehicle_label,
+            Vehicle.name,
+            Vehicle.plate,
+            User.email,
+        )
+        .join(Transport, Transport.id == TransportEdit.transport_id)
+        .outerjoin(Vehicle, Vehicle.id == Transport.vehicle_id)
+        .outerjoin(User, User.id == TransportEdit.changed_by)
+        .order_by(TransportEdit.changed_at.desc())
+        .limit(limit)
+    )
+    if start is not None:
+        query = query.where(TransportEdit.changed_at >= start)
+    if end is not None:
+        query = query.where(TransportEdit.changed_at <= end)
+
+    entries: list[HistoryEntryRead] = []
+    for (
+        edit,
+        transport_id,
+        product_name,
+        place,
+        transport_date,
+        vehicle_label,
+        vehicle_name,
+        vehicle_plate,
+        email,
+    ) in await db.execute(query):
+        vehicle = vehicle_name or vehicle_plate or vehicle_label or "véhicule inconnu"
+        entries.append(
+            HistoryEntryRead(
+                id=edit.id,
+                occurred_at=edit.changed_at,
+                entity=HistoryEntity.TRANSPORT,
+                action=HistoryAction(str(edit.action)),
+                actor_email=email,
+                target_id=transport_id,
+                subject=f"{product_name} · {place}",
+                detail=f"Transport du {transport_date.isoformat()} · {vehicle}",
+                changes=_compact(
+                    [
+                        _change(
+                            "departure_time",
+                            "Heure de départ",
+                            edit.previous_departure_time,
+                            edit.new_departure_time,
+                        ),
+                        _change(
+                            "departure_temperature_celsius",
+                            "Température de départ",
+                            edit.previous_departure_temperature_celsius,
+                            edit.new_departure_temperature_celsius,
+                        ),
+                        _change(
+                            "arrival_time",
+                            "Heure d'arrivée",
+                            edit.previous_arrival_time,
+                            edit.new_arrival_time,
+                        ),
+                        _change(
+                            "arrival_temperature_celsius",
+                            "Température d'arrivée",
+                            edit.previous_arrival_temperature_celsius,
+                            edit.new_arrival_temperature_celsius,
+                        ),
+                        _change(
+                            "observation",
+                            "Observation",
+                            edit.previous_observation,
+                            edit.new_observation,
+                        ),
+                    ]
+                ),
+            )
+        )
+    return entries
+
+
 _COLLECTORS = {
     HistoryEntity.TEMPERATURE_READING: _reading_entries,
     HistoryEntity.CLEANING_RECORD: _cleaning_entries,
     HistoryEntity.PASTEURISATION_PHASE: _pasteurisation_entries,
+    HistoryEntity.TRANSPORT: _transport_entries,
 }
 
 

@@ -4,19 +4,25 @@ export const HISTORY_ENTITY_LABELS: Record<HistoryEntity, string> = {
   temperature_reading: "Relevé",
   cleaning_record: "Nettoyage",
   pasteurisation_phase: "Pasteurisation",
+  transport: "Transport",
 };
 
 export const HISTORY_ENTITY_TONES: Record<HistoryEntity, string> = {
   temperature_reading: "bg-sky-50 text-sky-700 ring-sky-200",
   cleaning_record: "bg-teal-50 text-teal-700 ring-teal-200",
   pasteurisation_phase: "bg-orange-50 text-orange-700 ring-orange-200",
+  transport: "bg-indigo-50 text-indigo-700 ring-indigo-200",
 };
 
-/** Route prefix of the entity an entry belongs to. */
-export const HISTORY_ENTITY_LINKS: Record<HistoryEntity, string> = {
+/**
+ * Route prefix of the entity an entry belongs to, or null when no screen
+ * exists yet: the feed then renders the subject as plain text.
+ */
+export const HISTORY_ENTITY_LINKS: Record<HistoryEntity, string | null> = {
   temperature_reading: "/equipment",
   cleaning_record: "/cleaning",
   pasteurisation_phase: "/pasteurisation",
+  transport: null,
 };
 
 export const HISTORY_ACTION_LABELS: Record<HistoryAction, string> = {
@@ -34,6 +40,7 @@ export const HISTORY_ACTION_TONES: Record<HistoryAction, string> = {
 export function historyEntryLink(entry: {
   entity: HistoryEntity;
   target_id: string;
-}): string {
-  return `${HISTORY_ENTITY_LINKS[entry.entity]}/${entry.target_id}`;
+}): string | null {
+  const prefix = HISTORY_ENTITY_LINKS[entry.entity];
+  return prefix === null ? null : `${prefix}/${entry.target_id}`;
 }

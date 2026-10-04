@@ -13,6 +13,7 @@ class HistoryEntity(enum.StrEnum):
     TEMPERATURE_READING = "temperature_reading"
     CLEANING_RECORD = "cleaning_record"
     PASTEURISATION_PHASE = "pasteurisation_phase"
+    TRANSPORT = "transport"
 
 
 class HistoryAction(enum.StrEnum):

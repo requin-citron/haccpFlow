@@ -30,7 +30,12 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}",
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}/phases/{{phase}}",
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}/phases/{{phase}}/history",
+    f"{API_V1_PREFIX}/transports",
+    f"{API_V1_PREFIX}/transports/{{transport_id}}",
+    f"{API_V1_PREFIX}/transports/{{transport_id}}/readings",
     f"{API_V1_PREFIX}/users",
+    f"{API_V1_PREFIX}/vehicles",
+    f"{API_V1_PREFIX}/vehicles/{{vehicle_id}}",
 }
 
 
@@ -115,6 +120,21 @@ def test_the_unified_history_is_read_only() -> None:
     schema = create_app().openapi()
 
     assert set(schema["paths"][f"{API_V1_PREFIX}/history"]) == {"get"}
+
+
+def test_vehicle_and_transport_routes_expose_the_expected_methods() -> None:
+    schema = create_app().openapi()
+    prefix = API_V1_PREFIX
+
+    assert set(schema["paths"][f"{prefix}/vehicles"]) == {"get", "post"}
+    assert set(schema["paths"][f"{prefix}/vehicles/{{vehicle_id}}"]) == {"delete", "put"}
+    assert set(schema["paths"][f"{prefix}/transports"]) == {"get", "post"}
+    assert set(schema["paths"][f"{prefix}/transports/{{transport_id}}"]) == {
+        "delete",
+        "get",
+        "put",
+    }
+    assert set(schema["paths"][f"{prefix}/transports/{{transport_id}}/readings"]) == {"put"}
 
 
 def test_swagger_and_redoc_are_served() -> None:

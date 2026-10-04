@@ -10,7 +10,9 @@ from app.api.v1 import (
     history,
     pasteurisations,
     readings,
+    transports,
     users,
+    vehicles,
 )
 from app.config import API_V1_PREFIX
 
@@ -22,4 +24,6 @@ api_router.include_router(equipment.router)
 api_router.include_router(history.router)
 api_router.include_router(pasteurisations.router)
 api_router.include_router(readings.router)
+api_router.include_router(transports.router)
 api_router.include_router(users.router)
+api_router.include_router(vehicles.router)

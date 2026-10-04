@@ -22,7 +22,9 @@ from app.models.temperature_reading import (
     TemperatureReading,
     TemperatureReadingEdit,
 )
+from app.models.transport import Transport, TransportEdit, TransportEditAction
 from app.models.user import User, UserRole, normalize_email
+from app.models.vehicle import Vehicle
 
 __all__ = [
     "CleaningFrequency",
@@ -44,7 +46,11 @@ __all__ = [
     "RefreshToken",
     "TemperatureReading",
     "TemperatureReadingEdit",
+    "Transport",
+    "TransportEdit",
+    "TransportEditAction",
     "User",
     "UserRole",
+    "Vehicle",
     "normalize_email",
 ]

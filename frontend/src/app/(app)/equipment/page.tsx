@@ -1,8 +1,10 @@
 import { EquipmentCard } from "@/components/equipment/equipment-card";
 import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialog";
 import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
+import { DeleteVehicleButton } from "@/components/vehicles/delete-vehicle-button";
+import { VehicleFormDialog } from "@/components/vehicles/vehicle-form-dialog";
 import { apiFetch } from "@/lib/api";
-import type { Equipment } from "@/lib/types";
+import type { CurrentUser, Equipment, Vehicle } from "@/lib/types";
 
 const STAT_TONES = {
   slate: "bg-slate-100 text-slate-600",
@@ -35,7 +37,12 @@ function StatCard({
 }
 
 export default async function EquipmentPage() {
-  const equipment = await apiFetch<Equipment[]>("/api/v1/equipment");
+  const [user, equipment, vehicles] = await Promise.all([
+    apiFetch<CurrentUser>("/api/v1/auth/me"),
+    apiFetch<Equipment[]>("/api/v1/equipment"),
+    apiFetch<Vehicle[]>("/api/v1/vehicles"),
+  ]);
+  const isAdmin = user.role === "admin";
   const fridgeCount = equipment.filter((item) => item.type === "fridge").length;
   const freezerCount = equipment.length - fridgeCount;
 
@@ -96,6 +103,51 @@ export default async function EquipmentPage() {
           ))}
         </section>
       )}
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Véhicules</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Les véhicules utilisés pour le suivi de transport. Ils se choisissent ensuite lors
+              de la déclaration d&apos;un transport.
+            </p>
+          </div>
+          <VehicleFormDialog />
+        </div>
+
+        {vehicles.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
+            <p className="text-sm text-slate-500">
+              Aucun véhicule enregistré. Ajoute un nom ou une plaque pour pouvoir déclarer des
+              transports.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {vehicles.map((vehicle) => {
+              const label = vehicle.name ?? vehicle.plate ?? "véhicule";
+              return (
+                <li
+                  key={vehicle.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-900">{label}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {vehicle.name && vehicle.plate ? `Plaque ${vehicle.plate}` : "Sans plaque"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <VehicleFormDialog vehicle={vehicle} />
+                    {isAdmin ? <DeleteVehicleButton id={vehicle.id} label={label} /> : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

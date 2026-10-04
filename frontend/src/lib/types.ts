@@ -142,7 +142,8 @@ export type PasteurisationPhaseEdit = {
 export type HistoryEntity =
   | "temperature_reading"
   | "cleaning_record"
-  | "pasteurisation_phase";
+  | "pasteurisation_phase"
+  | "transport";
 
 export type HistoryAction = "created" | "updated" | "deleted";
 
@@ -163,4 +164,12 @@ export type HistoryEntry = {
   subject: string;
   detail: string;
   changes: HistoryChange[];
+};
+
+export type Vehicle = {
+  id: string;
+  name: string | null;
+  plate: string | null;
+  created_at: string;
+  updated_at: string;
 };

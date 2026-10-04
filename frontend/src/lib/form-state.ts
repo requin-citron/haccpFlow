@@ -38,3 +38,10 @@ export type PasteurisationFormState = {
 };
 
 export const INITIAL_PASTEURISATION_FORM_STATE: PasteurisationFormState = { status: "idle" };
+
+export type VehicleFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_VEHICLE_FORM_STATE: VehicleFormState = { status: "idle" };
