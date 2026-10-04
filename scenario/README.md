@@ -37,6 +37,7 @@ relancer sans créer de doublon.
 | `check_equipment_api.py` | Création avec seuils par défaut, doublon insensible à la casse (409), modification, suppression douce puis 404. |
 | `check_readings_api.py` | Saisie du matin seul puis complétion du soir sans écraser l'existant, correction tracée dans l'historique, conformité recalculée, date antidatée acceptée, date trop future et température impossible refusées. |
 | `check_cleaning_api.py` | Cycle de vie d'un plan, déclarations multiples le même jour, correction et suppression auditées, calcul du prévisionnel et de la liste du retard. |
+| `check_pasteurisation_api.py` | Cycle de vie d'un lot de pasteurisation, remplissage progressif des trois phases (préchauffage, palier, refroidissement), durée calculée, correction auditée, refus d'une fin antérieure au début, recherche par numéro de lot. |
 | `check_frontend_pages.py` | Les pages Matériel, Relevés et Nettoyage rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. |
 | `check_cleaning_tabs.py` | La séparation entre l'onglet opérationnel (déclarer) et l'onglet de gestion (créer, modifier), ainsi que le contenu de l'agenda. |
 

@@ -7,6 +7,13 @@ from app.models.cleaning_plan import (
     CleaningStatus,
 )
 from app.models.equipment import Equipment, EquipmentType
+from app.models.pasteurisation import (
+    PasteurisationBatch,
+    PasteurisationPhase,
+    PasteurisationPhaseEdit,
+    PasteurisationPhaseEditAction,
+    PasteurisationPhaseRecord,
+)
 from app.models.refresh_token import RefreshToken
 from app.models.temperature_reading import (
     ReadingEditAction,
@@ -26,6 +33,11 @@ __all__ = [
     "CleaningStatus",
     "Equipment",
     "EquipmentType",
+    "PasteurisationBatch",
+    "PasteurisationPhase",
+    "PasteurisationPhaseEdit",
+    "PasteurisationPhaseEditAction",
+    "PasteurisationPhaseRecord",
     "ReadingEditAction",
     "ReadingSlot",
     "ReadingSource",

@@ -9,6 +9,10 @@ sanitaire :
 - **Plan de nettoyage et de désinfection (PND)** — zones et matériels à
   nettoyer, fréquences, produits, déclarations de nettoyage, prévisionnel et
   liste du retard.
+- **Pasteurisation** — registre des lots (date, produit, numéro de lot,
+  quantité) et suivi de leurs trois phases : préchauffage, palier, puis
+  refroidissement, chacune avec ses heures, sa température cible et ses
+  observations.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
@@ -150,6 +154,10 @@ inaccessibles.
 | Désactiver un plan de nettoyage | ❌ | ✅ |
 | Déclarer, corriger ou supprimer un nettoyage | ✅ | ✅ |
 | Consulter le prévisionnel et la liste du retard | ✅ | ✅ |
+| Consulter les lots de pasteurisation | ✅ | ✅ |
+| Créer un lot et enregistrer ses phases | ✅ | ✅ |
+| Corriger une phase de pasteurisation | ✅ | ✅ |
+| Désactiver un lot de pasteurisation | ❌ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
@@ -211,7 +219,7 @@ python3 scenario/check_cleaning_api.py
 
 ## Tests
 
-La suite backend compte plus de 130 tests : des tests unitaires sans aucune
+La suite backend compte plus de 160 tests : des tests unitaires sans aucune
 dépendance, et des tests d'intégration sur un PostgreSQL jetable.
 
 ```sh
@@ -243,6 +251,8 @@ dessus.
 
 - Enrôlement de capteurs et ingestion MQTT : les relevés automatiques viendront
   compléter les créneaux laissés vides (`source = sensor` est déjà prévu).
+- Interface de saisie de la pasteurisation.
+- Alerte quand un lot de pasteurisation reste incomplet.
 - Gestion des utilisateurs depuis l'interface.
 - Listener TLS sur le broker pour les sites on-premise.
 - Export du plan de maîtrise sanitaire en PDF.
