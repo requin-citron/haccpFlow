@@ -54,6 +54,10 @@ def main() -> None:
     else:
         report.info("aucun lot : lance seed_pasteurisation.py pour voir le détail rempli")
 
+    status, html = fetch_page("/equipment", cookie=cookie)
+    for label in ("Véhicules", "Nouveau véhicule"):
+        report.check(f"section véhicules : « {label} » rendu", label in html)
+
     report.finish()
 
 

@@ -206,3 +206,14 @@ export function HistoryIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function TruckIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M13 17H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v11Z" />
+      <path d="M13 9h3.7a1 1 0 0 1 .8.4l2.3 3a1 1 0 0 1 .2.6V16a1 1 0 0 1-1 1h-5" />
+      <circle cx="7.5" cy="17.5" r="1.5" />
+      <circle cx="16.5" cy="17.5" r="1.5" />
+    </Icon>
+  );
+}

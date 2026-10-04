@@ -1,7 +1,7 @@
 import { EquipmentCard } from "@/components/equipment/equipment-card";
 import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialog";
 import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
-import { DeleteVehicleButton } from "@/components/vehicles/delete-vehicle-button";
+import { VehicleCard } from "@/components/vehicles/vehicle-card";
 import { VehicleFormDialog } from "@/components/vehicles/vehicle-form-dialog";
 import { apiFetch } from "@/lib/api";
 import type { CurrentUser, Equipment, Vehicle } from "@/lib/types";
@@ -124,28 +124,11 @@ export default async function EquipmentPage() {
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {vehicles.map((vehicle) => {
-              const label = vehicle.name ?? vehicle.plate ?? "véhicule";
-              return (
-                <li
-                  key={vehicle.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900">{label}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {vehicle.name && vehicle.plate ? `Plaque ${vehicle.plate}` : "Sans plaque"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <VehicleFormDialog vehicle={vehicle} />
-                    {isAdmin ? <DeleteVehicleButton id={vehicle.id} label={label} /> : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {vehicles.map((vehicle) => (
+              <VehicleCard key={vehicle.id} vehicle={vehicle} isAdmin={isAdmin} />
+            ))}
+          </div>
         )}
       </section>
     </div>

@@ -13,6 +13,9 @@ sanitaire :
   quantité) et suivi de leurs trois phases : préchauffage, palier, puis
   refroidissement, chacune avec ses heures, sa température cible et ses
   observations.
+- **Transport** — référentiel des véhicules (nom et plaque) et registre des
+  déplacements : lieu, produit, lot, puis les relevés de chaîne du froid au
+  départ et à l'arrivée.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
@@ -158,6 +161,9 @@ inaccessibles.
 | Créer un lot et enregistrer ses phases | ✅ | ✅ |
 | Corriger une phase de pasteurisation | ✅ | ✅ |
 | Désactiver un lot de pasteurisation | ❌ | ✅ |
+| Consulter les véhicules et les transports | ✅ | ✅ |
+| Créer un véhicule et déclarer un transport | ✅ | ✅ |
+| Désactiver un véhicule ou un transport | ❌ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
@@ -219,7 +225,7 @@ python3 scenario/check_cleaning_api.py
 
 ## Tests
 
-La suite backend compte plus de 160 tests : des tests unitaires sans aucune
+La suite backend compte plus de 210 tests : des tests unitaires sans aucune
 dépendance, et des tests d'intégration sur un PostgreSQL jetable.
 
 ```sh
@@ -252,6 +258,7 @@ dessus.
 - Enrôlement de capteurs et ingestion MQTT : les relevés automatiques viendront
   compléter les créneaux laissés vides (`source = sensor` est déjà prévu).
 - Alerte quand un lot de pasteurisation reste incomplet.
+- Interface de saisie des transports (le référentiel des véhicules est déjà en place).
 - Gestion des utilisateurs depuis l'interface.
 - Listener TLS sur le broker pour les sites on-premise.
 - Export du plan de maîtrise sanitaire en PDF.
