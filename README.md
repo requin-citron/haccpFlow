@@ -251,7 +251,6 @@ dessus.
 
 - Enrôlement de capteurs et ingestion MQTT : les relevés automatiques viendront
   compléter les créneaux laissés vides (`source = sensor` est déjà prévu).
-- Interface de saisie de la pasteurisation.
 - Alerte quand un lot de pasteurisation reste incomplet.
 - Gestion des utilisateurs depuis l'interface.
 - Listener TLS sur le broker pour les sites on-premise.

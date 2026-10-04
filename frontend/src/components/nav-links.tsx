@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { CheckIcon, ClipboardIcon, DropletIcon, GridIcon } from "@/components/icons";
+import { CheckIcon, ClipboardIcon, DropletIcon, FlameIcon, GridIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
   { href: "/equipment", label: "Matériel", icon: GridIcon },
   { href: "/readings", label: "Relevés", icon: ClipboardIcon },
   { href: "/cleaning", label: "Nettoyage", icon: CheckIcon },
   { href: "/cleaning/plans", label: "Plan de nettoyage", icon: DropletIcon },
+  { href: "/pasteurisation", label: "Pasteurisation", icon: FlameIcon },
 ];
 
 export function NavLinks() {

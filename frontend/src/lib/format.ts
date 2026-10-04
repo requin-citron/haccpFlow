@@ -2,6 +2,7 @@ import type {
   CleaningFrequency,
   CleaningStatus,
   EquipmentType,
+  PasteurisationPhase,
   ReadingSlot,
   ReadingSource,
 } from "@/lib/types";
@@ -31,6 +32,18 @@ export const CLEANING_STATUS_LABELS: Record<CleaningStatus, string> = {
   overdue: "En retard",
   due_today: "À faire aujourd'hui",
   upcoming: "À venir",
+};
+
+export const PASTEURISATION_PHASE_LABELS: Record<PasteurisationPhase, string> = {
+  preheating: "Préchauffage",
+  holding: "Palier (pasteurisation)",
+  cooling: "Refroidissement",
+};
+
+export const PASTEURISATION_PHASE_SHORT_LABELS: Record<PasteurisationPhase, string> = {
+  preheating: "Pré",
+  holding: "Pal",
+  cooling: "Ref",
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -101,6 +114,23 @@ export function formatDateTimeUtc(isoDateTime: string): string {
     timeZone: "UTC",
   }).format(new Date(isoDateTime));
   return `${formatted} UTC`;
+}
+
+/** "09:00:00" -> "09:00", for a time input. */
+export function formatTimeInput(value: string | null): string {
+  return value ? value.slice(0, 5) : "";
+}
+
+export function formatDuration(minutes: number | null): string {
+  if (minutes === null) {
+    return "—";
+  }
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")}`;
 }
 
 export function formatTemperature(value: number): string {

@@ -31,3 +31,10 @@ export type CleaningRecordFormState = {
 };
 
 export const INITIAL_CLEANING_RECORD_FORM_STATE: CleaningRecordFormState = { status: "idle" };
+
+export type PasteurisationFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_PASTEURISATION_FORM_STATE: PasteurisationFormState = { status: "idle" };

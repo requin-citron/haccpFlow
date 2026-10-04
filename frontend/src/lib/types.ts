@@ -98,3 +98,43 @@ export type CleaningScheduleEntry = {
   status: CleaningStatus;
   days_late: number;
 };
+
+export type PasteurisationPhase = "preheating" | "holding" | "cooling";
+
+export type PasteurisationPhaseEditAction = "created" | "updated";
+
+export type PasteurisationPhaseSlot = {
+  phase: PasteurisationPhase;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_minutes: number | null;
+  target_temperature_celsius: number | null;
+  observation: string | null;
+};
+
+export type PasteurisationBatch = {
+  id: string;
+  batch_date: string;
+  product_name: string;
+  lot_number: string;
+  quantity: number;
+  phases: PasteurisationPhaseSlot[];
+  filled_phases: number;
+  is_complete: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PasteurisationPhaseEdit = {
+  action: PasteurisationPhaseEditAction;
+  previous_started_at: string | null;
+  new_started_at: string | null;
+  previous_ended_at: string | null;
+  new_ended_at: string | null;
+  previous_target_temperature_celsius: number | null;
+  new_target_temperature_celsius: number | null;
+  previous_observation: string | null;
+  new_observation: string | null;
+  changed_by_email: string | null;
+  changed_at: string;
+};

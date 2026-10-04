@@ -26,6 +26,7 @@ docker compose --profile app up -d frontend
 | --- | --- |
 | `seed_equipment.py` | Trois équipements : deux frigos (dont un avec seuils explicites) et un congélateur. |
 | `seed_cleaning.py` | Quatre plans de nettoyage couvrant tous les états — un en retard, un à faire aujourd'hui, un à venir, un après chaque usage — avec leurs déclarations et une correction de date pour alimenter le journal. |
+| `seed_pasteurisation.py` | Trois lots de pasteurisation : un complet, un en cours (préchauffage seul) et un vide, pour voir les trois états dans l'interface. |
 
 Les deux sont **idempotents** : un nom déjà présent est ignoré, on peut les
 relancer sans créer de doublon.
