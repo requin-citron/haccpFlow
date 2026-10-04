@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     auth,
+    cash_registers,
     cleaning_plans,
     cleaning_schedule,
     equipment,
@@ -19,6 +20,7 @@ from app.config import API_V1_PREFIX
 
 api_router = APIRouter(prefix=API_V1_PREFIX)
 api_router.include_router(auth.router)
+api_router.include_router(cash_registers.router)
 api_router.include_router(cleaning_plans.router)
 api_router.include_router(cleaning_schedule.router)
 api_router.include_router(equipment.router)

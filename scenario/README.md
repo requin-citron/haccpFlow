@@ -42,6 +42,7 @@ relancer sans créer de doublon.
 | `check_pasteurisation_api.py` | Cycle de vie d'un lot de pasteurisation, remplissage progressif des trois phases (préchauffage, palier, refroidissement), durée calculée, correction auditée, refus d'une fin antérieure au début, recherche par numéro de lot. |
 | `check_transport_api.py` | Référentiel des véhicules (nom, plaque, doublons) et registre des transports : départ puis arrivée, véhicule du référentiel ou libellé libre, correction auditée, recherche par lot, désactivation. |
 | `check_export_api.py` | Télécharge les quatre extractions CSV et vérifie le BOM UTF-8, le séparateur point-virgule et la ligne d'en-tête de chacune. |
+| `check_cash_register_api.py` | Enrôlement d'une caisse avec son comptage initial : total calculé en centimes, coupures absentes à zéro, nom déjà pris, compteur négatif, coupure inconnue, correction, désactivation et nom libéré. |
 | `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation, Transport, Export et Historique rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. Vérifie aussi qu'un export CSV se télécharge bien à travers le frontend, BOM compris. |
 | `check_cleaning_tabs.py` | La séparation entre l'onglet opérationnel (déclarer) et l'onglet de gestion (créer, modifier), ainsi que le contenu de l'agenda. |
 

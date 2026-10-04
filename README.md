@@ -19,6 +19,8 @@ sanitaire :
 - **Export CSV** — quatre extractions prêtes pour Excel (relevés, nettoyages,
   pasteurisation, transport) filtrables par période, désactivés compris, pour
   répondre à un contrôle ou archiver.
+- **Caisses** — enrôlement d'une caisse avec son comptage initial, coupure par
+  coupure, des pièces de 1 centime aux billets de 50 euros.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
@@ -167,6 +169,8 @@ inaccessibles.
 | Consulter les véhicules et les transports | ✅ | ✅ |
 | Créer un véhicule et déclarer un transport | ✅ | ✅ |
 | Désactiver un véhicule ou un transport | ❌ | ✅ |
+| Enrôler une caisse et corriger son comptage | ✅ | ✅ |
+| Désactiver une caisse | ❌ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
@@ -228,7 +232,7 @@ python3 scenario/check_cleaning_api.py
 
 ## Tests
 
-La suite backend compte plus de 220 tests : des tests unitaires sans aucune
+La suite backend compte plus de 240 tests : des tests unitaires sans aucune
 dépendance, et des tests d'intégration sur un PostgreSQL jetable.
 
 ```sh

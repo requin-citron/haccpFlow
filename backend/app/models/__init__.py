@@ -1,3 +1,8 @@
+from app.models.cash_register import (
+    DENOMINATION_FIELDS,
+    DENOMINATIONS,
+    CashRegister,
+)
 from app.models.cleaning_plan import (
     CleaningFrequency,
     CleaningPlan,
@@ -27,6 +32,9 @@ from app.models.user import User, UserRole, normalize_email
 from app.models.vehicle import Vehicle
 
 __all__ = [
+    "DENOMINATIONS",
+    "DENOMINATION_FIELDS",
+    "CashRegister",
     "CleaningFrequency",
     "CleaningPlan",
     "CleaningRecord",
