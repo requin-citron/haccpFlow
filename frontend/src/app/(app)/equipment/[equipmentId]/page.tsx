@@ -6,19 +6,12 @@ import { ReadingDialog } from "@/components/readings/reading-dialog";
 import { apiFetch } from "@/lib/api";
 import {
   EQUIPMENT_TYPE_LABELS,
-  SLOT_LABELS,
   addDays,
-  formatDateTimeUtc,
   formatShortDay,
   formatTemperature,
   todayIso,
 } from "@/lib/format";
-import type {
-  Equipment,
-  TemperatureReadingDay,
-  TemperatureReadingEdit,
-  TemperatureReadingSlot,
-} from "@/lib/types";
+import type { Equipment, TemperatureReadingDay, TemperatureReadingSlot } from "@/lib/types";
 
 const HISTORY_DAYS = 14;
 
@@ -34,36 +27,6 @@ function SlotValue({ slot }: { slot: TemperatureReadingSlot | null }) {
     >
       {formatTemperature(slot.temperature_celsius)}
     </span>
-  );
-}
-
-function HistoryCell({ entries }: { entries: TemperatureReadingEdit[] }) {
-  if (entries.length === 0) {
-    return <span className="text-xs text-slate-400">—</span>;
-  }
-  return (
-    <details className="group">
-      <summary className="cursor-pointer list-none text-xs font-semibold text-teal-700 hover:text-teal-800">
-        Voir ({entries.length})
-      </summary>
-      <ul className="mt-2 space-y-1.5">
-        {entries.map((entry, index) => (
-          <li
-            key={`${entry.slot}-${entry.changed_at}-${index}`}
-            className="rounded-lg bg-slate-50 px-2.5 py-2 text-[11px] leading-relaxed text-slate-600"
-          >
-            <span className="font-medium text-slate-800">{SLOT_LABELS[entry.slot]}</span>{" "}
-            {entry.action === "created" ? "créé" : "modifié"}
-            {entry.previous_celsius !== null
-              ? ` · ${formatTemperature(entry.previous_celsius)} → ${formatTemperature(entry.new_celsius)}`
-              : ` · ${formatTemperature(entry.new_celsius)}`}
-            <br />
-            {formatDateTimeUtc(entry.changed_at)}
-            {entry.changed_by_email ? ` · ${entry.changed_by_email}` : ""}
-          </li>
-        ))}
-      </ul>
-    </details>
   );
 }
 
@@ -86,17 +49,7 @@ export default async function EquipmentDetailPage({
     `/api/v1/equipment/${equipment.id}/readings?from=${from}&to=${to}`,
   );
 
-  const rows = await Promise.all(
-    [...days].reverse().map(async (day) => ({
-      day,
-      history:
-        day.morning || day.evening
-          ? await apiFetch<TemperatureReadingEdit[]>(
-              `/api/v1/equipment/${equipment.id}/readings/${day.reading_date}/history`,
-            )
-          : [],
-    })),
-  );
+  const rows = [...days].reverse();
 
   const Icon = equipment.type === "freezer" ? SnowflakeIcon : FridgeIcon;
 
@@ -151,7 +104,8 @@ export default async function EquipmentDetailPage({
               {HISTORY_DAYS} derniers jours
             </h2>
             <p className="text-xs text-slate-500">
-              Chaque modification est tracée : auteur et valeur précédente.
+              Saisie du matin et du soir. Le détail des modifications est dans l&apos;onglet
+              Historique.
             </p>
           </div>
         </header>
@@ -164,11 +118,10 @@ export default async function EquipmentDetailPage({
                 <th className="px-5 py-3 font-medium">Matin</th>
                 <th className="px-5 py-3 font-medium">Soir</th>
                 <th className="px-5 py-3 font-medium">Saisie</th>
-                <th className="px-5 py-3 font-medium">Journal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {rows.map(({ day, history }) => (
+              {rows.map((day) => (
                 <tr key={day.reading_date} className="align-top">
                   <td className="whitespace-nowrap px-5 py-3 capitalize text-slate-700">
                     {formatShortDay(day.reading_date)}
@@ -181,9 +134,6 @@ export default async function EquipmentDetailPage({
                   </td>
                   <td className="px-5 py-3">
                     <ReadingDialog equipment={equipment} readingDate={day.reading_date} day={day} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <HistoryCell entries={history} />
                   </td>
                 </tr>
               ))}

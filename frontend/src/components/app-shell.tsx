@@ -23,7 +23,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </span>
         </Link>
 
-        <NavLinks />
+        <NavLinks isAdmin={user.role === "admin"} />
 
         <div className="mt-auto space-y-3 border-t border-slate-800 pt-4">
           <div className="hidden px-1 lg:block">

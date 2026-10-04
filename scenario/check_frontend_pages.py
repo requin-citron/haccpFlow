@@ -8,6 +8,7 @@ PAGES: list[tuple[str, str]] = [
     ("/readings", "Relevés de température"),
     ("/cleaning", "Nettoyage"),
     ("/pasteurisation", "Pasteurisation"),
+    ("/history", "Historique"),
 ]
 
 

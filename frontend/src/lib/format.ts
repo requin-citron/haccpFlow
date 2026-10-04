@@ -116,6 +116,15 @@ export function formatDateTimeUtc(isoDateTime: string): string {
   return `${formatted} UTC`;
 }
 
+/** UTC calendar day of an ISO datetime, for grouping a feed. */
+export function dayFromIso(isoDateTime: string): string {
+  return isoDateTime.slice(0, 10);
+}
+
+export function timeFromIso(isoDateTime: string): string {
+  return isoDateTime.slice(11, 16);
+}
+
 /** "09:00:00" -> "09:00", for a time input. */
 export function formatTimeInput(value: string | null): string {
   return value ? value.slice(0, 5) : "";

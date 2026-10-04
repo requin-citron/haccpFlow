@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PasteurisationBatchDialog } from "@/components/pasteurisation/batch-form-dialog";
+import { DeleteBatchButton } from "@/components/pasteurisation/delete-batch-button";
 import { CheckIcon, FlameIcon, SearchIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import {
@@ -14,7 +15,7 @@ import {
   PHASE_STATE_LABELS,
   phaseState,
 } from "@/lib/pasteurisation";
-import type { PasteurisationBatch } from "@/lib/types";
+import type { CurrentUser, PasteurisationBatch } from "@/lib/types";
 
 function StatCard({
   label,
@@ -47,7 +48,11 @@ export default async function PasteurisationPage({
   const lot = params.lot?.trim() ?? "";
   const query = lot ? `?lot=${encodeURIComponent(lot)}` : "";
 
-  const batches = await apiFetch<PasteurisationBatch[]>(`/api/v1/pasteurisations${query}`);
+  const [user, batches] = await Promise.all([
+    apiFetch<CurrentUser>("/api/v1/auth/me"),
+    apiFetch<PasteurisationBatch[]>(`/api/v1/pasteurisations${query}`),
+  ]);
+  const isAdmin = user.role === "admin";
   const incomplete = batches.filter((batch) => !batch.is_complete).length;
   const remaining = batches.reduce(
     (total, batch) => total + (batch.phases.length - batch.filled_phases),
@@ -143,7 +148,7 @@ export default async function PasteurisationPage({
                   <th className="px-5 py-3 font-medium">Entités</th>
                   <th className="px-5 py-3 font-medium">Phases</th>
                   <th className="px-5 py-3 font-medium">Statut</th>
-                  <th className="px-5 py-3 text-right font-medium">Ouvrir</th>
+                  <th className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -187,13 +192,18 @@ export default async function PasteurisationPage({
                         {batch.is_complete ? "Complet" : `${batch.filled_phases}/${batch.phases.length}`}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right">
-                      <Link
-                        href={`/pasteurisation/${batch.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
-                      >
-                        Ouvrir
-                      </Link>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/pasteurisation/${batch.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
+                        >
+                          Ouvrir
+                        </Link>
+                        {isAdmin ? (
+                          <DeleteBatchButton id={batch.id} lot={batch.lot_number} />
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}

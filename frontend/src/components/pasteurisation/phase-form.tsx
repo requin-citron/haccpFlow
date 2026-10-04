@@ -7,7 +7,6 @@ import { AlertIcon, CheckIcon } from "@/components/icons";
 import { INITIAL_PASTEURISATION_FORM_STATE } from "@/lib/form-state";
 import {
   PASTEURISATION_PHASE_LABELS,
-  formatDateTimeUtc,
   formatDuration,
   formatTimeInput,
 } from "@/lib/format";
@@ -15,22 +14,19 @@ import {
   PHASE_STATE_ACCENTS,
   PHASE_STATE_BADGES,
   PHASE_STATE_LABELS,
-  describePhaseChange,
   phaseState,
 } from "@/lib/pasteurisation";
 import { FIELD_CLASS, LABEL_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
-import type { PasteurisationPhaseEdit, PasteurisationPhaseSlot } from "@/lib/types";
+import type { PasteurisationPhaseSlot } from "@/lib/types";
 
 export function PasteurisationPhaseForm({
   batchId,
   slot,
   rank,
-  history,
 }: {
   batchId: string;
   slot: PasteurisationPhaseSlot;
   rank: number;
-  history: PasteurisationPhaseEdit[];
 }) {
   const [state, formAction, pending] = useActionState(
     savePasteurisationPhaseAction,
@@ -156,29 +152,6 @@ export function PasteurisationPhaseForm({
         </button>
       </div>
 
-      {history.length > 0 ? (
-        <details className="border-t border-slate-100 pt-3">
-          <summary className="cursor-pointer list-none text-xs font-semibold text-teal-700 hover:text-teal-800">
-            Journal des saisies ({history.length})
-          </summary>
-          <ul className="mt-2 space-y-1.5">
-            {history.map((entry, index) => (
-              <li
-                key={`${entry.changed_at}-${index}`}
-                className="rounded-lg bg-slate-50 px-2.5 py-2 text-[11px] leading-relaxed text-slate-600"
-              >
-                <span className="font-medium text-slate-800">
-                  {entry.action === "created" ? "Saisie" : "Correction"}
-                </span>{" "}
-                · {describePhaseChange(entry)}
-                <br />
-                {formatDateTimeUtc(entry.changed_at)}
-                {entry.changed_by_email ? ` · ${entry.changed_by_email}` : ""}
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
     </form>
   );
 }

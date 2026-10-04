@@ -148,7 +148,7 @@ inaccessibles.
 | Créer et modifier un matériel | ✅ | ✅ |
 | Désactiver un matériel | ❌ | ✅ |
 | Saisir, compléter et corriger un relevé de température | ✅ | ✅ |
-| Consulter l'historique des relevés | ✅ | ✅ |
+| Consulter l'historique des modifications (onglet Historique) | ❌ | ✅ |
 | Consulter les plans de nettoyage | ✅ | ✅ |
 | Créer et modifier un plan de nettoyage | ✅ | ✅ |
 | Désactiver un plan de nettoyage | ❌ | ✅ |

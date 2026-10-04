@@ -13,53 +13,9 @@ import {
   formatShortDay,
   todayIso,
 } from "@/lib/format";
-import type {
-  CleaningPlan,
-  CleaningRecord,
-  CleaningRecordEdit,
-  CurrentUser,
-} from "@/lib/types";
+import type { CleaningPlan, CleaningRecord, CurrentUser } from "@/lib/types";
 
 const RECENT_LIMIT = 20;
-
-function HistoryList({ entries }: { entries: CleaningRecordEdit[] }) {
-  if (entries.length === 0) {
-    return <span className="text-xs text-slate-400">—</span>;
-  }
-  return (
-    <details>
-      <summary className="cursor-pointer list-none text-xs font-semibold text-teal-700 hover:text-teal-800">
-        Voir ({entries.length})
-      </summary>
-      <ul className="mt-2 space-y-1.5">
-        {entries.map((entry, index) => (
-          <li
-            key={`${entry.action}-${entry.changed_at}-${index}`}
-            className="rounded-lg bg-slate-50 px-2.5 py-2 text-[11px] leading-relaxed text-slate-600"
-          >
-            <span className="font-medium text-slate-800">
-              {entry.action === "created"
-                ? "Déclaré"
-                : entry.action === "updated"
-                  ? "Corrigé"
-                  : "Supprimé"}
-            </span>
-            {entry.previous_cleaning_date !== null && entry.new_cleaning_date !== null
-              ? ` · ${formatShortDay(entry.previous_cleaning_date)} → ${formatShortDay(entry.new_cleaning_date)}`
-              : entry.new_cleaning_date !== null
-                ? ` · ${formatShortDay(entry.new_cleaning_date)}`
-                : entry.previous_cleaning_date !== null
-                  ? ` · ${formatShortDay(entry.previous_cleaning_date)}`
-                  : ""}
-            <br />
-            {formatDateTimeUtc(entry.changed_at)}
-            {entry.changed_by_email ? ` · ${entry.changed_by_email}` : ""}
-          </li>
-        ))}
-      </ul>
-    </details>
-  );
-}
 
 export default async function CleaningPlanDetailPage({
   params,
@@ -80,14 +36,6 @@ export default async function CleaningPlanDetailPage({
 
   const records = await apiFetch<CleaningRecord[]>(`/api/v1/cleaning-plans/${plan.id}/records`);
   const recent = records.slice(0, RECENT_LIMIT);
-  const rows = await Promise.all(
-    recent.map(async (record) => ({
-      record,
-      history: await apiFetch<CleaningRecordEdit[]>(
-        `/api/v1/cleaning-plans/${plan.id}/records/${record.id}/history`,
-      ),
-    })),
-  );
 
   return (
     <div className="space-y-8">
@@ -138,11 +86,11 @@ export default async function CleaningPlanDetailPage({
               ? "Aucune déclaration pour ce plan."
               : `${records.length} déclaration${records.length > 1 ? "s" : ""}${
                   records.length > RECENT_LIMIT ? `, ${RECENT_LIMIT} plus récentes affichées` : ""
-                }. Chaque correction est tracée.`}
+                }. Les corrections sont visibles dans l'onglet Historique.`}
           </p>
         </header>
 
-        {rows.length === 0 ? (
+        {recent.length === 0 ? (
           <div className="px-6 py-12 text-center text-sm text-slate-500">
             Déclare un premier nettoyage pour alimenter l&apos;historique.
           </div>
@@ -154,12 +102,11 @@ export default async function CleaningPlanDetailPage({
                   <th className="px-5 py-3 font-medium">Date du nettoyage</th>
                   <th className="px-5 py-3 font-medium">Commentaire</th>
                   <th className="px-5 py-3 font-medium">Déclaré par</th>
-                  <th className="px-5 py-3 font-medium">Journal</th>
                   <th className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {rows.map(({ record, history }) => (
+                {recent.map((record) => (
                   <tr key={record.id} className="align-top">
                     <td className="whitespace-nowrap px-5 py-3 font-medium text-slate-800">
                       {formatShortDay(record.cleaning_date)}
@@ -173,9 +120,6 @@ export default async function CleaningPlanDetailPage({
                       <span className="text-[11px] text-slate-400">
                         {formatDateTimeUtc(record.recorded_at)}
                       </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <HistoryList entries={history} />
                     </td>
                     <td className="px-5 py-3">
                       <CleaningRecordActions planId={plan.id} record={record} />

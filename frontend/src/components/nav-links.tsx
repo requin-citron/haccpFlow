@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { CheckIcon, ClipboardIcon, DropletIcon, FlameIcon, GridIcon } from "@/components/icons";
+import {
+  CheckIcon,
+  ClipboardIcon,
+  DropletIcon,
+  FlameIcon,
+  GridIcon,
+  HistoryIcon,
+} from "@/components/icons";
 
 const NAV_ITEMS = [
   { href: "/equipment", label: "Matériel", icon: GridIcon },
@@ -11,19 +18,21 @@ const NAV_ITEMS = [
   { href: "/cleaning", label: "Nettoyage", icon: CheckIcon },
   { href: "/cleaning/plans", label: "Plan de nettoyage", icon: DropletIcon },
   { href: "/pasteurisation", label: "Pasteurisation", icon: FlameIcon },
+  { href: "/history", label: "Historique", icon: HistoryIcon, adminOnly: true },
 ];
 
-export function NavLinks() {
+export function NavLinks({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
   // Longest matching href wins, so /cleaning/plans does not also light up
   // the /cleaning entry.
-  const activeHref = NAV_ITEMS.filter(
+  const activeHref = items.filter(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
   ).sort((first, second) => second.href.length - first.href.length)[0]?.href;
 
   return (
     <nav aria-label="Navigation principale" className="space-y-1">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const active = item.href === activeHref;
 

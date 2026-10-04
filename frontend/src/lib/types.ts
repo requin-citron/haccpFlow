@@ -138,3 +138,29 @@ export type PasteurisationPhaseEdit = {
   changed_by_email: string | null;
   changed_at: string;
 };
+
+export type HistoryEntity =
+  | "temperature_reading"
+  | "cleaning_record"
+  | "pasteurisation_phase";
+
+export type HistoryAction = "created" | "updated" | "deleted";
+
+export type HistoryChange = {
+  field: string;
+  label: string;
+  previous: string | null;
+  new: string | null;
+};
+
+export type HistoryEntry = {
+  id: string;
+  occurred_at: string;
+  entity: HistoryEntity;
+  action: HistoryAction;
+  actor_email: string | null;
+  target_id: string;
+  subject: string;
+  detail: string;
+  changes: HistoryChange[];
+};

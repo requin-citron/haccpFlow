@@ -7,11 +7,7 @@ import { PasteurisationPhaseForm } from "@/components/pasteurisation/phase-form"
 import { FlameIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDayLabel, todayIso } from "@/lib/format";
-import type {
-  CurrentUser,
-  PasteurisationBatch,
-  PasteurisationPhaseEdit,
-} from "@/lib/types";
+import type { CurrentUser, PasteurisationBatch } from "@/lib/types";
 
 export default async function PasteurisationBatchPage({
   params,
@@ -30,17 +26,7 @@ export default async function PasteurisationBatchPage({
     throw error;
   }
 
-  const [user, histories] = await Promise.all([
-    apiFetch<CurrentUser>("/api/v1/auth/me"),
-    Promise.all(
-      batch.phases.map(async (slot) => ({
-        phase: slot.phase,
-        entries: await apiFetch<PasteurisationPhaseEdit[]>(
-          `/api/v1/pasteurisations/${batch.id}/phases/${slot.phase}/history`,
-        ),
-      })),
-    ),
-  ]);
+  const user = await apiFetch<CurrentUser>("/api/v1/auth/me");
 
   return (
     <div className="space-y-8">
@@ -106,9 +92,6 @@ export default async function PasteurisationBatchPage({
               batchId={batch.id}
               slot={slot}
               rank={index + 1}
-              history={
-                histories.find((entry) => entry.phase === slot.phase)?.entries ?? []
-              }
             />
           ))}
         </div>

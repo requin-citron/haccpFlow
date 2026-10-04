@@ -25,6 +25,7 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings",
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}",
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}/history",
+    f"{API_V1_PREFIX}/history",
     f"{API_V1_PREFIX}/pasteurisations",
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}",
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}/phases/{{phase}}",
@@ -108,6 +109,12 @@ def test_pasteurisation_routes_expose_the_expected_methods() -> None:
     assert set(
         schema["paths"][f"{prefix}/pasteurisations/{{batch_id}}/phases/{{phase}}/history"]
     ) == {"get"}
+
+
+def test_the_unified_history_is_read_only() -> None:
+    schema = create_app().openapi()
+
+    assert set(schema["paths"][f"{API_V1_PREFIX}/history"]) == {"get"}
 
 
 def test_swagger_and_redoc_are_served() -> None:
