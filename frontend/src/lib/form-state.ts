@@ -52,3 +52,10 @@ export type TransportFormState = {
 };
 
 export const INITIAL_TRANSPORT_FORM_STATE: TransportFormState = { status: "idle" };
+
+export type CashRegisterFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_CASH_REGISTER_FORM_STATE: CashRegisterFormState = { status: "idle" };

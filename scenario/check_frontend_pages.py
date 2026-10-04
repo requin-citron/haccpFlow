@@ -57,8 +57,13 @@ def main() -> None:
         report.info("aucun lot : lance seed_pasteurisation.py pour voir le détail rempli")
 
     status, html = fetch_page("/equipment", cookie=cookie)
-    for label in ("Véhicules", "Nouveau véhicule"):
-        report.check(f"section véhicules : « {label} » rendu", label in html)
+    for label in (
+        "Véhicules",
+        "Nouveau véhicule",
+        "Caisses",
+        "Nouvelle caisse",
+    ):
+        report.check(f"page Matériel : « {label} » rendu", label in html)
 
     status, transports = call("GET", f"{API_V1}/transports", token=token)
     report.status("registre des transports", status)

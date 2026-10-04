@@ -3,8 +3,10 @@ import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialo
 import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
 import { VehicleCard } from "@/components/vehicles/vehicle-card";
 import { VehicleFormDialog } from "@/components/vehicles/vehicle-form-dialog";
+import { CashRegisterCard } from "@/components/cash-registers/cash-register-card";
+import { CashRegisterFormDialog } from "@/components/cash-registers/cash-register-form-dialog";
 import { apiFetch } from "@/lib/api";
-import type { CurrentUser, Equipment, Vehicle } from "@/lib/types";
+import type { CashRegister, CurrentUser, Equipment, Vehicle } from "@/lib/types";
 
 const STAT_TONES = {
   slate: "bg-slate-100 text-slate-600",
@@ -37,10 +39,11 @@ function StatCard({
 }
 
 export default async function EquipmentPage() {
-  const [user, equipment, vehicles] = await Promise.all([
+  const [user, equipment, vehicles, cashRegisters] = await Promise.all([
     apiFetch<CurrentUser>("/api/v1/auth/me"),
     apiFetch<Equipment[]>("/api/v1/equipment"),
     apiFetch<Vehicle[]>("/api/v1/vehicles"),
+    apiFetch<CashRegister[]>("/api/v1/cash-registers"),
   ]);
   const isAdmin = user.role === "admin";
   const fridgeCount = equipment.filter((item) => item.type === "fridge").length;
@@ -127,6 +130,38 @@ export default async function EquipmentPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {vehicles.map((vehicle) => (
               <VehicleCard key={vehicle.id} vehicle={vehicle} isAdmin={isAdmin} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Caisses</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Les caisses enrôlées avec leur comptage initial, coupure par coupure. Le suivi des
+              comptages viendra ensuite.
+            </p>
+          </div>
+          <CashRegisterFormDialog />
+        </div>
+
+        {cashRegisters.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
+            <p className="text-sm text-slate-500">
+              Aucune caisse enregistrée. Déclare une caisse et son comptage initial pour préparer
+              le suivi.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {cashRegisters.map((cashRegister) => (
+              <CashRegisterCard
+                key={cashRegister.id}
+                cashRegister={cashRegister}
+                isAdmin={isAdmin}
+              />
             ))}
           </div>
         )}

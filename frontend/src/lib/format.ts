@@ -142,6 +142,14 @@ export function formatDuration(minutes: number | null): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")}`;
 }
 
+/** Cents to a French euro display, e.g. 8228 -> "82,28 €". */
+export function formatEuros(cents: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
+}
+
 export function formatTemperature(value: number): string {
   const rounded = Math.round(value * 100) / 100;
   const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);

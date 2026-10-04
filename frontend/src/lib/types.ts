@@ -197,3 +197,26 @@ export type Transport = {
   created_at: string;
   updated_at: string;
 };
+
+export type CashRegisterCounts = {
+  coins_1_cent: number;
+  coins_2_cent: number;
+  coins_5_cent: number;
+  coins_10_cent: number;
+  coins_20_cent: number;
+  coins_50_cent: number;
+  coins_1_euro: number;
+  coins_2_euro: number;
+  notes_5_euro: number;
+  notes_10_euro: number;
+  notes_20_euro: number;
+  notes_50_euro: number;
+};
+
+export type CashRegister = CashRegisterCounts & {
+  id: string;
+  name: string;
+  total_cents: number;
+  created_at: string;
+  updated_at: string;
+};
