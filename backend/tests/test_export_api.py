@@ -136,7 +136,7 @@ def test_the_readings_export_lists_the_values(
     assert morning[4] == "2,50"
     assert morning[5] == "Oui"
     assert morning[6] == "Manuel"
-    assert morning[8] == "Actif"
+    assert morning[2] == datetime.now(UTC).date().strftime("%d/%m/%Y")
     evening = next(row for row in rows[1:] if row[3] == "Soir")
     assert evening[5] == "Non"
 
@@ -153,7 +153,6 @@ def test_the_cleanings_export_escapes_free_text(
     assert record[3] == datetime.now(UTC).date().strftime("%d/%m/%Y")
     assert record[4] == TRICKY_COMMENT
     assert record[5] == "admin@test.local"
-    assert record[7] == "Actif"
 
 
 def test_the_pasteurisation_export_lays_out_the_phases(
@@ -167,15 +166,14 @@ def test_the_pasteurisation_export_lays_out_the_phases(
     assert headers[:4] == ["Date", "Produit", "N° de lot", "Quantité"]
     assert "Préchauffage — durée (min)" in headers
     assert "Refroidissement — observation" in headers
-    assert headers[-2:] == ["Phases", "Statut du lot"]
+    assert headers[-1] == "Phases"
 
     batch = next(row for row in rows[1:] if row[2] == "LOT-EXPORT")
     duration_index = headers.index("Préchauffage — durée (min)")
     assert batch[1] == "Crème export"
     assert batch[3] == "42"
     assert batch[duration_index] == "30"
-    assert batch[-2] == "Incomplet"
-    assert batch[-1] == "Actif"
+    assert batch[-1] == "Incomplet"
 
 
 def test_the_transport_export_shows_the_vehicle(
@@ -202,7 +200,6 @@ def test_the_transport_export_shows_the_vehicle(
     assert referenced[headers.index("Véhicule référencé")] == "Oui"
     assert referenced[headers.index("Départ — température (°C)")] == "3,50"
     assert referenced[headers.index("Chaîne du froid")] == "En cours"
-    assert referenced[headers.index("Statut du transport")] == "Actif"
 
     external = next(row for row in rows[1:] if row[1] == "Glace export")
     assert external[headers.index("Véhicule")] == "Transporteur externe 999"
@@ -220,8 +217,10 @@ def test_a_deactivated_row_is_still_exported(
     readings = _rows(api_client.get(f"{EXPORTS}/readings", headers=admin_headers))
     cleanings = _rows(api_client.get(f"{EXPORTS}/cleanings", headers=admin_headers))
 
-    assert any(row[8] == "Désactivé" for row in readings[1:])
-    assert any(row[7] == "Désactivé" for row in cleanings[1:])
+    # The status column is gone, but a deactivated row must stay: an archive
+    # that silently drops it would be incomplete.
+    assert any(row[0] == "Frigo export" for row in readings[1:])
+    assert any(row[0] == "Zone export" for row in cleanings[1:])
 
 
 def test_a_deactivated_transport_is_still_exported(
@@ -231,10 +230,9 @@ def test_a_deactivated_transport_is_still_exported(
     api_client.delete(f"{TRANSPORTS}/{seeded['transport']['id']}", headers=admin_headers)
 
     rows = _rows(api_client.get(f"{EXPORTS}/transports", headers=admin_headers))
-    headers = rows[0]
     transport = next(row for row in rows[1:] if row[1] == "Crème export")
 
-    assert transport[headers.index("Statut du transport")] == "Désactivé"
+    assert transport[1] == "Crème export"
 
 
 def test_the_date_range_filters_the_rows(

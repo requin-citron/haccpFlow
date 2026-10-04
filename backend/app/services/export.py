@@ -89,10 +89,6 @@ def _boolean(value: bool) -> str:
     return "Oui" if value else "Non"
 
 
-def _status(deleted: bool) -> str:
-    return "Désactivé" if deleted else "Actif"
-
-
 async def _readings(db: AsyncSession, start: date | None, end: date | None) -> Extract:
     headers = [
         "Matériel",
@@ -103,7 +99,6 @@ async def _readings(db: AsyncSession, start: date | None, end: date | None) -> E
         "Conforme",
         "Source",
         "Relevé le",
-        "Statut du matériel",
     ]
     query = (
         select(TemperatureReading, Equipment)
@@ -127,7 +122,6 @@ async def _readings(db: AsyncSession, start: date | None, end: date | None) -> E
                 _boolean(reading.is_compliant),
                 _SOURCE_LABELS[reading.source],
                 _datetime(reading.recorded_at),
-                _status(equipment.deleted_at is not None),
             ]
         )
     return headers, rows
@@ -142,7 +136,6 @@ async def _cleanings(db: AsyncSession, start: date | None, end: date | None) -> 
         "Commentaire",
         "Déclaré par",
         "Déclaré le",
-        "Statut du plan",
     ]
     # A deleted declaration was withdrawn as a mistake: the audit trail keeps it.
     query = (
@@ -168,7 +161,6 @@ async def _cleanings(db: AsyncSession, start: date | None, end: date | None) -> 
                 _text(record.comment),
                 _text(email),
                 _datetime(record.recorded_at),
-                _status(plan.deleted_at is not None),
             ]
         )
     return headers, rows
@@ -187,7 +179,7 @@ async def _pasteurisations(db: AsyncSession, start: date | None, end: date | Non
                 f"{label} — observation",
             ]
         )
-    headers.extend(["Phases", "Statut du lot"])
+    headers.append("Phases")
 
     query = select(PasteurisationBatch).order_by(
         PasteurisationBatch.batch_date, PasteurisationBatch.lot_number
@@ -231,12 +223,7 @@ async def _pasteurisations(db: AsyncSession, start: date | None, end: date | Non
                     _text(record.observation),
                 ]
             )
-        row.extend(
-            [
-                "Complet" if complete else "Incomplet",
-                _status(batch.deleted_at is not None),
-            ]
-        )
+        row.append("Complet" if complete else "Incomplet")
         rows.append(row)
     return headers, rows
 
@@ -256,7 +243,6 @@ async def _transports(db: AsyncSession, start: date | None, end: date | None) ->
         "Arrivée — température (°C)",
         "Observation",
         "Chaîne du froid",
-        "Statut du transport",
     ]
     query = (
         select(Transport, Vehicle)
@@ -294,7 +280,6 @@ async def _transports(db: AsyncSession, start: date | None, end: date | None) ->
                     )
                     else "En cours"
                 ),
-                _status(transport.deleted_at is not None),
             ]
         )
     return headers, rows

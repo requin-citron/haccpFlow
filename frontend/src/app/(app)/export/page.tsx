@@ -16,7 +16,7 @@ const DATASETS = [
     key: "readings",
     title: "Relevés de température",
     description:
-      "Une ligne par créneau : matériel, date, température, conformité, source et statut du matériel.",
+      "Une ligne par créneau : matériel, date, température, conformité et source.",
     tone: "bg-sky-50 text-sky-600",
     icon: <ThermometerIcon className="size-5" />,
   },
@@ -74,8 +74,8 @@ export default async function ExportPage({
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
           Des extractions CSV prêtes à ouvrir dans Excel, à remettre lors d&apos;un contrôle ou à
-          archiver. Les éléments désactivés sont conservés, avec leur statut, pour que l&apos;archive
-          reste complète.
+          archiver. Les éléments retirés du parc sont conservés — l&apos;archive reste donc
+          complète, sans mention de statut qui prêterait à confusion.
         </p>
       </header>
 
