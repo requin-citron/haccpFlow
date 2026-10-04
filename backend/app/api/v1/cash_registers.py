@@ -17,6 +17,7 @@ from app.services.cash_register import (
     get_active_cash_register,
     name_is_taken,
 )
+from app.services.cash_session import register_has_open_session
 
 router = APIRouter(prefix="/cash-registers", tags=["cash-registers"])
 
@@ -105,5 +106,11 @@ async def update_cash_register(
 @router.delete("/{cash_register_id}", status_code=204, dependencies=[_ADMIN_ONLY])
 async def delete_cash_register(cash_register_id: uuid.UUID, db: DbSession) -> None:
     cash_register = await get_active_cash_register(db, cash_register_id, for_update=True)
+    if await register_has_open_session(db, cash_register_id):
+        raise ApiError(
+            409,
+            "cash_register_has_open_session",
+            "Close the cash register's open session before deactivating it",
+        )
     cash_register.deleted_at = datetime.now(UTC)
     await db.commit()

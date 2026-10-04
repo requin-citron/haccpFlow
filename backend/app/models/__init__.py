@@ -3,6 +3,11 @@ from app.models.cash_register import (
     DENOMINATIONS,
     CashRegister,
 )
+from app.models.cash_session import (
+    CashExpense,
+    CashExpenseKind,
+    CashSession,
+)
 from app.models.cleaning_plan import (
     CleaningFrequency,
     CleaningPlan,
@@ -34,7 +39,10 @@ from app.models.vehicle import Vehicle
 __all__ = [
     "DENOMINATIONS",
     "DENOMINATION_FIELDS",
+    "CashExpense",
+    "CashExpenseKind",
     "CashRegister",
+    "CashSession",
     "CleaningFrequency",
     "CleaningPlan",
     "CleaningRecord",

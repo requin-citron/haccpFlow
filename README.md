@@ -21,6 +21,10 @@ sanitaire :
   répondre à un contrôle ou archiver.
 - **Caisses** — enrôlement d'une caisse avec son comptage initial, coupure par
   coupure, des pièces de 1 centime aux billets de 50 euros.
+- **Suivi de caisse** — ouverture d'un suivi sur une caisse (fond repris de son
+  état en base ou forcé), frais professionnels et personnels enregistrés au fil
+  de la journée, puis clôture : le comptage de fin de journée devient le nouvel
+  état de la caisse. Un seul suivi peut être ouvert à la fois par caisse.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
@@ -171,6 +175,8 @@ inaccessibles.
 | Désactiver un véhicule ou un transport | ❌ | ✅ |
 | Enrôler une caisse et corriger son comptage | ✅ | ✅ |
 | Désactiver une caisse | ❌ | ✅ |
+| Ouvrir un suivi de caisse, saisir les frais et clôturer | ✅ | ✅ |
+| Supprimer un suivi de caisse | ❌ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
@@ -265,7 +271,6 @@ dessus.
 - Enrôlement de capteurs et ingestion MQTT : les relevés automatiques viendront
   compléter les créneaux laissés vides (`source = sensor` est déjà prévu).
 - Alerte quand un lot de pasteurisation reste incomplet.
-- Suivi des comptages de caisse, l'enrôlement étant en place.
 - Gestion des utilisateurs depuis l'interface.
 - Listener TLS sur le broker pour les sites on-premise.
 - Export du plan de maîtrise sanitaire en PDF.
