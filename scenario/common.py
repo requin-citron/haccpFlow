@@ -100,6 +100,25 @@ def fetch_page(path: str, *, cookie: str | None = None) -> tuple[int, str]:
     return _request("GET", f"{WEB_BASE_URL}{path}", headers=headers)
 
 
+def call_bytes(
+    method: str,
+    path: str,
+    *,
+    token: str | None = None,
+) -> tuple[int, bytes, dict[str, str]]:
+    """Call the API and keep the raw body, for non-JSON responses like CSV."""
+
+    headers = {"Authorization": f"Bearer {token}"} if token else None
+    request = urllib.request.Request(f"{API_BASE_URL}{path}", method=method)
+    for key, value in (headers or {}).items():
+        request.add_header(key, value)
+    try:
+        with urllib.request.urlopen(request) as response:
+            return response.status, response.read(), dict(response.headers)
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read(), dict(exc.headers)
+
+
 def login(email: str, password: str) -> tuple[str, str]:
     """Renvoie le jeton d'accès et l'en-tête Cookie de session du frontend."""
 

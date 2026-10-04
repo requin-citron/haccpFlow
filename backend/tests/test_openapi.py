@@ -25,6 +25,7 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings",
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}",
     f"{API_V1_PREFIX}/equipment/{{equipment_id}}/readings/{{reading_date}}/history",
+    f"{API_V1_PREFIX}/exports/{{dataset}}",
     f"{API_V1_PREFIX}/history",
     f"{API_V1_PREFIX}/pasteurisations",
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}",
@@ -120,6 +121,12 @@ def test_the_unified_history_is_read_only() -> None:
     schema = create_app().openapi()
 
     assert set(schema["paths"][f"{API_V1_PREFIX}/history"]) == {"get"}
+
+
+def test_the_export_route_is_read_only() -> None:
+    schema = create_app().openapi()
+
+    assert set(schema["paths"][f"{API_V1_PREFIX}/exports/{{dataset}}"]) == {"get"}
 
 
 def test_vehicle_and_transport_routes_expose_the_expected_methods() -> None:
