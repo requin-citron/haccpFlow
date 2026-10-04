@@ -258,7 +258,6 @@ dessus.
 - Enrôlement de capteurs et ingestion MQTT : les relevés automatiques viendront
   compléter les créneaux laissés vides (`source = sensor` est déjà prévu).
 - Alerte quand un lot de pasteurisation reste incomplet.
-- Interface de saisie des transports (le référentiel des véhicules est déjà en place).
 - Gestion des utilisateurs depuis l'interface.
 - Listener TLS sur le broker pour les sites on-premise.
 - Export du plan de maîtrise sanitaire en PDF.

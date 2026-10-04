@@ -33,6 +33,7 @@ def main() -> None:
     status, _ = call("POST", VEHICLES, token=token, body={"name": None, "plate": None})
     report.status("véhicule sans nom ni plaque refusé", status, 422)
 
+    created_transports: list[str] = []
     transport_id = None
     if isinstance(vehicle, dict):
         status, transport = call(
@@ -52,6 +53,7 @@ def main() -> None:
         report.status("transport créé avec le départ", status, 201)
         if isinstance(transport, dict):
             transport_id = transport["id"]
+            created_transports.append(transport_id)
             report.equals(
                 "véhicule repris du référentiel",
                 transport["vehicle"],
@@ -87,6 +89,7 @@ def main() -> None:
     )
     report.status("transport avec un véhicule externe", status, 201)
     if isinstance(other, dict):
+        created_transports.append(other["id"])
         report.equals("aucune référence", other["vehicle"]["id"], None)
         report.equals(
             "libellé libre repris", other["vehicle"]["name"], "Transporteur externe 1234 XYZ"
@@ -152,6 +155,10 @@ def main() -> None:
         report.status("désactivation du transport", status, 204)
         status, _ = call("GET", f"{TRANSPORTS}/{transport_id}", token=token)
         report.status("transport désactivé inaccessible", status, 404)
+    for extra in created_transports:
+        if extra != transport_id:
+            call("DELETE", f"{TRANSPORTS}/{extra}", token=token)
+    report.info(f"{len(created_transports)} transport(s) de test désactivé(s)")
     if isinstance(vehicle, dict):
         call("DELETE", f"{VEHICLES}/{vehicle['id']}", token=token)
         report.info("véhicule de test désactivé")

@@ -1,30 +1,18 @@
 import type { PasteurisationPhaseEdit, PasteurisationPhaseSlot } from "@/lib/types";
+import {
+  STATUS_ACCENTS,
+  STATUS_BADGES,
+  STATUS_DOTS,
+  STATUS_LABELS,
+  type CheckpointStatus,
+} from "@/lib/status";
 
-export type PhaseState = "complete" | "partial" | "empty";
+export type PhaseState = CheckpointStatus;
 
-export const PHASE_STATE_LABELS: Record<PhaseState, string> = {
-  complete: "Complet",
-  partial: "En cours",
-  empty: "À remplir",
-};
-
-export const PHASE_STATE_BADGES: Record<PhaseState, string> = {
-  complete: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  partial: "bg-amber-50 text-amber-700 ring-amber-200",
-  empty: "bg-slate-100 text-slate-500 ring-slate-200",
-};
-
-export const PHASE_STATE_ACCENTS: Record<PhaseState, string> = {
-  complete: "border-emerald-200",
-  partial: "border-amber-200",
-  empty: "border-slate-200",
-};
-
-export const PHASE_STATE_DOTS: Record<PhaseState, string> = {
-  complete: "bg-emerald-500",
-  partial: "bg-amber-500",
-  empty: "bg-slate-300",
-};
+export const PHASE_STATE_LABELS = STATUS_LABELS;
+export const PHASE_STATE_BADGES = STATUS_BADGES;
+export const PHASE_STATE_ACCENTS = STATUS_ACCENTS;
+export const PHASE_STATE_DOTS = STATUS_DOTS;
 
 /** A phase is complete with both times and its target temperature. */
 export function phaseState(slot: PasteurisationPhaseSlot): PhaseState {

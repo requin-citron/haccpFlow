@@ -45,3 +45,10 @@ export type VehicleFormState = {
 };
 
 export const INITIAL_VEHICLE_FORM_STATE: VehicleFormState = { status: "idle" };
+
+export type TransportFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_TRANSPORT_FORM_STATE: TransportFormState = { status: "idle" };

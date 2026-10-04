@@ -22,7 +22,7 @@ export const HISTORY_ENTITY_LINKS: Record<HistoryEntity, string | null> = {
   temperature_reading: "/equipment",
   cleaning_record: "/cleaning",
   pasteurisation_phase: "/pasteurisation",
-  transport: null,
+  transport: "/transport",
 };
 
 export const HISTORY_ACTION_LABELS: Record<HistoryAction, string> = {

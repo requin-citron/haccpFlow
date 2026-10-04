@@ -10,6 +10,7 @@ import {
   FlameIcon,
   GridIcon,
   HistoryIcon,
+  TruckIcon,
 } from "@/components/icons";
 
 const NAV_ITEMS = [
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/cleaning", label: "Nettoyage", icon: CheckIcon },
   { href: "/cleaning/plans", label: "Plan de nettoyage", icon: DropletIcon },
   { href: "/pasteurisation", label: "Pasteurisation", icon: FlameIcon },
+  { href: "/transport", label: "Transport", icon: TruckIcon },
   { href: "/history", label: "Historique", icon: HistoryIcon, adminOnly: true },
 ];
 

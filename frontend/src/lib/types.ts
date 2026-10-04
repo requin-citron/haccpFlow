@@ -173,3 +173,27 @@ export type Vehicle = {
   created_at: string;
   updated_at: string;
 };
+
+export type TransportVehicle = {
+  /** Null when the transport used a free label for a one-off carrier. */
+  id: string | null;
+  name: string;
+  plate: string | null;
+};
+
+export type Transport = {
+  id: string;
+  transport_date: string;
+  place: string;
+  product_name: string;
+  lot_number: string | null;
+  vehicle: TransportVehicle;
+  departure_time: string | null;
+  departure_temperature_celsius: number | null;
+  arrival_time: string | null;
+  arrival_temperature_celsius: number | null;
+  observation: string | null;
+  is_complete: boolean;
+  created_at: string;
+  updated_at: string;
+};

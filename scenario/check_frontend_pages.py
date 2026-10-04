@@ -8,6 +8,7 @@ PAGES: list[tuple[str, str]] = [
     ("/readings", "Relevés de température"),
     ("/cleaning", "Nettoyage"),
     ("/pasteurisation", "Pasteurisation"),
+    ("/transport", "Transport"),
     ("/history", "Historique"),
 ]
 
@@ -57,6 +58,16 @@ def main() -> None:
     status, html = fetch_page("/equipment", cookie=cookie)
     for label in ("Véhicules", "Nouveau véhicule"):
         report.check(f"section véhicules : « {label} » rendu", label in html)
+
+    status, transports = call("GET", f"{API_V1}/transports", token=token)
+    report.status("registre des transports", status)
+    if isinstance(transports, list) and transports:
+        status, html = fetch_page(f"/transport/{transports[0]['id']}", cookie=cookie)
+        report.status("/transport/{id}", status)
+        for label in ("Relevés de température", "Départ", "Arrivée", "Observation"):
+            report.check(f"« {label} » rendu", label in html)
+    else:
+        report.info("aucun transport : lance seed_transport.py pour voir le détail rempli")
 
     report.finish()
 
