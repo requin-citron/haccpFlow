@@ -1,5 +1,7 @@
 """Vérifie que les pages du frontend rendent les données et restent protégées."""
 
+import uuid
+
 from common import API_V1, Report, call, fetch_page, login, require_env
 
 #: chemin, texte attendu uniquement quand la page est rendue avec une session
@@ -9,6 +11,7 @@ PAGES: list[tuple[str, str]] = [
     ("/cleaning", "Nettoyage"),
     ("/pasteurisation", "Pasteurisation"),
     ("/transport", "Transport"),
+    ("/cash-sessions", "Suivi de caisse"),
     ("/export", "Export"),
     ("/history", "Historique"),
 ]
@@ -37,6 +40,7 @@ def main() -> None:
         "Nettoyage",
         "Plan de nettoyage",
         "Pasteurisation",
+        "Suivi de caisse",
     ):
         report.check(f"onglet « {label} » présent", f">{label}<" in html)
 
@@ -82,6 +86,82 @@ def main() -> None:
     report.status("téléchargement via le frontend", status)
     report.check("  BOM conservé", csv_text.startswith("\ufeff"))
     report.check("  en-tête français", "Matériel;Type;Date" in csv_text)
+
+    # Suivi de caisse : le détail d'un suivi ouvert doit proposer les frais et
+    # la clôture. La caisse et le suivi créés ici sont supprimés ensuite.
+    suffix = uuid.uuid4().hex[:6].upper()
+    status, cash_register = call(
+        "POST",
+        f"{API_V1}/cash-registers",
+        token=token,
+        body={"name": f"Caisse front {suffix}", "coins_1_euro": 2},
+    )
+    report.status("caisse de test créée", status, 201)
+    if isinstance(cash_register, dict):
+        status, session = call(
+            "POST",
+            f"{API_V1}/cash-sessions",
+            token=token,
+            body={"cash_register_id": cash_register["id"]},
+        )
+        report.status("suivi de test ouvert", status, 201)
+        if isinstance(session, dict):
+            status, html = fetch_page(f"/cash-sessions/{session['id']}", cookie=cookie)
+            report.status("/cash-sessions/{id}", status)
+            for label in (
+                cash_register["name"],
+                "Fond d'ouverture",
+                "Comptage d'ouverture",
+                "Ajouter un frais",
+                "Clôturer le suivi",
+            ):
+                report.check(f"« {label} » rendu", label in html)
+
+            # Un frais puis la clôture : l'état figé doit aussi se rendre.
+            call(
+                "POST",
+                f"{API_V1}/cash-sessions/{session['id']}/expenses",
+                token=token,
+                body={
+                    "kind": "professional",
+                    "name": "Sacs poubelle",
+                    "quantity": 2,
+                    "unit_price_cents": 250,
+                    "vat_rate": "20.00",
+                },
+            )
+            call(
+                "POST",
+                f"{API_V1}/cash-sessions/{session['id']}/close",
+                token=token,
+                body={
+                    "closing_counts": dict.fromkeys(
+                        (
+                            "coins_1_cent",
+                            "coins_2_cent",
+                            "coins_5_cent",
+                            "coins_10_cent",
+                            "coins_20_cent",
+                            "coins_50_cent",
+                            "coins_1_euro",
+                            "coins_2_euro",
+                            "notes_5_euro",
+                            "notes_10_euro",
+                            "notes_20_euro",
+                            "notes_50_euro",
+                        ),
+                        0,
+                    )
+                    | {"notes_20_euro": 1}
+                },
+            )
+            status, html = fetch_page(f"/cash-sessions/{session['id']}", cookie=cookie)
+            for label in ("Sacs poubelle", "Frais pro", "Comptage de clôture", "Clôturé par"):
+                report.check(f"suivi clôturé : « {label} » rendu", label in html)
+
+            call("DELETE", f"{API_V1}/cash-sessions/{session['id']}", token=token)
+        call("DELETE", f"{API_V1}/cash-registers/{cash_register['id']}", token=token)
+        report.info("caisse et suivi de test nettoyés")
 
     report.finish()
 

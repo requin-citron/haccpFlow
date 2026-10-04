@@ -59,3 +59,10 @@ export type CashRegisterFormState = {
 };
 
 export const INITIAL_CASH_REGISTER_FORM_STATE: CashRegisterFormState = { status: "idle" };
+
+export type CashSessionFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_CASH_SESSION_FORM_STATE: CashSessionFormState = { status: "idle" };

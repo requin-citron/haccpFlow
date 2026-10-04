@@ -44,7 +44,7 @@ relancer sans créer de doublon.
 | `check_export_api.py` | Télécharge les quatre extractions CSV et vérifie le BOM UTF-8, le séparateur point-virgule et la ligne d'en-tête de chacune. |
 | `check_cash_register_api.py` | Enrôlement d'une caisse avec son comptage initial : total calculé en centimes, coupures absentes à zéro, nom déjà pris, compteur négatif, coupure inconnue, correction, désactivation et nom libéré. |
 | `check_cash_sessions_api.py` | Suivi d'une caisse : fond repris de la caisse ou forcé, refus d'un second suivi ouvert, frais pro/perso ajoutés, corrigés et totalisés, comptage de clôture incomplet refusé, clôture qui met à jour la caisse, suivi figé ensuite, et nouvelle ouverture qui reprend le comptage de clôture. |
-| `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation, Transport, Export et Historique rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. Vérifie aussi qu'un export CSV se télécharge bien à travers le frontend, BOM compris. |
+| `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation, Transport, Suivi de caisse, Export et Historique rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. Vérifie aussi le détail d'un suivi de caisse (frais, clôture, état figé) et qu'un export CSV se télécharge bien à travers le frontend, BOM compris. |
 | `check_cleaning_tabs.py` | La séparation entre l'onglet opérationnel (déclarer) et l'onglet de gestion (créer, modifier), ainsi que le contenu de l'agenda. |
 
 Les vérifications suppriment les données qu'elles ont créées avant de se

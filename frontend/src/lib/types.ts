@@ -220,3 +220,39 @@ export type CashRegister = CashRegisterCounts & {
   created_at: string;
   updated_at: string;
 };
+
+export type CashExpenseKind = "professional" | "personal";
+
+export type CashExpense = {
+  id: string;
+  kind: CashExpenseKind;
+  name: string;
+  quantity: number;
+  unit_price_cents: number;
+  /** Percentage, serialised as a decimal string by the API ("20.00"). */
+  vat_rate: string;
+  total_cents: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CashSession = {
+  id: string;
+  cash_register_id: string;
+  cash_register_name: string;
+  session_date: string;
+  opening_counts: CashRegisterCounts;
+  closing_counts: CashRegisterCounts | null;
+  opening_total_cents: number;
+  closing_total_cents: number | null;
+  expenses_total_cents: number;
+  expenses_professional_total_cents: number;
+  expenses_personal_total_cents: number;
+  expenses: CashExpense[];
+  is_open: boolean;
+  opened_by_email: string | null;
+  closed_by_email: string | null;
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};

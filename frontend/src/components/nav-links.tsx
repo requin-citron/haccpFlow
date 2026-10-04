@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
+  BanknoteIcon,
   CheckIcon,
   ClipboardIcon,
   DropletIcon,
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/cleaning/plans", label: "Plan de nettoyage", icon: DropletIcon },
   { href: "/pasteurisation", label: "Pasteurisation", icon: FlameIcon },
   { href: "/transport", label: "Transport", icon: TruckIcon },
+  { href: "/cash-sessions", label: "Suivi de caisse", icon: BanknoteIcon },
   { href: "/export", label: "Export", icon: DownloadIcon },
   { href: "/history", label: "Historique", icon: HistoryIcon, adminOnly: true },
 ];
