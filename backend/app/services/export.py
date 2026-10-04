@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import csv
 import io
+import re
+import unicodedata
+import uuid
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime, time
 from decimal import Decimal
+from typing import NamedTuple
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
+from app.core.errors import ApiError
+from app.models.cash_register import DENOMINATIONS, CashRegister
+from app.models.cash_session import CashExpense, CashExpenseKind, CashSession
 from app.models.cleaning_plan import CleaningFrequency, CleaningPlan, CleaningRecord
 from app.models.equipment import Equipment, EquipmentType
 from app.models.pasteurisation import PasteurisationBatch, PasteurisationPhase
@@ -21,6 +29,13 @@ from app.models.transport import Transport
 from app.models.user import User
 from app.models.vehicle import Vehicle
 from app.schemas.export import ExportDataset
+from app.services.cash_session import (
+    closing_counts_of,
+    closing_total_cents,
+    counts_from,
+    expenses_total_cents,
+    opening_total_cents,
+)
 from app.services.pasteurisation import (
     PHASE_ORDER,
     compute_duration_minutes,
@@ -49,8 +64,34 @@ _PHASE_LABELS = {
     PasteurisationPhase.HOLDING: "Palier (pasteurisation)",
     PasteurisationPhase.COOLING: "Refroidissement",
 }
+_CENT_LABELS = {
+    1: "1 centime",
+    2: "2 centimes",
+    5: "5 centimes",
+    10: "10 centimes",
+    20: "20 centimes",
+    50: "50 centimes",
+    100: "1 euro",
+    200: "2 euros",
+    500: "5 euros",
+    1000: "10 euros",
+    2000: "20 euros",
+    5000: "50 euros",
+}
+_DENOMINATION_LABELS = {field: _CENT_LABELS[cents] for field, cents in DENOMINATIONS}
+_EXPENSE_KIND_LABELS = {
+    CashExpenseKind.PROFESSIONAL: "Frais pro",
+    CashExpenseKind.PERSONAL: "Frais perso",
+}
 
 Extract = tuple[list[str], list[list[str]]]
+
+
+class CashSessionExport(NamedTuple):
+    """One session's extract: the file name and the CSV itself."""
+
+    filename: str
+    content: str
 
 
 def render_csv(headers: Sequence[str], rows: Iterable[Sequence[str]]) -> str:
@@ -79,10 +120,23 @@ def _datetime(value: datetime | None) -> str:
     return value.astimezone(UTC).strftime("%d/%m/%Y %H:%M") if value is not None else ""
 
 
-def _temperature(value: Decimal | None) -> str:
+def _decimal(value: Decimal | None) -> str:
     """Decimal comma, so Excel reads the cell as a number."""
 
     return f"{value:.2f}".replace(".", ",") if value is not None else ""
+
+
+def _euros(cents: int) -> str:
+    """Cents to an amount Excel reads as a number, e.g. 8228 -> "82,28"."""
+
+    return f"{cents / 100:.2f}".replace(".", ",")
+
+
+def _slugify(value: str) -> str:
+    """A file-name-safe version of a register name, accents folded."""
+
+    ascii_text = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")
 
 
 def _boolean(value: bool) -> str:
@@ -118,7 +172,7 @@ async def _readings(db: AsyncSession, start: date | None, end: date | None) -> E
                 _EQUIPMENT_TYPE_LABELS[equipment.type],
                 _date(reading.reading_date),
                 _SLOT_LABELS[reading.slot],
-                _temperature(reading.temperature_celsius),
+                _decimal(reading.temperature_celsius),
                 _boolean(reading.is_compliant),
                 _SOURCE_LABELS[reading.source],
                 _datetime(reading.recorded_at),
@@ -218,7 +272,7 @@ async def _pasteurisations(db: AsyncSession, start: date | None, end: date | Non
                 [
                     _time(record.started_at),
                     _time(record.ended_at),
-                    _temperature(record.target_temperature_celsius),
+                    _decimal(record.target_temperature_celsius),
                     "" if duration is None else str(duration),
                     _text(record.observation),
                 ]
@@ -266,9 +320,9 @@ async def _transports(db: AsyncSession, start: date | None, end: date | None) ->
                 _text(vehicle.plate) if vehicle is not None else "",
                 _boolean(vehicle is not None),
                 _time(transport.departure_time),
-                _temperature(transport.departure_temperature_celsius),
+                _decimal(transport.departure_temperature_celsius),
                 _time(transport.arrival_time),
-                _temperature(transport.arrival_temperature_celsius),
+                _decimal(transport.arrival_temperature_celsius),
                 _text(transport.observation),
                 (
                     "Complet"
@@ -285,11 +339,205 @@ async def _transports(db: AsyncSession, start: date | None, end: date | None) ->
     return headers, rows
 
 
+def _count_rows(counts: dict[str, int]) -> list[list[str]]:
+    rows = [["Coupure", "Nombre", "Montant (€)"]]
+    for field, cents in DENOMINATIONS:
+        count = int(counts.get(field, 0))
+        rows.append([_DENOMINATION_LABELS[field], str(count), _euros(count * cents)])
+    return rows
+
+
+async def _expenses_by_session(
+    db: AsyncSession,
+    session_ids: Sequence[uuid.UUID],
+) -> dict[uuid.UUID, list[CashExpense]]:
+    """Every expense of the given sessions, grouped, in a single query."""
+
+    grouped: dict[uuid.UUID, list[CashExpense]] = {}
+    if not session_ids:
+        return grouped
+    for expense in await db.scalars(
+        select(CashExpense)
+        .where(CashExpense.session_id.in_(session_ids))
+        .order_by(CashExpense.created_at, CashExpense.id)
+    ):
+        grouped.setdefault(expense.session_id, []).append(expense)
+    return grouped
+
+
+async def _cash_registers(db: AsyncSession, start: date | None, end: date | None) -> Extract:
+    """The successive states of the registers: one row per tracking session."""
+
+    headers = ["Caisse", "Date", "Fond — total (€)"]
+    headers.extend(f"Fond — {_DENOMINATION_LABELS[field]}" for field, _ in DENOMINATIONS)
+    headers.extend(
+        ["Frais pro (€)", "Frais perso (€)", "Total des frais (€)", "Clôture — total (€)"]
+    )
+    headers.extend(f"Clôture — {_DENOMINATION_LABELS[field]}" for field, _ in DENOMINATIONS)
+    headers.extend(["Ouvert par", "Ouvert le", "Clôturé par", "Clôturé le", "Supprimé le"])
+
+    opened_user = aliased(User)
+    closed_user = aliased(User)
+    query = (
+        select(CashSession, CashRegister.name, opened_user.email, closed_user.email)
+        .join(CashRegister, CashRegister.id == CashSession.cash_register_id)
+        .outerjoin(opened_user, opened_user.id == CashSession.opened_by)
+        .outerjoin(closed_user, closed_user.id == CashSession.closed_by)
+        .order_by(
+            func.lower(CashRegister.name),
+            CashSession.session_date,
+            CashSession.created_at,
+        )
+    )
+    if start is not None:
+        query = query.where(CashSession.session_date >= start)
+    if end is not None:
+        query = query.where(CashSession.session_date <= end)
+
+    rows_data = list(await db.execute(query))
+    expenses = await _expenses_by_session(db, [session.id for session, _, _, _ in rows_data])
+
+    rows: list[list[str]] = []
+    for session, register_name, opened_email, closed_email in rows_data:
+        session_expenses = expenses.get(session.id, [])
+        opening = counts_from(session)
+        closing = closing_counts_of(session)
+        row = [register_name, _date(session.session_date), _euros(opening_total_cents(session))]
+        row.extend(str(opening[field]) for field, _ in DENOMINATIONS)
+        row.extend(
+            [
+                _euros(expenses_total_cents(session_expenses, kind=CashExpenseKind.PROFESSIONAL)),
+                _euros(expenses_total_cents(session_expenses, kind=CashExpenseKind.PERSONAL)),
+                _euros(expenses_total_cents(session_expenses)),
+                "" if closing is None else _euros(closing_total_cents(session) or 0),
+            ]
+        )
+        row.extend("" if closing is None else str(closing[field]) for field, _ in DENOMINATIONS)
+        row.extend(
+            [
+                _text(opened_email),
+                _datetime(session.created_at),
+                _text(closed_email),
+                _datetime(session.closed_at),
+                _datetime(session.deleted_at),
+            ]
+        )
+        rows.append(row)
+    return headers, rows
+
+
+def _session_extract(
+    session: CashSession,
+    *,
+    register_name: str,
+    opened_by_email: str | None,
+    closed_by_email: str | None,
+    expenses: Sequence[CashExpense],
+) -> Extract:
+    """One session as a block-per-block document, readable for a control."""
+
+    headers = ["Suivi de caisse", register_name]
+    rows: list[list[str]] = [
+        ["Date", _date(session.session_date)],
+        ["Ouvert par", _text(opened_by_email)],
+        ["Ouvert le", _datetime(session.created_at)],
+        ["Clôturé par", _text(closed_by_email)],
+        ["Clôturé le", _datetime(session.closed_at)],
+    ]
+    if session.deleted_at is not None:
+        rows.append(["Supprimé le", _datetime(session.deleted_at)])
+
+    rows.append([])
+    rows.append(["Comptage d'ouverture"])
+    rows.extend(_count_rows(counts_from(session)))
+    rows.append(["Total", "", _euros(opening_total_cents(session))])
+
+    rows.append([])
+    rows.append(["Frais"])
+    rows.append(["Type", "Nom", "Quantité", "Prix unitaire (€)", "TVA (%)", "Total (€)"])
+    for expense in expenses:
+        rows.append(
+            [
+                _EXPENSE_KIND_LABELS[expense.kind],
+                expense.name,
+                str(expense.quantity),
+                _euros(expense.unit_price_cents),
+                _decimal(expense.vat_rate),
+                _euros(expense.quantity * expense.unit_price_cents),
+            ]
+        )
+    rows.append([])
+    rows.append(["Totaux"])
+    rows.append(
+        [
+            "Frais pro (€)",
+            _euros(expenses_total_cents(expenses, kind=CashExpenseKind.PROFESSIONAL)),
+        ]
+    )
+    rows.append(
+        [
+            "Frais perso (€)",
+            _euros(expenses_total_cents(expenses, kind=CashExpenseKind.PERSONAL)),
+        ]
+    )
+    rows.append(["Total des frais (€)", _euros(expenses_total_cents(expenses))])
+
+    rows.append([])
+    rows.append(["Comptage de clôture"])
+    closing = closing_counts_of(session)
+    if closing is None:
+        rows.append(["Suivi en cours — comptage de clôture non saisi"])
+    else:
+        rows.extend(_count_rows(closing))
+        rows.append(["Total", "", _euros(closing_total_cents(session) or 0)])
+    return headers, rows
+
+
+async def build_cash_session_export(db: AsyncSession, session_id: uuid.UUID) -> CashSessionExport:
+    """The extract of one session, with the file name to hand out."""
+
+    opened_user = aliased(User)
+    closed_user = aliased(User)
+    row = (
+        await db.execute(
+            select(CashSession, CashRegister.name, opened_user.email, closed_user.email)
+            .join(CashRegister, CashRegister.id == CashSession.cash_register_id)
+            .outerjoin(opened_user, opened_user.id == CashSession.opened_by)
+            .outerjoin(closed_user, closed_user.id == CashSession.closed_by)
+            .where(
+                CashSession.id == session_id,
+                CashSession.deleted_at.is_(None),
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        raise ApiError(404, "cash_session_not_found", "Cash session not found")
+    session, register_name, opened_by_email, closed_by_email = row
+
+    headers, rows = _session_extract(
+        session,
+        register_name=register_name,
+        opened_by_email=opened_by_email,
+        closed_by_email=closed_by_email,
+        expenses=list(
+            await db.scalars(
+                select(CashExpense)
+                .where(CashExpense.session_id == session.id)
+                .order_by(CashExpense.created_at, CashExpense.id)
+            )
+        ),
+    )
+    slug = _slugify(register_name) or "caisse"
+    filename = f"caisse-{slug}-{session.session_date.isoformat()}.csv"
+    return CashSessionExport(filename=filename, content=render_csv(headers, rows))
+
+
 _EXTRACTS = {
     ExportDataset.READINGS: _readings,
     ExportDataset.CLEANINGS: _cleanings,
     ExportDataset.PASTEURISATIONS: _pasteurisations,
     ExportDataset.TRANSPORTS: _transports,
+    ExportDataset.CASH_REGISTERS: _cash_registers,
 }
 
 #: File-name prefixes, one per data set.
@@ -298,6 +546,7 @@ FILENAME_PREFIXES = {
     ExportDataset.CLEANINGS: "nettoyages",
     ExportDataset.PASTEURISATIONS: "pasteurisation",
     ExportDataset.TRANSPORTS: "transports",
+    ExportDataset.CASH_REGISTERS: "caisses",
 }
 
 

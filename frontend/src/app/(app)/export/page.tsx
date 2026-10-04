@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import {
+  BanknoteIcon,
   DownloadIcon,
   DropletIcon,
   FlameIcon,
@@ -43,6 +44,14 @@ const DATASETS = [
       "Un déplacement par ligne : véhicule, plaque, lieu, produit et les deux relevés de chaîne du froid.",
     tone: "bg-indigo-50 text-indigo-600",
     icon: <TruckIcon className="size-5" />,
+  },
+  {
+    key: "cash-registers",
+    title: "Caisses",
+    description:
+      "Les états successifs de chaque caisse : fond d'ouverture, frais pro et perso, comptage de clôture et détail des coupures.",
+    tone: "bg-emerald-50 text-emerald-600",
+    icon: <BanknoteIcon className="size-5" />,
   },
 ];
 

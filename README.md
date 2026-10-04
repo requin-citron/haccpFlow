@@ -16,9 +16,10 @@ sanitaire :
 - **Transport** — référentiel des véhicules (nom et plaque) et registre des
   déplacements : lieu, produit, lot, puis les relevés de chaîne du froid au
   départ et à l'arrivée.
-- **Export CSV** — quatre extractions prêtes pour Excel (relevés, nettoyages,
-  pasteurisation, transport) filtrables par période, désactivés compris, pour
-  répondre à un contrôle ou archiver.
+- **Export CSV** — cinq extractions prêtes pour Excel (relevés, nettoyages,
+  pasteurisation, transport, états successifs des caisses) filtrables par
+  période, désactivés compris, pour répondre à un contrôle ou archiver ; un
+  suivi de caisse peut aussi être sorti seul, en un petit CSV.
 - **Caisses** — enrôlement d'une caisse avec son comptage initial, coupure par
   coupure, des pièces de 1 centime aux billets de 50 euros.
 - **Suivi de caisse** — ouverture d'un suivi sur une caisse (fond repris de son
@@ -177,6 +178,7 @@ inaccessibles.
 | Désactiver une caisse | ❌ | ✅ |
 | Ouvrir un suivi de caisse, saisir les frais et clôturer | ✅ | ✅ |
 | Supprimer un suivi de caisse | ❌ | ✅ |
+| Télécharger les exports CSV, y compris l'extract d'un suivi | ✅ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir

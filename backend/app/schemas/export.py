@@ -10,3 +10,4 @@ class ExportDataset(enum.StrEnum):
     CLEANINGS = "cleanings"
     PASTEURISATIONS = "pasteurisations"
     TRANSPORTS = "transports"
+    CASH_REGISTERS = "cash-registers"

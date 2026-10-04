@@ -7,7 +7,7 @@ import { DeleteSessionButton } from "@/components/cash-sessions/delete-session-b
 import { EditSessionDialog } from "@/components/cash-sessions/edit-session-dialog";
 import { ExpenseFormDialog } from "@/components/cash-sessions/expense-form-dialog";
 import { ExpenseRow } from "@/components/cash-sessions/expense-row";
-import { BanknoteIcon, CheckIcon } from "@/components/icons";
+import { BanknoteIcon, CheckIcon, DownloadIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDateTimeUtc, formatDayLabel, formatEuros } from "@/lib/format";
 import type { CashSession, CurrentUser } from "@/lib/types";
@@ -89,6 +89,13 @@ export default async function CashSessionPage({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`/api/cash-sessions/${session.id}/export`}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            <DownloadIcon className="size-4" />
+            Télécharger le CSV
+          </a>
           {isOpen ? <EditSessionDialog session={session} /> : null}
           {user.role === "admin" ? (
             <DeleteSessionButton id={session.id} label={session.cash_register_name} />

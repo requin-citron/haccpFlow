@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import csv
 import io
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+
+from app.models.cash_register import DENOMINATION_FIELDS
 
 pytestmark = pytest.mark.integration
 
@@ -16,8 +19,10 @@ PLANS = "/api/v1/cleaning-plans"
 BATCHES = "/api/v1/pasteurisations"
 TRANSPORTS = "/api/v1/transports"
 VEHICLES = "/api/v1/vehicles"
+CASH_REGISTERS = "/api/v1/cash-registers"
+CASH_SESSIONS = "/api/v1/cash-sessions"
 
-DATASETS = ["readings", "cleanings", "pasteurisations", "transports"]
+DATASETS = ["readings", "cleanings", "pasteurisations", "transports", "cash-registers"]
 
 TRICKY_COMMENT = 'Produit A ; rinçage "complet"\nseconde ligne'
 
@@ -273,6 +278,208 @@ def test_an_unknown_dataset_is_rejected(
     response = api_client.get(f"{EXPORTS}/factures", headers=admin_headers)
 
     assert response.status_code == 422
+
+
+def _counts(**overrides: int) -> dict[str, int]:
+    counts = dict.fromkeys(DENOMINATION_FIELDS, 0)
+    counts.update(overrides)
+    return counts
+
+
+def _open_session(
+    api_client: TestClient, headers: dict[str, str], cash_register_id: str
+) -> dict[str, Any]:
+    response = api_client.post(
+        CASH_SESSIONS, json={"cash_register_id": cash_register_id}, headers=headers
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def test_the_cash_register_export_lists_the_successive_states(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = api_client.post(
+        CASH_REGISTERS,
+        json={"name": "Caisse export", **_counts(coins_1_euro=3)},
+        headers=admin_headers,
+    ).json()
+
+    # Un suivi clôturé avec un frais, un suivi supprimé par un admin, et un
+    # suivi encore ouvert : les trois états doivent apparaître.
+    closed = _open_session(api_client, admin_headers, cash_register["id"])
+    api_client.post(
+        f"{CASH_SESSIONS}/{closed['id']}/expenses",
+        json={
+            "kind": "professional",
+            "name": "Sacs export",
+            "quantity": 3,
+            "unit_price_cents": 250,
+            "vat_rate": "20.00",
+        },
+        headers=admin_headers,
+    )
+    api_client.post(
+        f"{CASH_SESSIONS}/{closed['id']}/close",
+        json={"closing_counts": _counts(notes_20_euro=1)},
+        headers=admin_headers,
+    )
+    removed = _open_session(api_client, admin_headers, cash_register["id"])
+    api_client.delete(f"{CASH_SESSIONS}/{removed['id']}", headers=admin_headers)
+    _open_session(api_client, admin_headers, cash_register["id"])
+
+    rows = _rows(api_client.get(f"{EXPORTS}/cash-registers", headers=admin_headers))
+    headers = rows[0]
+
+    assert headers[:3] == ["Caisse", "Date", "Fond — total (€)"]
+    assert headers[3] == "Fond — 1 centime"
+    assert headers[14] == "Fond — 50 euros"
+    assert headers[15:19] == [
+        "Frais pro (€)",
+        "Frais perso (€)",
+        "Total des frais (€)",
+        "Clôture — total (€)",
+    ]
+    assert headers[19] == "Clôture — 1 centime"
+    assert headers[30] == "Clôture — 50 euros"
+    assert headers[31:] == [
+        "Ouvert par",
+        "Ouvert le",
+        "Clôturé par",
+        "Clôturé le",
+        "Supprimé le",
+    ]
+
+    states = [row for row in rows[1:] if row[0] == "Caisse export"]
+    assert len(states) == 3
+    closed_row, removed_row, open_row = states
+    assert closed_row[headers.index("Date")] == datetime.now(UTC).date().strftime("%d/%m/%Y")
+    assert closed_row[headers.index("Fond — total (€)")] == "3,00"
+    assert closed_row[headers.index("Fond — 1 euro")] == "3"
+    assert closed_row[headers.index("Frais pro (€)")] == "7,50"
+    assert closed_row[headers.index("Total des frais (€)")] == "7,50"
+    assert closed_row[headers.index("Clôture — total (€)")] == "20,00"
+    assert closed_row[headers.index("Clôture — 20 euros")] == "1"
+    assert closed_row[headers.index("Clôturé par")] == "admin@test.local"
+    assert closed_row[headers.index("Supprimé le")] == ""
+
+    # Le suivi supprimé reste dans la succession, avec sa date de suppression.
+    assert removed_row[headers.index("Fond — total (€)")] == "20,00"
+    assert removed_row[headers.index("Supprimé le")] != ""
+
+    # Le suivi en cours n'a pas encore de comptage de clôture.
+    assert open_row[headers.index("Clôture — total (€)")] == ""
+    assert open_row[headers.index("Clôture — 20 euros")] == ""
+    assert open_row[headers.index("Clôturé le")] == ""
+
+    # Le filtre de période porte sur la date du suivi.
+    filtered = api_client.get(
+        f"{EXPORTS}/cash-registers?from={_days_ago(1)}&to={_days_ago(1)}",
+        headers=admin_headers,
+    )
+    assert filtered.status_code == 200
+    # Seule la ligne d'en-tête : le filtre porte bien sur la date du suivi.
+    assert len(_rows(filtered)) == 1
+
+
+def test_a_session_extract_shows_the_counts_and_the_expenses(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = api_client.post(
+        CASH_REGISTERS,
+        json={"name": "Caisse générale", **_counts(coins_1_euro=3)},
+        headers=admin_headers,
+    ).json()
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+    api_client.post(
+        f"{CASH_SESSIONS}/{session['id']}/expenses",
+        json={
+            "kind": "personal",
+            "name": "Prélèvement ; gérant",
+            "quantity": 2,
+            "unit_price_cents": 500,
+            "vat_rate": "0.00",
+        },
+        headers=admin_headers,
+    )
+    api_client.post(
+        f"{CASH_SESSIONS}/{session['id']}/close",
+        json={"closing_counts": _counts(coins_1_euro=5, notes_10_euro=2)},
+        headers=admin_headers,
+    )
+
+    response = api_client.get(f"{CASH_SESSIONS}/{session['id']}/export", headers=admin_headers)
+    rows = _rows(response)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert response.headers["content-disposition"] == (
+        f'attachment; filename="caisse-caisse-generale-{_today()}.csv"'
+    )
+    assert rows[0] == ["Suivi de caisse", "Caisse générale"]
+    assert ["Ouvert par", "admin@test.local"] in rows
+    assert ["Comptage d'ouverture"] in rows
+    assert ["1 euro", "3", "3,00"] in rows
+    assert ["Total", "", "3,00"] in rows
+    assert ["Frais"] in rows
+    assert ["Frais perso", "Prélèvement ; gérant", "2", "5,00", "0,00", "10,00"] in rows
+    assert ["Frais pro (€)", "0,00"] in rows
+    assert ["Frais perso (€)", "10,00"] in rows
+    assert ["Total des frais (€)", "10,00"] in rows
+    assert ["Comptage de clôture"] in rows
+    assert ["10 euros", "2", "20,00"] in rows
+    assert ["Total", "", "25,00"] in rows
+
+
+def test_a_session_extract_mentions_an_ongoing_session(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = api_client.post(
+        CASH_REGISTERS, json={"name": "Caisse ouverte"}, headers=admin_headers
+    ).json()
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+
+    rows = _rows(api_client.get(f"{CASH_SESSIONS}/{session['id']}/export", headers=admin_headers))
+
+    assert ["Comptage de clôture"] in rows
+    assert ["Suivi en cours — comptage de clôture non saisi"] in rows
+    assert ["Frais pro (€)", "0,00"] in rows
+
+
+def test_a_session_extract_is_not_available_for_a_deleted_session(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = api_client.post(
+        CASH_REGISTERS, json={"name": "Caisse supprimée"}, headers=admin_headers
+    ).json()
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+    api_client.delete(f"{CASH_SESSIONS}/{session['id']}", headers=admin_headers)
+
+    response = api_client.get(f"{CASH_SESSIONS}/{session['id']}/export", headers=admin_headers)
+
+    assert response.status_code == 404
+    assert response.json()["code"] == "cash_session_not_found"
+    assert (
+        api_client.get(f"{CASH_SESSIONS}/{uuid.uuid4()}/export", headers=admin_headers).status_code
+        == 404
+    )
+
+
+def test_a_session_extract_is_available_to_an_operator(
+    api_client: TestClient, admin_headers: dict[str, str], operator_headers: dict[str, str]
+) -> None:
+    cash_register = api_client.post(
+        CASH_REGISTERS, json={"name": "Caisse opérateur"}, headers=admin_headers
+    ).json()
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+
+    response = api_client.get(f"{CASH_SESSIONS}/{session['id']}/export", headers=operator_headers)
+
+    assert response.status_code == 200
+
+
+def test_a_session_extract_requires_authentication(api_client: TestClient) -> None:
+    assert api_client.get(f"{CASH_SESSIONS}/{uuid.uuid4()}/export").status_code == 401
 
 
 def test_an_operator_can_export(api_client: TestClient, operator_headers: dict[str, str]) -> None:

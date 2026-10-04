@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -39,6 +40,7 @@ from app.services.cash_session import (
     opening_total_cents,
 )
 from app.services.dates import ensure_not_in_the_future
+from app.services.export import build_cash_session_export
 
 router = APIRouter(prefix="/cash-sessions", tags=["cash-sessions"])
 
@@ -323,3 +325,15 @@ async def delete_session(session_id: uuid.UUID, db: DbSession) -> None:
     session = await get_cash_session(db, session_id, for_update=True)
     session.deleted_at = datetime.now(UTC)
     await db.commit()
+
+
+@router.get("/{session_id}/export", dependencies=[_ANY_ROLE])
+async def export_session(session_id: uuid.UUID, db: DbSession) -> Response:
+    """Download one session's counts, expenses and closing as a small CSV."""
+
+    export = await build_cash_session_export(db, session_id)
+    return Response(
+        content=export.content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{export.filename}"'},
+    )

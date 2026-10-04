@@ -18,6 +18,7 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/cash-sessions",
     f"{API_V1_PREFIX}/cash-sessions/{{session_id}}",
     f"{API_V1_PREFIX}/cash-sessions/{{session_id}}/close",
+    f"{API_V1_PREFIX}/cash-sessions/{{session_id}}/export",
     f"{API_V1_PREFIX}/cash-sessions/{{session_id}}/expenses",
     f"{API_V1_PREFIX}/cash-sessions/{{session_id}}/expenses/{{expense_id}}",
     f"{API_V1_PREFIX}/cleaning-plans",

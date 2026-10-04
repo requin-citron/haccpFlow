@@ -81,6 +81,14 @@ def main() -> None:
 
     status, html = fetch_page("/export", cookie=cookie)
     report.check("page d'export : bouton de téléchargement", "Télécharger le CSV" in html)
+    for dataset in (
+        "readings",
+        "cleanings",
+        "pasteurisations",
+        "transports",
+        "cash-registers",
+    ):
+        report.check(f"export « {dataset} » proposé", f"/api/exports/{dataset}" in html)
 
     status, csv_text = fetch_page("/api/exports/readings", cookie=cookie)
     report.status("téléchargement via le frontend", status)
@@ -114,8 +122,16 @@ def main() -> None:
                 "Comptage d'ouverture",
                 "Ajouter un frais",
                 "Clôturer le suivi",
+                "Télécharger le CSV",
             ):
                 report.check(f"« {label} » rendu", label in html)
+
+            # Le CSV du suivi se télécharge à travers le frontend.
+            status, csv_text = fetch_page(
+                f"/api/cash-sessions/{session['id']}/export", cookie=cookie
+            )
+            report.status("extract du suivi via le frontend", status)
+            report.check("  bloc d'ouverture", "Comptage d'ouverture" in csv_text)
 
             # Un frais puis la clôture : l'état figé doit aussi se rendre.
             call(
