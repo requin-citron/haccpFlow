@@ -217,3 +217,13 @@ export function TruckIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function DownloadIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3v12" />
+      <path d="m7 11 5 5 5-5" />
+      <path d="M4 20h16" />
+    </Icon>
+  );
+}

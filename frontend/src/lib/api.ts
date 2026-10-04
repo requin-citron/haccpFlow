@@ -4,6 +4,9 @@ const API_BASE_URL = (process.env.API_INTERNAL_URL ?? "http://localhost:8000").r
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
+/** Extracts can be long to generate: give them more room than an API call. */
+const EXPORT_TIMEOUT_MS = 60_000;
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -28,11 +31,15 @@ type TokenPairPayload = {
   expires_in: number;
 };
 
-async function fetchBackend(path: string, init: RequestInit): Promise<Response> {
+async function fetchBackend(
+  path: string,
+  init: RequestInit,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<Response> {
   return fetch(`${API_BASE_URL}${path}`, {
     ...init,
     cache: "no-store",
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 }
 
@@ -104,13 +111,21 @@ async function renewSession(session: Session): Promise<Session | null> {
  * cookies cannot be written, so the new access token is only used for the
  * current request; it is persisted on the next Server Action.
  */
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function authorizedFetch(
+  path: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
   const session = await getSession();
   if (!session) {
     throw new ApiError(401, "unauthenticated", "Session absente.");
   }
 
-  let response = await fetchBackend(path, { ...init, headers: withAuth(init.headers, session) });
+  let response = await fetchBackend(
+    path,
+    { ...init, headers: withAuth(init.headers, session) },
+    timeoutMs,
+  );
 
   if (response.status === 401) {
     const renewed = await renewSession(session);
@@ -119,8 +134,18 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       throw new ApiError(401, "session_expired", "Session expirée.");
     }
     await persistSession(renewed);
-    response = await fetchBackend(path, { ...init, headers: withAuth(init.headers, renewed) });
+    response = await fetchBackend(
+      path,
+      { ...init, headers: withAuth(init.headers, renewed) },
+      timeoutMs,
+    );
   }
+
+  return response;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await authorizedFetch(path, init, REQUEST_TIMEOUT_MS);
 
   if (!response.ok) {
     throw await toApiError(response);
@@ -129,6 +154,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     return undefined as T;
   }
   return (await response.json()) as T;
+}
+
+/** Same authentication, but the raw response: used to stream files through. */
+export async function apiFetchRaw(path: string, init: RequestInit = {}): Promise<Response> {
+  return authorizedFetch(path, init, EXPORT_TIMEOUT_MS);
 }
 
 function withAuth(headers: HeadersInit | undefined, session: Session): Headers {

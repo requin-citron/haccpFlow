@@ -9,6 +9,7 @@ PAGES: list[tuple[str, str]] = [
     ("/cleaning", "Nettoyage"),
     ("/pasteurisation", "Pasteurisation"),
     ("/transport", "Transport"),
+    ("/export", "Export"),
     ("/history", "Historique"),
 ]
 
@@ -68,6 +69,14 @@ def main() -> None:
             report.check(f"« {label} » rendu", label in html)
     else:
         report.info("aucun transport : lance seed_transport.py pour voir le détail rempli")
+
+    status, html = fetch_page("/export", cookie=cookie)
+    report.check("page d'export : bouton de téléchargement", "Télécharger le CSV" in html)
+
+    status, csv_text = fetch_page("/api/exports/readings", cookie=cookie)
+    report.status("téléchargement via le frontend", status)
+    report.check("  BOM conservé", csv_text.startswith("\ufeff"))
+    report.check("  en-tête français", "Matériel;Type;Date" in csv_text)
 
     report.finish()
 

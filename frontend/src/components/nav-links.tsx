@@ -7,6 +7,7 @@ import {
   CheckIcon,
   ClipboardIcon,
   DropletIcon,
+  DownloadIcon,
   FlameIcon,
   GridIcon,
   HistoryIcon,
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/cleaning/plans", label: "Plan de nettoyage", icon: DropletIcon },
   { href: "/pasteurisation", label: "Pasteurisation", icon: FlameIcon },
   { href: "/transport", label: "Transport", icon: TruckIcon },
+  { href: "/export", label: "Export", icon: DownloadIcon },
   { href: "/history", label: "Historique", icon: HistoryIcon, adminOnly: true },
 ];
 
