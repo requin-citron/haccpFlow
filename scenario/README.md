@@ -28,7 +28,7 @@ docker compose --profile app up -d frontend
 | `seed_cleaning.py` | Quatre plans de nettoyage couvrant tous les états — un en retard, un à faire aujourd'hui, un à venir, un après chaque usage — avec leurs déclarations et une correction de date pour alimenter le journal. |
 | `seed_pasteurisation.py` | Trois lots de pasteurisation : un complet, un en cours (préchauffage seul) et un vide, pour voir les trois états dans l'interface. |
 | `seed_transport.py` | Trois transports : un complet avec ses deux températures, un en cours (départ seul) et un avec un véhicule externe non référencé. |
-| `seed_delivery_note.py` | Remplace le modèle `bon-de-livraison` par le template LaTeX de `templates/delivery-note/` et crée toutes ses variables (coordonnées La LEGU, client, unité, lignes produits). Idempotent. |
+| `seed_delivery_note.py` | Remplace le modèle `bon-de-livraison` par le template LaTeX générique de `templates/delivery-note/` et crée ses variables avec des valeurs neutres (émetteur, client, unité, lignes produits). Supprime l'ancien logo de démonstration s'il existe. Idempotent. |
 
 Les deux sont **idempotents** : un nom déjà présent est ignoré, on peut les
 relancer sans créer de doublon.

@@ -133,7 +133,12 @@ def test_unknown_value_is_rejected() -> None:
 
 def test_static_value_cannot_be_overridden() -> None:
     variables = [
-        _variable("company", TemplateVariableKind.STATIC, TemplateVariableValueType.TEXT, "La LEGU")
+        _variable(
+            "company",
+            TemplateVariableKind.STATIC,
+            TemplateVariableValueType.TEXT,
+            "Entreprise Test",
+        )
     ]
 
     with pytest.raises(ApiError) as exc_info:

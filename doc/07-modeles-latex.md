@@ -172,7 +172,7 @@ Tous les filtres Jinja standards, plus :
 ```json
 {
   "values": {
-    "client_nom": "Biocoop",
+    "client_nom": "Client Exemple",
     "lignes_produits": [
       { "designation": "Bocal A", "pots": 10, "prix": "3.95" }
     ]
@@ -240,20 +240,25 @@ restreints.
 
 ## Modèle de bon de livraison fourni
 
-Le dossier local `templates/delivery-note/` contient le modèle La LEGU et son
-logo. Le seed [`scenario/seed_delivery_note.py`](../scenario/seed_delivery_note.py)
-est idempotent :
+Le dossier local `templates/delivery-note/` contient un modèle générique de bon
+de livraison, sans coordonnée d'entreprise ni logo. Le seed
+[`scenario/seed_delivery_note.py`](../scenario/seed_delivery_note.py) est
+idempotent :
 
 1. il crée ou remplace le modèle `bon-de-livraison` ;
-2. il crée/met à jour 22 variables ;
-3. il téléverse `logo-la-legu.jpg` sur la variable `logo`.
+2. il crée/met à jour 21 variables avec des valeurs neutres ;
+3. il supprime l'ancien logo de démonstration s'il existe.
+
+Le logo est optionnel : créer une variable image statique `logo` et y
+téléverser un JPEG/PNG. Sans cette variable, le modèle affiche un cadre
+« LOGO ».
 
 Variables principales :
 
 | Type | Variables |
 | --- | --- |
 | Statiques texte | `vendeur_nom`, `vendeur_adresse_1`, `vendeur_adresse_2`, `vendeur_pays`, `vendeur_email`, `vendeur_siret`, `vendeur_ville`, `vendeur_tva`, `vendeur_telephone`, `entete_quantite`, `mention_tva`, `mention_bio` |
-| Statique image | `logo` |
+| Statique image (optionnel) | `logo` |
 | Locales texte | `bl_numero`, `bl_reference`, `client_nom`, `client_adresse_1`, `client_adresse_2`, `client_ape`, `client_siret`, `unite_quantite` |
 | Locale tableau | `lignes_produits` |
 
@@ -265,6 +270,7 @@ Le template calcule `totalPots` et `totalMontant` à partir des lignes.
 - Une seule image par variable, uniquement statique.
 - Pas d'upload d'image locale à chaque génération (prévu).
 - Pas de gestion d'assets autres que les images de variables.
-- Le logo n'est pas inclus dans le `.tex` : il doit être uploadé comme asset.
+- Le logo est optionnel et n'est pas fourni : il doit être uploadé comme asset
+  si souhaité.
 - La compilation dépend de TeX Live ; un rebuild de l'image est nécessaire
   après changement des paquets.

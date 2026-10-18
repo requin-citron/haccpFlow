@@ -67,10 +67,10 @@ def test_admin_can_manage_variables_and_usage_is_computed(
     company = templates_client.post(
         variables_path,
         headers=admin_headers,
-        json=_variable("company", kind="static", value="La LEGU"),
+        json=_variable("company", kind="static", value="Entreprise Test"),
     )
     assert company.status_code == 201
-    assert company.json()["value"] == "La LEGU"
+    assert company.json()["value"] == "Entreprise Test"
 
     unused = templates_client.post(
         variables_path,

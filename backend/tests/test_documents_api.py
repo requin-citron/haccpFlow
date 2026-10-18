@@ -86,7 +86,7 @@ def _configure_template(
         template_id,
         name="company",
         kind="static",
-        value="La LEGU",
+        value="Entreprise Test",
     )
     _create_variable(client, admin_headers, template_id, name="client")
     _create_variable(
@@ -126,7 +126,7 @@ def test_preview_renders_jinja_with_escaping(
     assert r"A \& B" in response.text
     assert "22/08/2026" in response.text
     assert "3.95" in response.text
-    assert "La LEGU" in response.text
+    assert "Entreprise Test" in response.text
     assert (
         templates_client.post(
             path,
@@ -158,7 +158,7 @@ def test_operator_can_generate_list_and_download(
     assert document["values"] == {
         "amount": "3.95",
         "client": "Dupont & Fils",
-        "company": "La LEGU",
+        "company": "Entreprise Test",
         "delivery_date": "2026-08-22",
     }
     assert document["filename"].endswith(".pdf")

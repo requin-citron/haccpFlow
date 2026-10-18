@@ -230,7 +230,7 @@ Content-Type: application/json
 {
   "values": {
     "bl_numero": "220826",
-    "client_nom": "Biocoop",
+    "client_nom": "Client Exemple",
     "lignes_produits": [
       { "designation": "Bocal A", "pots": 10, "prix": "3.95" }
     ]

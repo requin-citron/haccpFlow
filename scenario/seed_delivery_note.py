@@ -1,8 +1,8 @@
-"""Configure le modèle de bon de livraison et toutes ses variables.
+"""Configure le modèle générique de bon de livraison et ses variables.
 
 Le script remplace le source du modèle « bon-de-livraison » existant (ou le
-crée) puis crée ou met à jour ses variables statiques, locales et ses lignes
-produits. Il est idempotent.
+crée) puis crée ou met à jour ses variables statiques et locales. Il est
+idempotent et n'injecte aucune donnée d'entreprise réelle.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from common import API_V1, REPO_ROOT, call, call_multipart, login, require_env
 
 TEMPLATE_NAME = "bon-de-livraison"
 TEMPLATE_PATH = REPO_ROOT / "templates" / "delivery-note" / "bon-de-livraison.tex"
-LOGO_PATH = REPO_ROOT / "templates" / "delivery-note" / "logo-la-legu.jpg"
+LEGACY_LOGO_FILENAME = "logo-la-legu.jpg"
 
 
 def variable(
@@ -37,44 +37,44 @@ def variable(
 
 
 DEFINITIONS: list[dict[str, Any]] = [
-    variable("vendeur_nom", "Nom de l'émetteur", "static", value="La LEGU"),
+    variable("vendeur_nom", "Nom de l'émetteur", "static", value="Votre entreprise"),
     variable(
         "vendeur_adresse_1",
         "Adresse de l'émetteur",
         "static",
-        value="3 place de la carrière",
+        value="1 rue de l'Exemple",
     ),
     variable(
         "vendeur_adresse_2",
         "Code postal et ville de l'émetteur",
         "static",
-        value="22510 MONCONTOUR",
+        value="00000 VILLE",
     ),
     variable("vendeur_pays", "Pays de l'émetteur", "static", value="France"),
     variable(
         "vendeur_email",
         "Email de l'émetteur",
         "static",
-        value="eric.oms@hotmail.fr",
+        value="contact@example.com",
     ),
     variable(
         "vendeur_siret",
         "SIRET de l'émetteur",
         "static",
-        value="424 366 516 00054",
+        value="000 000 000 00000",
     ),
-    variable("vendeur_ville", "Ville de l'émetteur", "static", value="St BRIEUC"),
+    variable("vendeur_ville", "Ville de l'émetteur", "static", value="VILLE"),
     variable(
         "vendeur_tva",
         "TVA de l'émetteur",
         "static",
-        value="FR71424366516",
+        value="FR00000000000",
     ),
     variable(
         "vendeur_telephone",
         "Téléphone du service client",
         "static",
-        value="07 68 28 40 25",
+        value="00 00 00 00 00",
     ),
     variable(
         "entete_quantite",
@@ -93,12 +93,6 @@ DEFINITIONS: list[dict[str, Any]] = [
         "Mention agriculture biologique",
         "static",
         value="*Issu agriculture biologique",
-    ),
-    variable(
-        "logo",
-        "Logo de l'émetteur",
-        "static",
-        value_type="image",
     ),
     variable("bl_numero", "Numéro du bon de livraison", "local"),
     variable("bl_reference", "Référence du bon de livraison", "local"),
@@ -120,14 +114,8 @@ DEFINITIONS: list[dict[str, Any]] = [
         "local",
         value_type="products",
         value=[
-            {"designation": "BOCAL - CORAIL & LEGUMES", "pots": 10, "prix": "3.95"},
-            {
-                "designation": "BOCAL - HARICOTS ROUGE & EPICES",
-                "pots": 10,
-                "prix": "3.95",
-            },
-            {"designation": "BOCAL - POIS CASSES CURCUMA", "pots": 9, "prix": "3.95"},
-            {"designation": "BOCAL - SALADE LENTILLES", "pots": 11, "prix": "3.95"},
+            {"designation": "Produit A", "pots": 10, "prix": "3.95"},
+            {"designation": "Produit B", "pots": 5, "prix": "2.50"},
         ],
         description="Ajoutez ou supprimez autant de lignes que nécessaire.",
     ),
@@ -138,8 +126,6 @@ def main() -> None:
     env = require_env()
     if not TEMPLATE_PATH.is_file():
         sys.exit(f"Modèle introuvable : {TEMPLATE_PATH}")
-    if not LOGO_PATH.is_file():
-        sys.exit(f"Logo introuvable : {LOGO_PATH}")
 
     token, _cookie = login(env["ADMIN_EMAIL"], env["ADMIN_PASSWORD"])
     source = TEMPLATE_PATH.read_bytes()
@@ -185,9 +171,22 @@ def main() -> None:
         sys.exit(f"Impossible de lister les variables (statut {status}).")
     by_name = {item["name"]: item for item in current}
 
+    # Nettoyage de l'ancien asset de démonstration, sans toucher à un logo
+    # volontairement ajouté par un administrateur sous un autre nom de fichier.
+    legacy_logo = by_name.get("logo")
+    removed_logo = False
+    if legacy_logo and (legacy_logo.get("image") or {}).get("filename") == LEGACY_LOGO_FILENAME:
+        status, _body = call(
+            "DELETE",
+            f"{API_V1}/templates/{template_id}/variables/{legacy_logo['id']}",
+            token=token,
+        )
+        if status != 204:
+            sys.exit(f"Échec de la suppression de l'ancien logo (statut {status}).")
+        removed_logo = True
+
     created = 0
     updated = 0
-    variable_ids: dict[str, str] = {}
     for definition in DEFINITIONS:
         existing_variable = by_name.get(definition["name"])
         if existing_variable:
@@ -210,21 +209,11 @@ def main() -> None:
             created += 1
         if status != expected or not isinstance(saved, dict):
             sys.exit(f"Échec pour la variable {definition['name']} (statut {status}).")
-        variable_ids[definition["name"]] = str(saved["id"])
-
-    logo_status, _logo = call_multipart(
-        "PUT",
-        f"{API_V1}/templates/{template_id}/variables/{variable_ids['logo']}/image",
-        token=token,
-        filename=LOGO_PATH.name,
-        content=LOGO_PATH.read_bytes(),
-    )
-    if logo_status != 200:
-        sys.exit(f"Échec du téléversement du logo (statut {logo_status}).")
 
     print(f"Modèle « {TEMPLATE_NAME} » {action} : {template_id}")
     print(f"Variables : {created} créée(s), {updated} mise(s) à jour.")
-    print(f"Logo téléversé : {LOGO_PATH.name}")
+    if removed_logo:
+        print("Ancien logo de démonstration supprimé.")
     print(f"Ouvrir : /templates/{template_id}")
 
 
