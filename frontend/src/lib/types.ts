@@ -256,3 +256,14 @@ export type CashSession = {
   created_at: string;
   updated_at: string;
 };
+
+export type LatexTemplate = {
+  id: string;
+  name: string;
+  original_filename: string;
+  size_bytes: number;
+  sha256: string;
+  uploaded_by_email: string | null;
+  created_at: string;
+  updated_at: string;
+};

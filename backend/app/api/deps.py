@@ -8,13 +8,14 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import API_V1_PREFIX, get_settings
+from app.config import API_V1_PREFIX, Settings, get_settings
 from app.core.errors import ApiError
 from app.core.security import TokenError, decode_access_token
 from app.db.session import get_db
 from app.models.user import User, UserRole
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{API_V1_PREFIX}/auth/login")
 

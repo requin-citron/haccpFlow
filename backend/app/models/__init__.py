@@ -17,6 +17,7 @@ from app.models.cleaning_plan import (
     CleaningStatus,
 )
 from app.models.equipment import Equipment, EquipmentType
+from app.models.latex_template import LatexTemplate
 from app.models.pasteurisation import (
     PasteurisationBatch,
     PasteurisationPhase,
@@ -51,6 +52,7 @@ __all__ = [
     "CleaningStatus",
     "Equipment",
     "EquipmentType",
+    "LatexTemplate",
     "PasteurisationBatch",
     "PasteurisationPhase",
     "PasteurisationPhaseEdit",

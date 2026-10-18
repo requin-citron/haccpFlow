@@ -167,3 +167,14 @@ export function formatDate(isoDate: string): string {
     year: "numeric",
   }).format(new Date(isoDate));
 }
+
+/** Human-readable file size, using binary units (Kio/Mio). */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} o`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} Kio`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mio`;
+}

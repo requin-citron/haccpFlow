@@ -26,6 +26,9 @@ sanitaire :
   état en base ou forcé), frais professionnels et personnels enregistrés au fil
   de la journée, puis clôture : le comptage de fin de journée devient le nouvel
   état de la caisse. Un seul suivi peut être ouvert à la fois par caisse.
+- **Modèles LaTeX** — import sécurisé réservé aux administrateurs, avec liste
+  et téléchargement. Les sources `.tex` sont stockées sur disque sous un nom
+  UUID ; la base ne conserve que les métadonnées.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
@@ -125,6 +128,13 @@ sont des valeurs internes au réseau Docker. `MQTT_CLIENT_ID` (défaut
 | --- | --- | --- |
 | `ADMIN_EMAIL` | `admin@example.com` | **Requis par compose.** Compte créé au premier démarrage. |
 | `ADMIN_PASSWORD` | — | **Requis par compose.** N'est jamais réécrit si l'utilisateur existe déjà. |
+
+### Modèles LaTeX
+
+| Variable | Défaut | Description |
+| --- | --- | --- |
+| `TEMPLATE_MAX_UPLOAD_BYTES` | `262144` | Taille maximale d'un fichier `.tex` uploadé, en octets. |
+| `TEMPLATE_STORAGE_DIR` | `data/templates` | Répertoire de stockage, relatif au répertoire de travail du backend. Avec le compose, il correspond à `backend/data/templates` et doit être inclus dans les sauvegardes. |
 
 ### Seuils de température par défaut (°C)
 

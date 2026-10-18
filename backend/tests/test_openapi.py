@@ -39,6 +39,8 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}",
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}/phases/{{phase}}",
     f"{API_V1_PREFIX}/pasteurisations/{{batch_id}}/phases/{{phase}}/history",
+    f"{API_V1_PREFIX}/templates",
+    f"{API_V1_PREFIX}/templates/{{template_id}}/download",
     f"{API_V1_PREFIX}/transports",
     f"{API_V1_PREFIX}/transports/{{transport_id}}",
     f"{API_V1_PREFIX}/transports/{{transport_id}}/readings",

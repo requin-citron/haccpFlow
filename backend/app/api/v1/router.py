@@ -13,6 +13,7 @@ from app.api.v1 import (
     history,
     pasteurisations,
     readings,
+    templates,
     transports,
     users,
     vehicles,
@@ -30,6 +31,7 @@ api_router.include_router(exports.router)
 api_router.include_router(history.router)
 api_router.include_router(pasteurisations.router)
 api_router.include_router(readings.router)
+api_router.include_router(templates.router)
 api_router.include_router(transports.router)
 api_router.include_router(users.router)
 api_router.include_router(vehicles.router)

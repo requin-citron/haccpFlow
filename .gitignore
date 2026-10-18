@@ -12,6 +12,12 @@ venv/
 .mypy_cache/
 .ruff_cache/
 
+# Runtime data (uploaded templates, backups)
+backend/data/
+
+# Local LaTeX deliverables (not part of the application code)
+/templates/
+
 # Node / Next.js
 node_modules/
 .next/

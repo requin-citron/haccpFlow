@@ -13,6 +13,7 @@ PAGES: list[tuple[str, str]] = [
     ("/transport", "Transport"),
     ("/cash-sessions", "Suivi de caisse"),
     ("/export", "Export"),
+    ("/templates", "Modèles LaTeX"),
     ("/history", "Historique"),
 ]
 
@@ -41,6 +42,7 @@ def main() -> None:
         "Plan de nettoyage",
         "Pasteurisation",
         "Suivi de caisse",
+        "Modèles LaTeX",
     ):
         report.check(f"onglet « {label} » présent", f">{label}<" in html)
 

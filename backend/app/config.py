@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 API_V1_PREFIX = "/api/v1"
@@ -32,6 +33,11 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
 
     database_url: str
+
+    # Uploaded LaTeX templates are stored as plain files; the database keeps
+    # their metadata. Both values are configurable per installation.
+    template_max_upload_bytes: int = Field(default=262_144, ge=1_024)
+    template_storage_dir: Path = Path("data/templates")
 
     mqtt_host: str = "mosquitto"
     mqtt_port: int = 1883
