@@ -109,8 +109,16 @@ async def read_upload(upload: UploadFile, max_bytes: int) -> bytes:
     return data
 
 
-async def template_name_is_taken(db: AsyncSession, key: str) -> bool:
-    found = await db.scalar(select(LatexTemplate.id).where(LatexTemplate.name_key == key))
+async def template_name_is_taken(
+    db: AsyncSession,
+    key: str,
+    *,
+    exclude_id: uuid.UUID | None = None,
+) -> bool:
+    query = select(LatexTemplate.id).where(LatexTemplate.name_key == key)
+    if exclude_id is not None:
+        query = query.where(LatexTemplate.id != exclude_id)
+    found = await db.scalar(query)
     return found is not None
 
 
@@ -162,6 +170,38 @@ async def save_template(
         await db.rollback()
         await asyncio.to_thread(delete_file, path)
         raise
+
+    await db.refresh(template)
+    return template
+
+
+async def rename_template(
+    db: AsyncSession,
+    template: LatexTemplate,
+    raw_name: str,
+) -> LatexTemplate:
+    """Change the display name only, keeping the source and variables intact."""
+
+    display_name = normalize_name(raw_name, "")
+    key = name_key(display_name)
+    if await template_name_is_taken(db, key, exclude_id=template.id):
+        raise ApiError(
+            409,
+            "template_name_taken",
+            "A template with this name already exists",
+        )
+
+    template.name = display_name
+    template.name_key = key
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise ApiError(
+            409,
+            "template_name_taken",
+            "A template with this name already exists",
+        ) from exc
 
     await db.refresh(template)
     return template

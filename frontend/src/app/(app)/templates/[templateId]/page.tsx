@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { DownloadIcon, FileTextIcon } from "@/components/icons";
 import { GenerateTemplateForm } from "@/components/templates/generate-template-form";
+import { RenameTemplateDialog } from "@/components/templates/rename-template-dialog";
 import { VariableEditor } from "@/components/templates/variable-editor";
 import { apiFetch } from "@/lib/api";
 import { formatDateTimeUtc, formatFileSize } from "@/lib/format";
@@ -60,13 +61,19 @@ export default async function TemplatePage({
           </div>
           <div className="flex items-center gap-2">
             {isAdmin ? (
-              <a
-                href={`/api/templates/${template.id}/download`}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                <DownloadIcon className="size-4" />
-                Télécharger le source
-              </a>
+              <>
+                <RenameTemplateDialog
+                  templateId={template.id}
+                  currentName={template.name}
+                />
+                <a
+                  href={`/api/templates/${template.id}/download`}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  <DownloadIcon className="size-4" />
+                  Télécharger le source
+                </a>
+              </>
             ) : null}
             <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3.5 py-2 text-sm font-medium text-slate-600">
               <FileTextIcon className="size-4" />

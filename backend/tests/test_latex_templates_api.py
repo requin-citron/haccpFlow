@@ -270,3 +270,88 @@ def test_admin_can_replace_a_template_source(
         ).content
         == replacement
     )
+
+
+def test_admin_can_rename_a_template_without_reuploading(
+    templates_client: TestClient,
+    admin_headers: dict[str, str],
+    operator_headers: dict[str, str],
+) -> None:
+    created = _upload(templates_client, admin_headers)
+    template_id = created.json()["id"]
+    templates_client.post(
+        f"{TEMPLATES}/{template_id}/variables",
+        headers=admin_headers,
+        json={
+            "name": "client",
+            "label": "Client",
+            "kind": "local",
+            "value_type": "text",
+            "value": None,
+        },
+    )
+
+    renamed = templates_client.patch(
+        f"{TEMPLATES}/{template_id}",
+        headers=admin_headers,
+        json={"name": "  Nouveau   nom  "},
+    )
+
+    assert renamed.status_code == 200
+    assert renamed.json()["name"] == "Nouveau nom"
+    assert (
+        templates_client.get(
+            f"{TEMPLATES}/{template_id}/download",
+            headers=admin_headers,
+        ).content
+        == TEX
+    )
+    assert (
+        len(
+            templates_client.get(
+                f"{TEMPLATES}/{template_id}/variables",
+                headers=admin_headers,
+            ).json()
+        )
+        == 1
+    )
+
+    _upload(templates_client, admin_headers, name="Autre")
+    conflict = templates_client.patch(
+        f"{TEMPLATES}/{template_id}",
+        headers=admin_headers,
+        json={"name": "autre"},
+    )
+    assert conflict.status_code == 409
+    assert conflict.json()["code"] == "template_name_taken"
+
+    case_change = templates_client.patch(
+        f"{TEMPLATES}/{template_id}",
+        headers=admin_headers,
+        json={"name": "NOUVEAU NOM"},
+    )
+    assert case_change.status_code == 200
+    assert case_change.json()["name"] == "NOUVEAU NOM"
+
+    assert (
+        templates_client.patch(
+            f"{TEMPLATES}/{template_id}",
+            headers=operator_headers,
+            json={"name": "Interdit"},
+        ).status_code
+        == 403
+    )
+    assert (
+        templates_client.patch(
+            f"{TEMPLATES}/{template_id}",
+            json={"name": "Anonyme"},
+        ).status_code
+        == 401
+    )
+    invalid = templates_client.patch(
+        f"{TEMPLATES}/{template_id}",
+        headers=admin_headers,
+        json={"name": "   "},
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["code"] == "template_name_invalid"

@@ -191,6 +191,7 @@ def main() -> None:
         report.status("/templates/{id}", status)
         report.check("page modèle : formulaire de génération", "Générer le document" in html)
         report.check("page modèle : éditeur de variables", "Variables du modèle" in html)
+        report.check("page modèle : renommage", "Renommer" in html)
     else:
         report.info("aucun modèle LaTeX : la page de détail n'est pas vérifiée")
 

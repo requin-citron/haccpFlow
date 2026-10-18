@@ -18,7 +18,7 @@ from app.models.latex_template import LatexTemplate
 from app.models.template_variable import TemplateVariable
 from app.models.user import User, UserRole
 from app.schemas.generated_document import GeneratedDocumentRead, GenerateTemplateRequest
-from app.schemas.latex_template import LatexTemplateRead
+from app.schemas.latex_template import LatexTemplateRead, LatexTemplateRename
 from app.schemas.template_variable import (
     TemplateVariableImageRead,
     TemplateVariableRead,
@@ -33,6 +33,7 @@ from app.services.latex_template import (
     list_templates,
     normalize_name,
     read_upload,
+    rename_template,
     sanitize_filename,
     save_template,
     template_file_path,
@@ -310,6 +311,19 @@ async def replace_latex_template(
     await db.refresh(template)
     uploader = await db.get(User, template.uploaded_by_id) if template.uploaded_by_id else None
     return _read(template, uploader.email if uploader else None)
+
+
+@router.patch("/{template_id}", response_model=LatexTemplateRead)
+async def rename_latex_template(
+    template_id: uuid.UUID,
+    payload: LatexTemplateRename,
+    db: DbSession,
+    _: AdminUser,
+) -> LatexTemplateRead:
+    template = await get_template(db, template_id)
+    renamed = await rename_template(db, template, payload.name)
+    uploader = await db.get(User, renamed.uploaded_by_id) if renamed.uploaded_by_id else None
+    return _read(renamed, uploader.email if uploader else None)
 
 
 @router.get("/{template_id}/variables", response_model=list[TemplateVariableRead])

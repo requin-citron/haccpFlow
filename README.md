@@ -46,6 +46,17 @@ L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 | Ingestion Zigbee | Zigbee2MQTT, **hors de cette stack** : il tourne on-premise avec les capteurs et publie sur le broker |
 | Déploiement | Docker Compose |
 
+## Documentation
+
+Le wiki de référence décrit l'architecture, les domaines métier, l'API, le
+modèle de données, le frontend, les modèles LaTeX et l'exploitation :
+
+**[doc/README.md](doc/README.md)**
+
+Il doit être mis à jour dans le même changement que le code. La matrice
+« changement → documentation » se trouve dans
+[doc/09-maintenance.md](doc/09-maintenance.md).
+
 ## Démarrage rapide
 
 ```sh

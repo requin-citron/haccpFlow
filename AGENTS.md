@@ -29,9 +29,18 @@ You are working on an open-source HACCP management platform.
 - Use least privilege.
 - Secrets must come from environment variables or a secret manager.
 
+## Documentation
+- The reference wiki lives in `doc/`; its index is `doc/README.md`.
+- Every change to an API, data model, configuration, deployment, or business
+  rule must update the relevant wiki page in the same change.
+- The change-to-documentation matrix is in `doc/09-maintenance.md`.
+- Add every new wiki page to the index and update the "last reviewed" date.
+
 ## Before changing code
 1. Inspect the relevant files.
 2. Understand the current architecture.
 3. Explain briefly what you intend to modify.
 4. Implement the smallest coherent change.
-5. Run relevant tests and linters.ls
+5. Run relevant tests and linters.
+6. Update the wiki when behavior, interfaces, configuration, or deployment
+   change.
