@@ -91,6 +91,7 @@ def main() -> None:
         "pasteurisations",
         "transports",
         "cash-registers",
+        "documents",
     ):
         report.check(f"export « {dataset} » proposé", f"/api/exports/{dataset}" in html)
 

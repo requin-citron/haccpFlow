@@ -4,6 +4,7 @@ import {
   BanknoteIcon,
   DownloadIcon,
   DropletIcon,
+  FileDownIcon,
   FlameIcon,
   ThermometerIcon,
   TruckIcon,
@@ -52,6 +53,14 @@ const DATASETS = [
       "Les états successifs de chaque caisse : fond d'ouverture, frais pro et perso, comptage de clôture et détail des coupures.",
     tone: "bg-emerald-50 text-emerald-600",
     icon: <BanknoteIcon className="size-5" />,
+  },
+  {
+    key: "documents",
+    title: "Documents générés",
+    description:
+      "Bons de livraison et autres PDF générés : date, modèle, auteur, fichier et valeurs des variables. Les lignes produits sont exportées en JSON.",
+    tone: "bg-cyan-50 text-cyan-600",
+    icon: <FileDownIcon className="size-5" />,
   },
 ];
 

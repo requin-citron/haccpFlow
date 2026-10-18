@@ -1,4 +1,4 @@
-"""Télécharge les cinq exports CSV et l'extract d'un suivi de caisse."""
+"""Télécharge les six exports CSV et l'extract d'un suivi de caisse."""
 
 import uuid
 
@@ -15,6 +15,7 @@ EXPECTED_HEADERS = {
     "pasteurisations": "Date;Produit;N° de lot;Quantité;Préchauffage — début",
     "transports": "Date;Produit;N° de lot;Lieu;Véhicule",
     "cash-registers": "Caisse;Date;Fond — total (€);Fond — 1 centime",
+    "documents": "Date de génération;Modèle;Généré par;Fichier PDF;Taille (octets);SHA-256",
 }
 
 DENOMINATIONS = (

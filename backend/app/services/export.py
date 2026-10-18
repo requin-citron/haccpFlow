@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import re
 import unicodedata
 import uuid
 from collections.abc import Iterable, Sequence
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import NamedTuple
 
@@ -19,6 +20,7 @@ from app.models.cash_register import DENOMINATIONS, CashRegister
 from app.models.cash_session import CashExpense, CashExpenseKind, CashSession
 from app.models.cleaning_plan import CleaningFrequency, CleaningPlan, CleaningRecord
 from app.models.equipment import Equipment, EquipmentType
+from app.models.generated_document import GeneratedDocument
 from app.models.pasteurisation import PasteurisationBatch, PasteurisationPhase
 from app.models.temperature_reading import (
     ReadingSlot,
@@ -130,6 +132,31 @@ def _euros(cents: int) -> str:
     """Cents to an amount Excel reads as a number, e.g. 8228 -> "82,28"."""
 
     return f"{cents / 100:.2f}".replace(".", ",")
+
+
+def _excel_safe(value: str) -> str:
+    """Prevent a user value from being evaluated as a spreadsheet formula."""
+
+    if value.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return f"'{value}"
+    return value
+
+
+def _variable_cell(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        text = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    elif isinstance(value, dict):
+        filename = value.get("filename")
+        text = (
+            str(filename)
+            if filename
+            else json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        )
+    else:
+        text = str(value)
+    return _excel_safe(text)
 
 
 def _slugify(value: str) -> str:
@@ -532,12 +559,63 @@ async def build_cash_session_export(db: AsyncSession, session_id: uuid.UUID) -> 
     return CashSessionExport(filename=filename, content=render_csv(headers, rows))
 
 
+async def _documents(
+    db: AsyncSession,
+    start: date | None,
+    end: date | None,
+) -> Extract:
+    headers = [
+        "Date de génération",
+        "Modèle",
+        "Généré par",
+        "Fichier PDF",
+        "Taille (octets)",
+        "SHA-256",
+    ]
+    query = (
+        select(GeneratedDocument, User.email)
+        .outerjoin(User, GeneratedDocument.generated_by_id == User.id)
+        .order_by(GeneratedDocument.created_at, GeneratedDocument.id)
+    )
+    if start is not None:
+        query = query.where(
+            GeneratedDocument.created_at >= datetime.combine(start, time.min, tzinfo=UTC)
+        )
+    if end is not None:
+        query = query.where(
+            GeneratedDocument.created_at
+            < datetime.combine(end + timedelta(days=1), time.min, tzinfo=UTC)
+        )
+
+    documents = (await db.execute(query)).all()
+    variable_names = sorted(
+        {name for document, _email in documents for name in document.values},
+        key=str.casefold,
+    )
+    headers.extend(variable_names)
+
+    rows: list[list[str]] = []
+    for document, email in documents:
+        row = [
+            _datetime(document.created_at),
+            _text(document.template_name),
+            _text(email),
+            _text(document.filename),
+            str(document.size_bytes),
+            _text(document.sha256),
+        ]
+        row.extend(_variable_cell(document.values.get(name)) for name in variable_names)
+        rows.append(row)
+    return headers, rows
+
+
 _EXTRACTS = {
     ExportDataset.READINGS: _readings,
     ExportDataset.CLEANINGS: _cleanings,
     ExportDataset.PASTEURISATIONS: _pasteurisations,
     ExportDataset.TRANSPORTS: _transports,
     ExportDataset.CASH_REGISTERS: _cash_registers,
+    ExportDataset.DOCUMENTS: _documents,
 }
 
 #: File-name prefixes, one per data set.
@@ -547,6 +625,7 @@ FILENAME_PREFIXES = {
     ExportDataset.PASTEURISATIONS: "pasteurisation",
     ExportDataset.TRANSPORTS: "transports",
     ExportDataset.CASH_REGISTERS: "caisses",
+    ExportDataset.DOCUMENTS: "documents-generes",
 }
 
 

@@ -11,3 +11,4 @@ class ExportDataset(enum.StrEnum):
     PASTEURISATIONS = "pasteurisations"
     TRANSPORTS = "transports"
     CASH_REGISTERS = "cash-registers"
+    DOCUMENTS = "documents"

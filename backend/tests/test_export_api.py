@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -10,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.models.cash_register import DENOMINATION_FIELDS
+from app.models.generated_document import GeneratedDocument
 
 pytestmark = pytest.mark.integration
 
@@ -22,7 +25,14 @@ VEHICLES = "/api/v1/vehicles"
 CASH_REGISTERS = "/api/v1/cash-registers"
 CASH_SESSIONS = "/api/v1/cash-sessions"
 
-DATASETS = ["readings", "cleanings", "pasteurisations", "transports", "cash-registers"]
+DATASETS = [
+    "readings",
+    "cleanings",
+    "pasteurisations",
+    "transports",
+    "cash-registers",
+    "documents",
+]
 
 TRICKY_COMMENT = 'Produit A ; rinçage "complet"\nseconde ligne'
 
@@ -490,3 +500,112 @@ def test_an_operator_can_export(api_client: TestClient, operator_headers: dict[s
 
 def test_exports_require_authentication(api_client: TestClient) -> None:
     assert api_client.get(f"{EXPORTS}/readings").status_code == 401
+
+
+def _insert_document(
+    session_factory: Any,
+    *,
+    created_at: datetime,
+    values: dict[str, object],
+    filename: str = "bon.pdf",
+    template_name: str = "bon-de-livraison",
+    size_bytes: int = 1234,
+    sha256: str = "a" * 64,
+) -> uuid.UUID:
+    async def run() -> uuid.UUID:
+        async with session_factory() as session:
+            document = GeneratedDocument(
+                template_id=None,
+                template_name=template_name,
+                generated_by_id=None,
+                values=values,
+                filename=filename,
+                storage_key=f"{uuid.uuid4()}.pdf",
+                size_bytes=size_bytes,
+                sha256=sha256,
+                created_at=created_at,
+            )
+            session.add(document)
+            await session.commit()
+            return document.id
+
+    return asyncio.run(run())
+
+
+def test_the_documents_export_lists_generation_info_and_variables(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+    session_factory: Any,
+) -> None:
+    now = datetime.now(UTC)
+    products = [
+        {"designation": "Bocal A", "pots": 10, "prix": "3.95"},
+        {"designation": "Bocal B", "pots": 2, "prix": "1.50"},
+    ]
+    _insert_document(
+        session_factory,
+        created_at=now,
+        values={
+            "bl_numero": "220826",
+            "client_nom": 'A ; "B"\nC',
+            "lignes_produits": products,
+            "logo": {"filename": "logo.png", "sha256": "b" * 64},
+            "formule": "=SUM(A1)",
+        },
+    )
+    _insert_document(
+        session_factory,
+        created_at=now - timedelta(days=2),
+        template_name="Ancien",
+        filename="ancien.pdf",
+        values={"bl_numero": "old"},
+    )
+
+    response = api_client.get(f"{EXPORTS}/documents", headers=admin_headers)
+
+    assert response.status_code == 200
+    rows = _rows(response)
+    headers = rows[0]
+    assert headers[:6] == [
+        "Date de génération",
+        "Modèle",
+        "Généré par",
+        "Fichier PDF",
+        "Taille (octets)",
+        "SHA-256",
+    ]
+    assert headers[6:] == sorted(
+        ["bl_numero", "client_nom", "formule", "lignes_produits", "logo"],
+        key=str.casefold,
+    )
+    index = {name: position for position, name in enumerate(headers)}
+    recent = next(row for row in rows[1:] if row[index["Fichier PDF"]] == "bon.pdf")
+    assert recent[index["Modèle"]] == "bon-de-livraison"
+    assert recent[index["Taille (octets)"]] == "1234"
+    assert recent[index["SHA-256"]] == "a" * 64
+    assert recent[index["bl_numero"]] == "220826"
+    assert recent[index["client_nom"]] == 'A ; "B"\nC'
+    assert recent[index["formule"]] == "'=SUM(A1)"
+    assert json.loads(recent[index["lignes_produits"]]) == products
+    assert recent[index["logo"]] == "logo.png"
+
+    old = next(row for row in rows[1:] if row[index["Fichier PDF"]] == "ancien.pdf")
+    assert old[index["bl_numero"]] == "old"
+    assert old[index["client_nom"]] == ""
+
+    filtered = _rows(
+        api_client.get(
+            f"{EXPORTS}/documents?from={_today()}",
+            headers=admin_headers,
+        )
+    )
+    assert len(filtered) == 2
+    assert filtered[1][index["Fichier PDF"]] == "bon.pdf"
+
+    empty = _rows(
+        api_client.get(
+            f"{EXPORTS}/documents?from=2099-01-01",
+            headers=admin_headers,
+        )
+    )
+    assert empty == [headers[:6]]

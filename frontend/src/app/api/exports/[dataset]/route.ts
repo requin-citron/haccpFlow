@@ -10,6 +10,7 @@ const DATASETS = new Set([
   "pasteurisations",
   "transports",
   "cash-registers",
+  "documents",
 ]);
 const ALLOWED_PARAMS = ["from", "to"];
 
