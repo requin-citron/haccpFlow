@@ -11,6 +11,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -117,6 +118,48 @@ def call_bytes(
             return response.status, response.read(), dict(response.headers)
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read(), dict(exc.headers)
+
+
+def call_multipart(
+    method: str,
+    path: str,
+    *,
+    token: str,
+    filename: str,
+    content: bytes,
+    fields: dict[str, str] | None = None,
+) -> tuple[int, Any]:
+    """Upload one file, with optional text fields, to the API."""
+
+    boundary = "----haccp" + uuid.uuid4().hex
+    chunks: list[bytes] = []
+    for key, value in (fields or {}).items():
+        chunks.append(
+            (
+                f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"'
+                f"\r\n\r\n{value}\r\n"
+            ).encode()
+        )
+    chunks.append(
+        (
+            f'--{boundary}\r\nContent-Disposition: form-data; name="file"; '
+            f'filename="{filename}"\r\nContent-Type: text/plain\r\n\r\n'
+        ).encode()
+        + content
+        + b"\r\n"
+    )
+    chunks.append(f"--{boundary}--\r\n".encode())
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": f"multipart/form-data; boundary={boundary}",
+    }
+    status, payload = _request(
+        method,
+        f"{API_BASE_URL}{path}",
+        data=b"".join(chunks),
+        headers=headers,
+    )
+    return status, (json.loads(payload) if payload else None)
 
 
 def login(email: str, password: str) -> tuple[str, str]:

@@ -9,6 +9,7 @@ import {
   ClipboardIcon,
   DropletIcon,
   DownloadIcon,
+  FileDownIcon,
   FileTextIcon,
   FlameIcon,
   GridIcon,
@@ -25,7 +26,8 @@ const NAV_ITEMS = [
   { href: "/transport", label: "Transport", icon: TruckIcon },
   { href: "/cash-sessions", label: "Suivi de caisse", icon: BanknoteIcon },
   { href: "/export", label: "Export", icon: DownloadIcon },
-  { href: "/templates", label: "Modèles LaTeX", icon: FileTextIcon, adminOnly: true },
+  { href: "/templates", label: "Modèles LaTeX", icon: FileTextIcon },
+  { href: "/documents", label: "Documents générés", icon: FileDownIcon },
   { href: "/history", label: "Historique", icon: HistoryIcon, adminOnly: true },
 ];
 

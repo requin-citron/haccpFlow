@@ -14,6 +14,7 @@ PAGES: list[tuple[str, str]] = [
     ("/cash-sessions", "Suivi de caisse"),
     ("/export", "Export"),
     ("/templates", "Modèles LaTeX"),
+    ("/documents", "Documents générés"),
     ("/history", "Historique"),
 ]
 
@@ -43,6 +44,7 @@ def main() -> None:
         "Pasteurisation",
         "Suivi de caisse",
         "Modèles LaTeX",
+        "Documents générés",
     ):
         report.check(f"onglet « {label} » présent", f">{label}<" in html)
 
@@ -180,6 +182,16 @@ def main() -> None:
             call("DELETE", f"{API_V1}/cash-sessions/{session['id']}", token=token)
         call("DELETE", f"{API_V1}/cash-registers/{cash_register['id']}", token=token)
         report.info("caisse et suivi de test nettoyés")
+
+    status, templates = call("GET", f"{API_V1}/templates", token=token)
+    report.status("modèles LaTeX", status)
+    if isinstance(templates, list) and templates:
+        status, html = fetch_page(f"/templates/{templates[0]['id']}", cookie=cookie)
+        report.status("/templates/{id}", status)
+        report.check("page modèle : formulaire de génération", "Générer le document" in html)
+        report.check("page modèle : éditeur de variables", "Variables du modèle" in html)
+    else:
+        report.info("aucun modèle LaTeX : la page de détail n'est pas vérifiée")
 
     report.finish()
 

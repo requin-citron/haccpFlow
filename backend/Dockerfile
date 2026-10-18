@@ -14,6 +14,16 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.5 /uv /uvx /bin/
 
 WORKDIR /app
 
+# Minimal TeX Live set: enough for the provided template and common documents.
+# The PDF compiler runs with restricted file access and shell escape disabled.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        texlive-latex-base \
+        texlive-latex-recommended \
+        texlive-fonts-recommended \
+        texlive-lang-french \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --gid 1000 app \
     && useradd --uid 1000 --gid 1000 --create-home --shell /usr/sbin/nologin app
 

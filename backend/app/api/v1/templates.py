@@ -1,18 +1,26 @@
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse
-from starlette.datastructures import UploadFile
+from fastapi.responses import FileResponse, PlainTextResponse
+from starlette.datastructures import FormData, UploadFile
 from starlette.formparsers import MultiPartException
 
 from app.api.deps import DbSession, SettingsDep, require_role
+from app.config import Settings
 from app.core.errors import ApiError
+from app.models.generated_document import GeneratedDocument
 from app.models.latex_template import LatexTemplate
+from app.models.template_variable import TemplateVariable
 from app.models.user import User, UserRole
+from app.schemas.generated_document import GeneratedDocumentRead, GenerateTemplateRequest
 from app.schemas.latex_template import LatexTemplateRead
+from app.schemas.template_variable import TemplateVariableRead, TemplateVariableWrite
+from app.services.documents import save_document
 from app.services.latex_template import (
     MULTIPART_OVERHEAD_BYTES,
     decode_template,
@@ -26,10 +34,24 @@ from app.services.latex_template import (
     template_file_path,
     validate_extension,
 )
+from app.services.pdf_generator import compile_pdf
+from app.services.storage import delete_file, storage_path, write_atomic
+from app.services.template_render import (
+    render_source,
+    used_variable_names,
+)
+from app.services.template_variables import (
+    create_variable,
+    delete_variable,
+    list_variables,
+    serialize_variable_value,
+    update_variable,
+)
 
 router = APIRouter(prefix="/templates", tags=["templates"])
 
 AdminUser = Annotated[User, Depends(require_role(UserRole.ADMIN))]
+AnyUser = Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.OPERATOR))]
 
 _UPLOAD_OPENAPI = {
     "requestBody": {
@@ -63,26 +85,48 @@ def _read(template: LatexTemplate, uploaded_by_email: str | None) -> LatexTempla
     )
 
 
-@router.get("", response_model=list[LatexTemplateRead])
-async def list_latex_templates(
-    db: DbSession,
-    _: AdminUser,
-) -> list[LatexTemplateRead]:
-    return [_read(template, email) for template, email in await list_templates(db)]
+async def _source(template: LatexTemplate, settings: Settings) -> str:
+    path = template_file_path(settings, template)
+    return await asyncio.to_thread(path.read_text, encoding="utf-8")
 
 
-@router.post(
-    "",
-    response_model=LatexTemplateRead,
-    status_code=201,
-    openapi_extra=_UPLOAD_OPENAPI,
-)
-async def upload_latex_template(
-    request: Request,
-    db: DbSession,
-    user: AdminUser,
-    settings: SettingsDep,
-) -> LatexTemplateRead:
+def _variable_read(
+    variable: TemplateVariable,
+    used: set[str],
+) -> TemplateVariableRead:
+    return TemplateVariableRead(
+        id=variable.id,
+        template_id=variable.template_id,
+        name=variable.name,
+        label=variable.label,
+        description=variable.description,
+        kind=variable.kind,
+        value_type=variable.value_type,
+        value=serialize_variable_value(variable),
+        used_in_template=variable.name in used,
+        created_at=variable.created_at,
+        updated_at=variable.updated_at,
+    )
+
+
+def _document_read(
+    document: GeneratedDocument,
+    generated_by_email: str | None,
+) -> GeneratedDocumentRead:
+    return GeneratedDocumentRead(
+        id=document.id,
+        template_id=document.template_id,
+        template_name=document.template_name,
+        generated_by_email=generated_by_email,
+        values=document.values,
+        filename=document.filename,
+        size_bytes=document.size_bytes,
+        sha256=document.sha256,
+        created_at=document.created_at,
+    )
+
+
+async def _tex_form(request: Request, settings: Settings) -> tuple[FormData, UploadFile]:
     max_bytes = settings.template_max_upload_bytes
     content_length = request.headers.get("content-length")
     if content_length:
@@ -119,20 +163,46 @@ async def upload_latex_template(
     upload = form.get("file")
     if not isinstance(upload, UploadFile):
         raise ApiError(422, "template_file_required", "A .tex file is required")
+    return form, upload
 
+
+async def _read_tex(upload: UploadFile, settings: Settings) -> tuple[str, str]:
+    try:
+        filename = sanitize_filename(upload.filename)
+        validate_extension(filename)
+        data = await read_upload(upload, settings.template_max_upload_bytes)
+    finally:
+        await upload.close()
+    return filename, decode_template(data)
+
+
+@router.get("", response_model=list[LatexTemplateRead])
+async def list_latex_templates(
+    db: DbSession,
+    _: AnyUser,
+) -> list[LatexTemplateRead]:
+    return [_read(template, email) for template, email in await list_templates(db)]
+
+
+@router.post(
+    "",
+    response_model=LatexTemplateRead,
+    status_code=201,
+    openapi_extra=_UPLOAD_OPENAPI,
+)
+async def upload_latex_template(
+    request: Request,
+    db: DbSession,
+    user: AdminUser,
+    settings: SettingsDep,
+) -> LatexTemplateRead:
+    form, upload = await _tex_form(request, settings)
     raw_name = form.get("name")
     if raw_name is not None and not isinstance(raw_name, str):
         raise ApiError(422, "template_name_invalid", "The template name is invalid")
 
-    try:
-        filename = sanitize_filename(upload.filename)
-        validate_extension(filename)
-        data = await read_upload(upload, max_bytes)
-    finally:
-        await upload.close()
-
+    filename, source = await _read_tex(upload, settings)
     display_name = normalize_name(raw_name or "", filename)
-    source = decode_template(data)
     template = await save_template(
         db,
         uploader=user,
@@ -142,6 +212,150 @@ async def upload_latex_template(
         source=source,
     )
     return _read(template, user.email)
+
+
+@router.put("/{template_id}", response_model=LatexTemplateRead)
+async def replace_latex_template(
+    template_id: uuid.UUID,
+    request: Request,
+    db: DbSession,
+    _: AdminUser,
+    settings: SettingsDep,
+) -> LatexTemplateRead:
+    template = await get_template(db, template_id)
+    _form, upload = await _tex_form(request, settings)
+    filename, source = await _read_tex(upload, settings)
+
+    path = storage_path(settings.template_storage_dir, template.storage_key)
+    old_data = await asyncio.to_thread(path.read_bytes) if path.is_file() else None
+    new_data = source.encode("utf-8")
+    await asyncio.to_thread(write_atomic, path, new_data)
+
+    template.original_filename = filename
+    template.size_bytes = len(new_data)
+    template.sha256 = hashlib.sha256(new_data).hexdigest()
+    try:
+        await db.commit()
+    except BaseException:
+        await db.rollback()
+        if old_data is None:
+            await asyncio.to_thread(delete_file, path)
+        else:
+            await asyncio.to_thread(write_atomic, path, old_data)
+        raise
+
+    await db.refresh(template)
+    uploader = await db.get(User, template.uploaded_by_id) if template.uploaded_by_id else None
+    return _read(template, uploader.email if uploader else None)
+
+
+@router.get("/{template_id}/variables", response_model=list[TemplateVariableRead])
+async def list_template_variables(
+    template_id: uuid.UUID,
+    db: DbSession,
+    _: AnyUser,
+    settings: SettingsDep,
+) -> list[TemplateVariableRead]:
+    template = await get_template(db, template_id)
+    variables = await list_variables(db, template_id)
+    used = used_variable_names(await _source(template, settings))
+    return [_variable_read(variable, used) for variable in variables]
+
+
+@router.post(
+    "/{template_id}/variables",
+    response_model=TemplateVariableRead,
+    status_code=201,
+)
+async def create_template_variable(
+    template_id: uuid.UUID,
+    payload: TemplateVariableWrite,
+    db: DbSession,
+    _: AdminUser,
+    settings: SettingsDep,
+) -> TemplateVariableRead:
+    template = await get_template(db, template_id)
+    used = used_variable_names(await _source(template, settings))
+    variable = await create_variable(db, template_id, payload)
+    return _variable_read(variable, used)
+
+
+@router.put(
+    "/{template_id}/variables/{variable_id}",
+    response_model=TemplateVariableRead,
+)
+async def update_template_variable(
+    template_id: uuid.UUID,
+    variable_id: uuid.UUID,
+    payload: TemplateVariableWrite,
+    db: DbSession,
+    _: AdminUser,
+    settings: SettingsDep,
+) -> TemplateVariableRead:
+    template = await get_template(db, template_id)
+    used = used_variable_names(await _source(template, settings))
+    variable = await update_variable(db, template_id, variable_id, payload)
+    return _variable_read(variable, used)
+
+
+@router.delete("/{template_id}/variables/{variable_id}", status_code=204)
+async def delete_template_variable(
+    template_id: uuid.UUID,
+    variable_id: uuid.UUID,
+    db: DbSession,
+    _: AdminUser,
+) -> None:
+    await get_template(db, template_id)
+    await delete_variable(db, template_id, variable_id)
+
+
+@router.post("/{template_id}/preview", response_class=PlainTextResponse)
+async def preview_template(
+    template_id: uuid.UUID,
+    payload: GenerateTemplateRequest,
+    db: DbSession,
+    _: AdminUser,
+    settings: SettingsDep,
+) -> PlainTextResponse:
+    template = await get_template(db, template_id)
+    variables = await list_variables(db, template_id)
+    rendered, _snapshot = render_source(
+        await _source(template, settings),
+        variables,
+        payload.values,
+    )
+    return PlainTextResponse(rendered, media_type="text/plain; charset=utf-8")
+
+
+@router.post(
+    "/{template_id}/generate",
+    response_model=GeneratedDocumentRead,
+    status_code=201,
+)
+async def generate_document(
+    template_id: uuid.UUID,
+    payload: GenerateTemplateRequest,
+    db: DbSession,
+    user: AnyUser,
+    settings: SettingsDep,
+) -> GeneratedDocumentRead:
+    template = await get_template(db, template_id)
+    variables = await list_variables(db, template_id)
+    rendered, snapshot = render_source(
+        await _source(template, settings),
+        variables,
+        payload.values,
+    )
+    pdf = await compile_pdf(rendered, settings)
+    document = await save_document(
+        db,
+        template=template,
+        uploader=user,
+        values=snapshot,
+        pdf=pdf,
+        settings=settings,
+    )
+    return _document_read(document, user.email)
 
 
 @router.get("/{template_id}/download")

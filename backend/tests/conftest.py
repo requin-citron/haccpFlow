@@ -130,6 +130,31 @@ def api_client(
 
 
 @pytest.fixture
+def template_settings(tmp_path: Path) -> Settings:
+    return Settings(
+        secret_key="unit-test-secret-key",
+        database_url=UNIT_DATABASE_URL,
+        template_storage_dir=tmp_path / "templates",
+        template_document_storage_dir=tmp_path / "documents",
+        template_max_upload_bytes=1024,
+        template_pdf_timeout_seconds=30,
+        template_pdf_max_output_bytes=20 * 1024 * 1024,
+        template_pdf_concurrency=1,
+        _env_file=None,
+    )
+
+
+@pytest.fixture
+def templates_client(
+    api_client: TestClient,
+    template_settings: Settings,
+) -> Iterator[TestClient]:
+    api_client.app.dependency_overrides[get_settings] = lambda: template_settings
+    yield api_client
+    api_client.app.dependency_overrides.pop(get_settings, None)
+
+
+@pytest.fixture
 def admin_headers(
     clean_database: None,
     session_factory: async_sessionmaker[AsyncSession],

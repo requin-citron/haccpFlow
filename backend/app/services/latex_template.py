@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import os
 import re
 import uuid
 from pathlib import Path
@@ -16,6 +15,8 @@ from app.config import Settings
 from app.core.errors import ApiError
 from app.models.latex_template import LatexTemplate
 from app.models.user import User
+from app.services.storage import delete_file, storage_path, write_atomic
+from app.services.template_render import validate_template_syntax
 
 ALLOWED_SUFFIX = ".tex"
 MAX_NAME_LENGTH = 120
@@ -91,6 +92,7 @@ def decode_template(data: bytes) -> str:
         )
     if not text.strip():
         raise ApiError(422, "template_empty", "The template is empty")
+    validate_template_syntax(text)
     return text
 
 
@@ -105,31 +107,6 @@ async def read_upload(upload: UploadFile, max_bytes: int) -> bytes:
             f"The file must be at most {max_bytes} bytes",
         )
     return data
-
-
-def _storage_path(settings: Settings, storage_key: str) -> Path:
-    root = settings.template_storage_dir
-    path = root / storage_key
-    if path.parent.resolve() != root.resolve():
-        raise RuntimeError("Invalid template storage key")
-    return path
-
-
-def _write_atomic(path: Path, data: bytes) -> None:
-    """Write the file completely before exposing it under its final name."""
-
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    temporary = path.parent / f".{path.name}.tmp"
-    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(data)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
 
 
 async def template_name_is_taken(db: AsyncSession, key: str) -> bool:
@@ -157,9 +134,9 @@ async def save_template(
         )
 
     storage_key = f"{uuid.uuid4()}{ALLOWED_SUFFIX}"
-    path = _storage_path(settings, storage_key)
+    path = storage_path(settings.template_storage_dir, storage_key)
     data = source.encode("utf-8")
-    await asyncio.to_thread(_write_atomic, path, data)
+    await asyncio.to_thread(write_atomic, path, data)
 
     template = LatexTemplate(
         name=display_name,
@@ -175,7 +152,7 @@ async def save_template(
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()
-        await asyncio.to_thread(path.unlink, missing_ok=True)
+        await asyncio.to_thread(delete_file, path)
         raise ApiError(
             409,
             "template_name_taken",
@@ -183,7 +160,7 @@ async def save_template(
         ) from exc
     except BaseException:
         await db.rollback()
-        await asyncio.to_thread(path.unlink, missing_ok=True)
+        await asyncio.to_thread(delete_file, path)
         raise
 
     await db.refresh(template)
@@ -207,7 +184,7 @@ async def get_template(db: AsyncSession, template_id: uuid.UUID) -> LatexTemplat
 
 
 def template_file_path(settings: Settings, template: LatexTemplate) -> Path:
-    path = _storage_path(settings, template.storage_key)
+    path = storage_path(settings.template_storage_dir, template.storage_key)
     if not path.is_file():
         raise ApiError(404, "template_file_missing", "The template file is missing from storage")
     return path

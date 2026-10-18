@@ -3,38 +3,16 @@ from __future__ import annotations
 import hashlib
 import re
 import uuid
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import Settings, get_settings
+from app.config import Settings
 
 TEMPLATES = "/api/v1/templates"
 TEX = b"\\documentclass{article}\n\\begin{document}\nBonjour\n\\end{document}\n"
 STORAGE_KEY = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.tex$")
-
-
-@pytest.fixture
-def storage_settings(tmp_path: Path) -> Settings:
-    return Settings(
-        secret_key="unit-test-secret-key",
-        database_url="postgresql+asyncpg://user:pass@localhost:5432/db",
-        template_storage_dir=tmp_path / "templates",
-        template_max_upload_bytes=1024,
-        _env_file=None,
-    )
-
-
-@pytest.fixture
-def templates_client(
-    api_client: TestClient,
-    storage_settings: Settings,
-) -> Iterator[TestClient]:
-    api_client.app.dependency_overrides[get_settings] = lambda: storage_settings
-    yield api_client
-    api_client.app.dependency_overrides.pop(get_settings, None)
 
 
 def _stored_files(settings: Settings) -> list[Path]:
@@ -62,7 +40,7 @@ def _upload(
 def test_admin_can_upload_list_and_download(
     templates_client: TestClient,
     admin_headers: dict[str, str],
-    storage_settings: Settings,
+    template_settings: Settings,
 ) -> None:
     response = _upload(templates_client, admin_headers)
 
@@ -74,7 +52,7 @@ def test_admin_can_upload_list_and_download(
     assert body["sha256"] == hashlib.sha256(TEX).hexdigest()
     assert body["uploaded_by_email"] == "admin@test.local"
 
-    files = _stored_files(storage_settings)
+    files = _stored_files(template_settings)
     assert len(files) == 1
     assert STORAGE_KEY.match(files[0].name)
     assert files[0].read_bytes() == TEX
@@ -104,7 +82,9 @@ def test_upload_list_and_download_are_admin_only(
 
     assert _upload(templates_client, operator_headers).status_code == 403
     assert _upload(templates_client, None).status_code == 401
-    assert templates_client.get(TEMPLATES, headers=operator_headers).status_code == 403
+    # Operators may list templates to generate documents, but cannot upload or
+    # download the LaTeX source.
+    assert templates_client.get(TEMPLATES, headers=operator_headers).status_code == 200
     assert templates_client.get(TEMPLATES).status_code == 401
     assert (
         templates_client.get(
@@ -119,7 +99,7 @@ def test_upload_list_and_download_are_admin_only(
 def test_duplicate_names_are_rejected_case_insensitively(
     templates_client: TestClient,
     admin_headers: dict[str, str],
-    storage_settings: Settings,
+    template_settings: Settings,
 ) -> None:
     assert _upload(templates_client, admin_headers, name="Modele").status_code == 201
 
@@ -127,34 +107,34 @@ def test_duplicate_names_are_rejected_case_insensitively(
 
     assert duplicate.status_code == 409
     assert duplicate.json()["code"] == "template_name_taken"
-    assert len(_stored_files(storage_settings)) == 1
+    assert len(_stored_files(template_settings)) == 1
 
 
 def test_uploaded_filename_never_becomes_a_path(
     templates_client: TestClient,
     admin_headers: dict[str, str],
-    storage_settings: Settings,
+    template_settings: Settings,
 ) -> None:
     response = _upload(templates_client, admin_headers, filename="../../evil.tex")
 
     assert response.status_code == 201
     assert response.json()["original_filename"] == "evil.tex"
-    files = _stored_files(storage_settings)
+    files = _stored_files(template_settings)
     assert len(files) == 1
     assert STORAGE_KEY.match(files[0].name)
-    assert not (storage_settings.template_storage_dir.parent / "evil.tex").exists()
+    assert not (template_settings.template_storage_dir.parent / "evil.tex").exists()
 
 
 def test_oversized_files_are_rejected(
     templates_client: TestClient,
     admin_headers: dict[str, str],
-    storage_settings: Settings,
+    template_settings: Settings,
 ) -> None:
     response = _upload(templates_client, admin_headers, content=b"x" * 2048)
 
     assert response.status_code == 413
     assert response.json()["code"] == "template_too_large"
-    assert _stored_files(storage_settings) == []
+    assert _stored_files(template_settings) == []
 
 
 def test_wrong_extension_is_rejected(
@@ -200,13 +180,13 @@ def test_name_too_long_is_rejected(
 def test_utf8_bom_is_not_stored(
     templates_client: TestClient,
     admin_headers: dict[str, str],
-    storage_settings: Settings,
+    template_settings: Settings,
 ) -> None:
     response = _upload(templates_client, admin_headers, content=b"\xef\xbb\xbf" + TEX)
 
     assert response.status_code == 201
     assert response.json()["size_bytes"] == len(TEX)
-    assert _stored_files(storage_settings)[0].read_bytes() == TEX
+    assert _stored_files(template_settings)[0].read_bytes() == TEX
 
 
 def test_unknown_template_is_not_found(
@@ -225,10 +205,10 @@ def test_unknown_template_is_not_found(
 def test_missing_storage_file_is_reported(
     templates_client: TestClient,
     admin_headers: dict[str, str],
-    storage_settings: Settings,
+    template_settings: Settings,
 ) -> None:
     created = _upload(templates_client, admin_headers)
-    _stored_files(storage_settings)[0].unlink()
+    _stored_files(template_settings)[0].unlink()
 
     response = templates_client.get(
         f"{TEMPLATES}/{created.json()['id']}/download",
@@ -237,3 +217,59 @@ def test_missing_storage_file_is_reported(
 
     assert response.status_code == 404
     assert response.json()["code"] == "template_file_missing"
+
+
+def test_admin_can_replace_a_template_source(
+    templates_client: TestClient,
+    admin_headers: dict[str, str],
+    operator_headers: dict[str, str],
+) -> None:
+    created = _upload(templates_client, admin_headers)
+    template_id = created.json()["id"]
+    replacement = (
+        b"\\documentclass{article}\n"
+        b"\\begin{document}\n"
+        b"Version remplacee\n"
+        b"\\end{document}\n"
+    )
+
+    response = templates_client.put(
+        f"{TEMPLATES}/{template_id}",
+        headers=admin_headers,
+        files={"file": ("remplace.tex", replacement, "text/plain")},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["original_filename"] == "remplace.tex"
+    assert body["size_bytes"] == len(replacement)
+    assert body["sha256"] == hashlib.sha256(replacement).hexdigest()
+
+    download = templates_client.get(
+        f"{TEMPLATES}/{template_id}/download",
+        headers=admin_headers,
+    )
+    assert download.content == replacement
+
+    assert (
+        templates_client.put(
+            f"{TEMPLATES}/{template_id}",
+            headers=operator_headers,
+            files={"file": ("refus.tex", replacement, "text/plain")},
+        ).status_code
+        == 403
+    )
+
+    invalid = templates_client.put(
+        f"{TEMPLATES}/{template_id}",
+        headers=admin_headers,
+        files={"file": ("invalide.tex", b"<% if %>", "text/plain")},
+    )
+    assert invalid.status_code == 422
+    assert (
+        templates_client.get(
+            f"{TEMPLATES}/{template_id}/download",
+            headers=admin_headers,
+        ).content
+        == replacement
+    )

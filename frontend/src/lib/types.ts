@@ -267,3 +267,39 @@ export type LatexTemplate = {
   created_at: string;
   updated_at: string;
 };
+
+export type TemplateVariableKind = "static" | "local";
+
+export type TemplateVariableValueType = "text" | "number" | "date" | "products";
+
+export type ProductRow = {
+  designation: string;
+  pots: number;
+  prix: string;
+};
+
+export type TemplateVariable = {
+  id: string;
+  template_id: string;
+  name: string;
+  label: string;
+  description: string | null;
+  kind: TemplateVariableKind;
+  value_type: TemplateVariableValueType;
+  value: string | ProductRow[] | null;
+  used_in_template: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GeneratedDocument = {
+  id: string;
+  template_id: string | null;
+  template_name: string;
+  generated_by_email: string | null;
+  values: Record<string, unknown>;
+  filename: string;
+  size_bytes: number;
+  sha256: string;
+  created_at: string;
+};

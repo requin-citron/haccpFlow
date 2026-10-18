@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # their metadata. Both values are configurable per installation.
     template_max_upload_bytes: int = Field(default=262_144, ge=1_024)
     template_storage_dir: Path = Path("data/templates")
+    template_document_storage_dir: Path = Path("data/documents")
+    template_pdf_timeout_seconds: int = Field(default=30, ge=5, le=300)
+    template_pdf_max_output_bytes: int = Field(default=20 * 1024 * 1024, ge=1_024)
+    template_pdf_concurrency: int = Field(default=2, ge=1, le=16)
 
     mqtt_host: str = "mosquitto"
     mqtt_port: int = 1883

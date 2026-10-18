@@ -28,6 +28,7 @@ docker compose --profile app up -d frontend
 | `seed_cleaning.py` | Quatre plans de nettoyage couvrant tous les états — un en retard, un à faire aujourd'hui, un à venir, un après chaque usage — avec leurs déclarations et une correction de date pour alimenter le journal. |
 | `seed_pasteurisation.py` | Trois lots de pasteurisation : un complet, un en cours (préchauffage seul) et un vide, pour voir les trois états dans l'interface. |
 | `seed_transport.py` | Trois transports : un complet avec ses deux températures, un en cours (départ seul) et un avec un véhicule externe non référencé. |
+| `seed_delivery_note.py` | Remplace le modèle `bon-de-livraison` par le template LaTeX de `templates/delivery-note/` et crée toutes ses variables (coordonnées La LEGU, client, unité, lignes produits). Idempotent. |
 
 Les deux sont **idempotents** : un nom déjà présent est ignoré, on peut les
 relancer sans créer de doublon.
@@ -44,7 +45,7 @@ relancer sans créer de doublon.
 | `check_export_api.py` | Télécharge les cinq extractions CSV et vérifie le BOM UTF-8, le séparateur point-virgule et la ligne d'en-tête de chacune, puis l'extract d'un suivi de caisse (blocs comptage d'ouverture, frais, clôture). |
 | `check_cash_register_api.py` | Enrôlement d'une caisse avec son comptage initial : total calculé en centimes, coupures absentes à zéro, nom déjà pris, compteur négatif, coupure inconnue, correction, désactivation et nom libéré. |
 | `check_cash_sessions_api.py` | Suivi d'une caisse : fond repris de la caisse ou forcé, refus d'un second suivi ouvert, frais pro/perso ajoutés, corrigés et totalisés, comptage de clôture incomplet refusé, clôture qui met à jour la caisse, suivi figé ensuite, et nouvelle ouverture qui reprend le comptage de clôture. |
-| `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation, Transport, Suivi de caisse, Export, Modèles LaTeX et Historique rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. Vérifie aussi le détail d'un suivi de caisse (frais, clôture, état figé) et qu'un export CSV se télécharge bien à travers le frontend, BOM compris. |
+| `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation, Transport, Suivi de caisse, Export, Modèles LaTeX, Documents générés et Historique rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. Vérifie aussi le détail d'un suivi de caisse (frais, clôture, état figé) et qu'un export CSV se télécharge bien à travers le frontend, BOM compris. |
 | `check_cleaning_tabs.py` | La séparation entre l'onglet opérationnel (déclarer) et l'onglet de gestion (créer, modifier), ainsi que le contenu de l'agenda. |
 
 Les vérifications suppriment les données qu'elles ont créées avant de se

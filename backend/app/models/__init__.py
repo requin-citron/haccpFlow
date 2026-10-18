@@ -17,6 +17,7 @@ from app.models.cleaning_plan import (
     CleaningStatus,
 )
 from app.models.equipment import Equipment, EquipmentType
+from app.models.generated_document import GeneratedDocument
 from app.models.latex_template import LatexTemplate
 from app.models.pasteurisation import (
     PasteurisationBatch,
@@ -32,6 +33,11 @@ from app.models.temperature_reading import (
     ReadingSource,
     TemperatureReading,
     TemperatureReadingEdit,
+)
+from app.models.template_variable import (
+    TemplateVariable,
+    TemplateVariableKind,
+    TemplateVariableValueType,
 )
 from app.models.transport import Transport, TransportEdit, TransportEditAction
 from app.models.user import User, UserRole, normalize_email
@@ -52,6 +58,7 @@ __all__ = [
     "CleaningStatus",
     "Equipment",
     "EquipmentType",
+    "GeneratedDocument",
     "LatexTemplate",
     "PasteurisationBatch",
     "PasteurisationPhase",
@@ -64,6 +71,9 @@ __all__ = [
     "RefreshToken",
     "TemperatureReading",
     "TemperatureReadingEdit",
+    "TemplateVariable",
+    "TemplateVariableKind",
+    "TemplateVariableValueType",
     "Transport",
     "TransportEdit",
     "TransportEditAction",

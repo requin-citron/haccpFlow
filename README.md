@@ -29,6 +29,9 @@ sanitaire :
 - **Modèles LaTeX** — import sécurisé réservé aux administrateurs, avec liste
   et téléchargement. Les sources `.tex` sont stockées sur disque sous un nom
   UUID ; la base ne conserve que les métadonnées.
+- **Variables et PDF** — variables statiques ou locales par modèle, rendu
+  Jinja sandboxé avec échappement LaTeX, génération PDF par `pdflatex` et
+  historique des documents produits avec les valeurs utilisées.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
@@ -135,6 +138,22 @@ sont des valeurs internes au réseau Docker. `MQTT_CLIENT_ID` (défaut
 | --- | --- | --- |
 | `TEMPLATE_MAX_UPLOAD_BYTES` | `262144` | Taille maximale d'un fichier `.tex` uploadé, en octets. |
 | `TEMPLATE_STORAGE_DIR` | `data/templates` | Répertoire de stockage, relatif au répertoire de travail du backend. Avec le compose, il correspond à `backend/data/templates` et doit être inclus dans les sauvegardes. |
+| `TEMPLATE_DOCUMENT_STORAGE_DIR` | `data/documents` | Répertoire des PDF générés (`backend/data/documents` avec le compose), à sauvegarder. |
+| `TEMPLATE_PDF_TIMEOUT_SECONDS` | `30` | Délai maximal d'une passe de compilation `pdflatex`. |
+| `TEMPLATE_PDF_MAX_OUTPUT_BYTES` | `20971520` | Taille maximale d'un PDF généré (20 Mio). |
+| `TEMPLATE_PDF_CONCURRENCY` | `2` | Nombre de compilations LaTeX simultanées. |
+
+Les variables d'un modèle sont de deux natures : `static` (valeur fixée par
+l'administrateur, jamais demandée à la génération) et `local` (valeur fournie
+par l'opérateur, avec valeur par défaut facultative). Le rendu utilise Jinja en
+mode sandboxé ; les valeurs texte sont échappées pour LaTeX, et le filtre
+`|safe` permet à un template admin d'insérer volontairement du LaTeX brut.
+Les délimiteurs Jinja sont choisis pour ne pas entrer en conflit avec LaTeX :
+`<< variable >>`, `<% if … %>…<% endif %>` et `<# commentaire #>`. Les `{`,
+`{%` et `{{` de LaTeX restent donc littéraux.
+Le type `products` gère un nombre libre de lignes (désignation, pots, prix
+unitaire) ; l'interface permet de les ajouter et de les supprimer, et le filtre
+`euro` formate les montants calculés.
 
 ### Seuils de température par défaut (°C)
 
@@ -189,6 +208,11 @@ inaccessibles.
 | Ouvrir un suivi de caisse, saisir les frais et clôturer | ✅ | ✅ |
 | Supprimer un suivi de caisse | ❌ | ✅ |
 | Télécharger les exports CSV, y compris l'extract d'un suivi | ✅ | ✅ |
+| Consulter les modèles LaTeX | ✅ | ✅ |
+| Générer un PDF depuis un modèle | ✅ | ✅ |
+| Consulter l'historique des documents générés | ✅ | ✅ |
+| Importer un modèle LaTeX | ❌ | ✅ |
+| Créer et modifier les variables d'un modèle | ❌ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir

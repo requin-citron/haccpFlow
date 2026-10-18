@@ -10,18 +10,26 @@ const EXPORT_TIMEOUT_MS = 60_000;
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
+  readonly context: Record<string, unknown> | null;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    context: Record<string, unknown> | null = null,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.context = context;
   }
 }
 
 type BackendErrorPayload = {
   detail?: string;
   code?: string;
+  context?: Record<string, unknown> | null;
 };
 
 type TokenPairPayload = {
@@ -54,6 +62,7 @@ async function toApiError(response: Response): Promise<ApiError> {
     response.status,
     payload.code ?? `http_${response.status}`,
     payload.detail ?? "Le serveur a renvoyé une erreur inattendue.",
+    payload.context ?? null,
   );
 }
 
