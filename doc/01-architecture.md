@@ -37,12 +37,18 @@ flowchart LR
 3. Le backend vérifie le mot de passe Argon2id et renvoie un access token JWT et
    un refresh token opaque.
 4. Next.js stocke les deux jetons dans des cookies `httpOnly`, `SameSite=Lax`
-   (`Secure` si `SESSION_COOKIE_SECURE=true`).
+   (`Secure` si `SESSION_COOKIE_SECURE=true` ou `NODE_ENV=production`). Leurs
+   durées de vie viennent de `expires_in` et `refresh_expires_in`.
 5. Les appels suivants passent par `apiFetch`, qui ajoute le Bearer côté
    serveur. Le navigateur ne voit jamais les jetons.
-6. Sur un `401`, le frontend tente un refresh unique et persiste la nouvelle
-   paire. Un refresh token déjà révoqué révoque toute la famille (détection de
-   rejeu).
+6. Avant le rendu, `src/proxy.ts` vérifie l'expiration de l'access token et
+   effectue le refresh si nécessaire. C'est le seul endroit qui peut toujours
+   écrire les nouveaux cookies ; les composants serveur ne tentent plus de
+   rotation.
+7. Le backend accepte une réutilisation très courte du refresh token qui vient
+   d'être tourné, pour absorber les requêtes concurrentes. Un rejeu après cette
+   fenêtre révoque toute la famille de rotation, sans toucher aux autres
+   connexions de l'utilisateur.
 
 Voir [Frontend](./06-frontend.md) et [API](./04-api.md).
 

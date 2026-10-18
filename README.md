@@ -188,7 +188,7 @@ codés en dur dans la logique : ce sont ces variables qui font foi.
 | Variable | Défaut | Description |
 | --- | --- | --- |
 | `FRONTEND_PORT` | `3000` | Port publié de l'interface. |
-| `SESSION_COOKIE_SECURE` | `false` | À passer à `true` dès que l'application est servie en HTTPS : les cookies de session deviennent `Secure`. |
+| `SESSION_COOKIE_SECURE` | `false` | À passer à `true` dès que l'application est servie en HTTPS. Les cookies sont aussi `Secure` automatiquement quand `NODE_ENV=production`. |
 
 Le frontend reçoit `API_INTERNAL_URL` (`http://backend:8000`), fixé par le
 compose : c'est l'adresse utilisée pour les appels serveur à serveur.

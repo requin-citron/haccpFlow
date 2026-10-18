@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
@@ -26,6 +27,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+#: A refresh token may be presented again shortly after its first rotation.
+#: This absorbs concurrent requests (for example a page and its API calls)
+#: without turning a normal race into a logout of every active session.
+REFRESH_REUSE_GRACE = timedelta(seconds=10)
+
 
 def _invalid_credentials() -> ApiError:
     return ApiError(401, "invalid_credentials", "Incorrect email or password")
@@ -42,13 +48,17 @@ async def _issue_token_pair(db: DbSession, user: User) -> TokenPair:
         subject=str(user.id),
         role=user.role.value,
     )
+    refresh_expires_in = int(timedelta(days=settings.refresh_token_expire_days).total_seconds())
 
     refresh_token = generate_refresh_token()
+    refresh_token_id = uuid.uuid4()
     db.add(
         RefreshToken(
+            id=refresh_token_id,
+            family_id=refresh_token_id,
             user_id=user.id,
             token_hash=hash_refresh_token(refresh_token),
-            expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days),
+            expires_at=datetime.now(UTC) + timedelta(seconds=refresh_expires_in),
         )
     )
     await db.commit()
@@ -57,6 +67,7 @@ async def _issue_token_pair(db: DbSession, user: User) -> TokenPair:
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=expires_in,
+        refresh_expires_in=refresh_expires_in,
     )
 
 
@@ -87,15 +98,24 @@ async def refresh(body: RefreshRequest, db: DbSession) -> TokenPair:
 
     now = datetime.now(UTC)
     if stored.revoked_at is not None:
-        # A revoked token is being replayed: revoke the whole family.
-        await db.execute(
-            update(RefreshToken)
-            .where(RefreshToken.user_id == stored.user_id, RefreshToken.revoked_at.is_(None))
-            .values(revoked_at=now)
+        reused_within_grace = (
+            stored.replaced_by_id is not None and now - stored.revoked_at <= REFRESH_REUSE_GRACE
         )
-        await db.commit()
-        logger.warning("Refresh token replay detected for user %s", stored.user_id)
-        raise _invalid_refresh_token()
+        if not reused_within_grace:
+            # A rotated token was replayed after the grace window: revoke the
+            # whole rotation family created by that login.
+            await db.execute(
+                update(RefreshToken)
+                .where(
+                    RefreshToken.family_id == stored.family_id,
+                    RefreshToken.revoked_at.is_(None),
+                )
+                .values(revoked_at=now)
+            )
+            await db.commit()
+            logger.warning("Refresh token replay detected for user %s", stored.user_id)
+            raise _invalid_refresh_token()
+        logger.info("Refresh token reused within the rotation grace window")
 
     if stored.expires_at <= now:
         raise _invalid_refresh_token()
@@ -105,17 +125,20 @@ async def refresh(body: RefreshRequest, db: DbSession) -> TokenPair:
         raise _invalid_refresh_token()
 
     settings = get_settings()
+    refresh_expires_in = int(timedelta(days=settings.refresh_token_expire_days).total_seconds())
     new_token = generate_refresh_token()
     new_record = RefreshToken(
+        family_id=stored.family_id,
         user_id=user.id,
         token_hash=hash_refresh_token(new_token),
-        expires_at=now + timedelta(days=settings.refresh_token_expire_days),
+        expires_at=now + timedelta(seconds=refresh_expires_in),
     )
     db.add(new_record)
     await db.flush()
 
-    stored.revoked_at = now
-    stored.replaced_by_id = new_record.id
+    if stored.revoked_at is None:
+        stored.revoked_at = now
+        stored.replaced_by_id = new_record.id
     await db.commit()
 
     access_token, expires_in = create_access_token(
@@ -127,6 +150,7 @@ async def refresh(body: RefreshRequest, db: DbSession) -> TokenPair:
         access_token=access_token,
         refresh_token=new_token,
         expires_in=expires_in,
+        refresh_expires_in=refresh_expires_in,
     )
 
 
@@ -136,8 +160,16 @@ async def logout(body: RefreshRequest, db: DbSession) -> None:
     stored = await db.scalar(
         select(RefreshToken).where(RefreshToken.token_hash == token_hash).with_for_update()
     )
-    if stored is not None and stored.revoked_at is None:
-        stored.revoked_at = datetime.now(UTC)
+    if stored is not None:
+        now = datetime.now(UTC)
+        await db.execute(
+            update(RefreshToken)
+            .where(
+                RefreshToken.family_id == stored.family_id,
+                RefreshToken.revoked_at.is_(None),
+            )
+            .values(revoked_at=now)
+        )
         await db.commit()
 
 

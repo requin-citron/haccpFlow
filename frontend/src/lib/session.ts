@@ -1,34 +1,31 @@
 import { cookies } from "next/headers";
 
-export const ACCESS_COOKIE = "haccp_access_token";
-export const REFRESH_COOKIE = "haccp_refresh_token";
+import {
+  ACCESS_COOKIE,
+  DEFAULT_REFRESH_MAX_AGE_SECONDS,
+  REFRESH_COOKIE,
+  accessTokenSecondsRemaining,
+  baseCookieOptions,
+  type Session,
+} from "@/lib/auth-cookies";
 
-const ACCESS_MAX_AGE_SECONDS = 60 * 60;
-const REFRESH_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
-
-export type Session = {
-  accessToken: string;
-  refreshToken: string;
-};
-
-function baseCookieOptions() {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    // Enable it when the app is served over HTTPS.
-    secure: process.env.SESSION_COOKIE_SECURE === "true",
-    path: "/",
-  };
-}
+export type { Session } from "@/lib/auth-cookies";
 
 export async function getSession(): Promise<Session | null> {
   const store = await cookies();
-  const accessToken = store.get(ACCESS_COOKIE)?.value;
+  const accessToken = store.get(ACCESS_COOKIE)?.value ?? "";
   const refreshToken = store.get(REFRESH_COOKIE)?.value;
-  if (!accessToken || !refreshToken) {
+  if (!refreshToken) {
     return null;
   }
-  return { accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+    accessMaxAge: accessToken
+      ? Math.max(60, accessTokenSecondsRemaining(accessToken) + 60)
+      : 0,
+    refreshMaxAge: DEFAULT_REFRESH_MAX_AGE_SECONDS,
+  };
 }
 
 /**
@@ -40,11 +37,11 @@ export async function persistSession(session: Session): Promise<boolean> {
     const store = await cookies();
     store.set(ACCESS_COOKIE, session.accessToken, {
       ...baseCookieOptions(),
-      maxAge: ACCESS_MAX_AGE_SECONDS,
+      maxAge: Math.max(60, session.accessMaxAge),
     });
     store.set(REFRESH_COOKIE, session.refreshToken, {
       ...baseCookieOptions(),
-      maxAge: REFRESH_MAX_AGE_SECONDS,
+      maxAge: Math.max(60, session.refreshMaxAge),
     });
     return true;
   } catch {

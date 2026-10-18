@@ -26,13 +26,19 @@ Réponse de login/refresh :
   "access_token": "...",
   "refresh_token": "...",
   "token_type": "bearer",
-  "expires_in": 3600
+  "expires_in": 3600,
+  "refresh_expires_in": 2592000
 }
 ```
 
-Le frontend stocke ces deux valeurs dans des cookies `httpOnly` et ajoute
-`Authorization: Bearer <access_token>` côté serveur. Le navigateur ne manipule
-jamais les jetons.
+`expires_in` et `refresh_expires_in` sont exprimés en secondes. Le frontend
+stocke les deux jetons dans des cookies `httpOnly` dont la durée de vie suit ces
+valeurs, puis ajoute `Authorization: Bearer <access_token>` côté serveur. Le
+navigateur ne manipule jamais les jetons.
+
+Une rotation de refresh token peut être rejouée pendant une courte fenêtre de
+grâce (10 s) pour absorber deux requêtes concurrentes. Au-delà, un rejeu révoque
+toute la famille de rotation issue de la connexion.
 
 ## Format d'erreur
 

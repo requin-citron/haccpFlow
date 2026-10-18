@@ -13,6 +13,9 @@ class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    #: All tokens produced by one login share this id, including the
+    #: replacements created during the rotation grace window.
+    family_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,

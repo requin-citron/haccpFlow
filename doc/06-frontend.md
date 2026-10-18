@@ -48,12 +48,16 @@ role.
 ## Session et appels API
 
 - Cookies `haccp_access_token` et `haccp_refresh_token`, `httpOnly`,
-  `SameSite=Lax`, `Secure` si `SESSION_COOKIE_SECURE=true`.
+  `SameSite=Lax`, `Secure` si `SESSION_COOKIE_SECURE=true` ou en production.
+- `src/proxy.ts` renouvelle l'access token avant les pages, Server Actions et
+  route handlers lorsque le JWT est expiré ou proche de l'expiration. Les
+  nouveaux cookies sont écrits dans la réponse du proxy.
 - `src/lib/api.ts` :
   - `apiFetch<T>` pour le JSON ;
   - `apiFetchRaw` pour les flux (CSV, PDF, images) ;
   - ajout du Bearer côté serveur ;
-  - refresh automatique unique sur `401` ;
+  - aucun refresh pendant le rendu : un composant serveur ne peut pas persister
+    les cookies ;
   - `ApiError` expose `status`, `code`, `message` et `context`.
 - Les erreurs backend sont traduites en messages français dans les composants.
 

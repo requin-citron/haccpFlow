@@ -5,6 +5,11 @@ import type { GeneratedDocument } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+// The backend allows two 30-second pdflatex passes. Keep the client-side
+// timeout above that budget so a slow but valid document is not reported as
+// failed while the server is still generating it.
+const PDF_GENERATION_TIMEOUT_MS = 120_000;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ templateId: string }> },
@@ -25,6 +30,7 @@ export async function POST(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       },
+      PDF_GENERATION_TIMEOUT_MS,
     );
     return NextResponse.json(document, { status: 201 });
   } catch (error) {
