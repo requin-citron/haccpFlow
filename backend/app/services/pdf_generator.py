@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 import signal
 import subprocess
 import tempfile
@@ -10,6 +11,7 @@ from pathlib import Path
 
 from app.config import Settings
 from app.core.errors import ApiError
+from app.services.template_render import CompileAsset
 
 _SEMAPHORES: dict[int, threading.BoundedSemaphore] = {}
 _SEMAPHORE_LOCK = threading.Lock()
@@ -84,10 +86,22 @@ def _run_pdflatex(
         )
 
 
-def _compile_sync(source: str, settings: Settings) -> bytes:
+def _compile_sync(
+    source: str,
+    settings: Settings,
+    assets: list[CompileAsset],
+) -> bytes:
     with tempfile.TemporaryDirectory(prefix="haccp-pdf-") as temporary:
         directory = Path(temporary)
         (directory / "document.tex").write_text(source, encoding="utf-8")
+        for asset in assets:
+            if not asset.path.is_file():
+                raise ApiError(
+                    422,
+                    "template_image_missing",
+                    "An image file is missing from storage",
+                )
+            shutil.copyfile(asset.path, directory / asset.filename)
         for name in ("texmf-var", "texmf-config", "texmf-home"):
             (directory / name).mkdir()
         env = os.environ.copy()
@@ -128,11 +142,15 @@ def _compile_sync(source: str, settings: Settings) -> bytes:
         return data
 
 
-async def compile_pdf(source: str, settings: Settings) -> bytes:
+async def compile_pdf(
+    source: str,
+    settings: Settings,
+    assets: list[CompileAsset],
+) -> bytes:
     """Compile in a worker thread, limiting concurrent LaTeX processes."""
 
     def run() -> bytes:
         with _semaphore(settings.template_pdf_concurrency):
-            return _compile_sync(source, settings)
+            return _compile_sync(source, settings, assets)
 
     return await asyncio.to_thread(run)

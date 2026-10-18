@@ -47,6 +47,7 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/templates/{{template_id}}/preview",
     f"{API_V1_PREFIX}/templates/{{template_id}}/variables",
     f"{API_V1_PREFIX}/templates/{{template_id}}/variables/{{variable_id}}",
+    f"{API_V1_PREFIX}/templates/{{template_id}}/variables/{{variable_id}}/image",
     f"{API_V1_PREFIX}/templates/{{template_id}}/download",
     f"{API_V1_PREFIX}/transports",
     f"{API_V1_PREFIX}/transports/{{transport_id}}",

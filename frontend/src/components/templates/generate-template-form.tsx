@@ -56,6 +56,11 @@ function describeError(payload: ErrorPayload | null): ErrorDetails {
       };
     case "template_compilation_timeout":
       return { message: "La compilation LaTeX a dépassé le délai autorisé." };
+    case "template_image_missing":
+      return {
+        message:
+          "Une image attendue par le modèle est absente. Un administrateur doit la téléverser.",
+      };
     default:
       return { message: payload?.detail ?? "La génération a échoué. Réessaie dans un instant." };
   }

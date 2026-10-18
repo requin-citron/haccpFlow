@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+from pathlib import Path
 from typing import Any
 
 from jinja2 import StrictUndefined, meta
@@ -11,6 +13,7 @@ from jinja2.exceptions import SecurityError, TemplateError, TemplateSyntaxError
 from jinja2.sandbox import SandboxedEnvironment
 from markupsafe import Markup
 
+from app.config import Settings
 from app.core.errors import ApiError
 from app.models.template_variable import (
     TemplateVariable,
@@ -18,9 +21,17 @@ from app.models.template_variable import (
     TemplateVariableValueType,
 )
 from app.schemas.template_variable import ProductRow
+from app.services.storage import storage_path
 from app.services.template_variables import parse_product_rows, validate_value
 
 MAX_RENDERED_BYTES = 2 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class CompileAsset:
+    filename: str
+    path: Path
+
 
 _LATEX_ESCAPES = {
     "\\": r"\textbackslash{}",
@@ -153,6 +164,21 @@ def resolve_variables(
     context: dict[str, object] = {}
     snapshot: dict[str, object] = {}
     for variable in variables:
+        if variable.value_type is TemplateVariableValueType.IMAGE:
+            if variable.asset is None:
+                raise ApiError(
+                    422,
+                    "template_image_missing",
+                    "An image variable has no image",
+                    context={"variable": variable.name},
+                )
+            context[variable.name] = Markup(variable.asset.storage_key)
+            snapshot[variable.name] = {
+                "filename": variable.asset.original_filename,
+                "sha256": variable.asset.sha256,
+            }
+            continue
+
         if variable.value_type is TemplateVariableValueType.PRODUCTS:
             if variable.kind is TemplateVariableKind.STATIC:
                 raw_rows = parse_product_rows(variable.value)
@@ -225,6 +251,36 @@ def resolve_variables(
             context={"missing": missing},
         )
     return context, snapshot
+
+
+def collect_assets(
+    variables: list[TemplateVariable],
+    settings: Settings,
+) -> list[CompileAsset]:
+    assets: list[CompileAsset] = []
+    for variable in variables:
+        if variable.value_type is not TemplateVariableValueType.IMAGE:
+            continue
+        if variable.asset is None:
+            raise ApiError(
+                422,
+                "template_image_missing",
+                "An image variable has no image",
+                context={"variable": variable.name},
+            )
+        path = storage_path(
+            settings.template_storage_dir / "assets",
+            variable.asset.storage_key,
+        )
+        if not path.is_file():
+            raise ApiError(
+                422,
+                "template_image_missing",
+                "The image file is missing from storage",
+                context={"variable": variable.name},
+            )
+        assets.append(CompileAsset(filename=variable.asset.storage_key, path=path))
+    return assets
 
 
 def render_source(

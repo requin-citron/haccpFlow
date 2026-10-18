@@ -14,6 +14,7 @@ from common import API_V1, REPO_ROOT, call, call_multipart, login, require_env
 
 TEMPLATE_NAME = "bon-de-livraison"
 TEMPLATE_PATH = REPO_ROOT / "templates" / "delivery-note" / "bon-de-livraison.tex"
+LOGO_PATH = REPO_ROOT / "templates" / "delivery-note" / "logo-la-legu.jpg"
 
 
 def variable(
@@ -93,6 +94,12 @@ DEFINITIONS: list[dict[str, Any]] = [
         "static",
         value="*Issu agriculture biologique",
     ),
+    variable(
+        "logo",
+        "Logo de l'émetteur",
+        "static",
+        value_type="image",
+    ),
     variable("bl_numero", "Numéro du bon de livraison", "local"),
     variable("bl_reference", "Référence du bon de livraison", "local"),
     variable("client_nom", "Nom du client", "local"),
@@ -131,6 +138,8 @@ def main() -> None:
     env = require_env()
     if not TEMPLATE_PATH.is_file():
         sys.exit(f"Modèle introuvable : {TEMPLATE_PATH}")
+    if not LOGO_PATH.is_file():
+        sys.exit(f"Logo introuvable : {LOGO_PATH}")
 
     token, _cookie = login(env["ADMIN_EMAIL"], env["ADMIN_PASSWORD"])
     source = TEMPLATE_PATH.read_bytes()
@@ -178,10 +187,11 @@ def main() -> None:
 
     created = 0
     updated = 0
+    variable_ids: dict[str, str] = {}
     for definition in DEFINITIONS:
         existing_variable = by_name.get(definition["name"])
         if existing_variable:
-            status, _body = call(
+            status, saved = call(
                 "PUT",
                 f"{API_V1}/templates/{template_id}/variables/{existing_variable['id']}",
                 token=token,
@@ -190,7 +200,7 @@ def main() -> None:
             expected = 200
             updated += 1
         else:
-            status, _body = call(
+            status, saved = call(
                 "POST",
                 f"{API_V1}/templates/{template_id}/variables",
                 token=token,
@@ -198,11 +208,23 @@ def main() -> None:
             )
             expected = 201
             created += 1
-        if status != expected:
+        if status != expected or not isinstance(saved, dict):
             sys.exit(f"Échec pour la variable {definition['name']} (statut {status}).")
+        variable_ids[definition["name"]] = str(saved["id"])
+
+    logo_status, _logo = call_multipart(
+        "PUT",
+        f"{API_V1}/templates/{template_id}/variables/{variable_ids['logo']}/image",
+        token=token,
+        filename=LOGO_PATH.name,
+        content=LOGO_PATH.read_bytes(),
+    )
+    if logo_status != 200:
+        sys.exit(f"Échec du téléversement du logo (statut {logo_status}).")
 
     print(f"Modèle « {TEMPLATE_NAME} » {action} : {template_id}")
     print(f"Variables : {created} créée(s), {updated} mise(s) à jour.")
+    print(f"Logo téléversé : {LOGO_PATH.name}")
     print(f"Ouvrir : /templates/{template_id}")
 
 

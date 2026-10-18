@@ -8,6 +8,7 @@ import pytest
 from app.core.errors import ApiError
 from app.models.template_variable import (
     TemplateVariable,
+    TemplateVariableAsset,
     TemplateVariableKind,
     TemplateVariableValueType,
 )
@@ -216,3 +217,38 @@ def test_provided_product_rows_override_the_default() -> None:
 
     assert rendered == "1"
     assert snapshot["lignes"] == [{"designation": "Nouveau", "pots": 2, "prix": "2.50"}]
+
+
+def test_static_image_variable_exposes_a_safe_filename() -> None:
+    variable = _variable(
+        "logo",
+        TemplateVariableKind.STATIC,
+        TemplateVariableValueType.IMAGE,
+        None,
+    )
+    variable.asset = TemplateVariableAsset(
+        storage_key="abc.png",
+        original_filename="logo.png",
+        content_type="image/png",
+        size_bytes=10,
+        sha256="digest",
+    )
+
+    rendered, snapshot = render_source(r"\includegraphics{<< logo >>}", [variable], {})
+
+    assert rendered == r"\includegraphics{abc.png}"
+    assert snapshot["logo"] == {"filename": "logo.png", "sha256": "digest"}
+
+
+def test_missing_image_asset_is_rejected() -> None:
+    variable = _variable(
+        "logo",
+        TemplateVariableKind.STATIC,
+        TemplateVariableValueType.IMAGE,
+        None,
+    )
+
+    with pytest.raises(ApiError) as exc_info:
+        render_source(r"\includegraphics{<< logo >>}", [variable], {})
+
+    assert exc_info.value.code == "template_image_missing"

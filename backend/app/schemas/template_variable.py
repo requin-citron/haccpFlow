@@ -17,6 +17,14 @@ class ProductRow(BaseModel):
     prix: str = Field(min_length=1, max_length=64)
 
 
+class TemplateVariableImageRead(BaseModel):
+    filename: str
+    content_type: str
+    size_bytes: int
+    sha256: str
+    updated_at: datetime
+
+
 class TemplateVariableWrite(BaseModel):
     """Payload accepted by the variable create and update endpoints.
 
@@ -43,6 +51,7 @@ class TemplateVariableRead(BaseModel):
     kind: TemplateVariableKind
     value_type: TemplateVariableValueType
     value: str | list[ProductRow] | None
+    image: TemplateVariableImageRead | None = None
     used_in_template: bool
     created_at: datetime
     updated_at: datetime

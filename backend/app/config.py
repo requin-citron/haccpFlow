@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     template_pdf_timeout_seconds: int = Field(default=30, ge=5, le=300)
     template_pdf_max_output_bytes: int = Field(default=20 * 1024 * 1024, ge=1_024)
     template_pdf_concurrency: int = Field(default=2, ge=1, le=16)
+    template_image_max_upload_bytes: int = Field(default=5 * 1024 * 1024, ge=1_024)
 
     mqtt_host: str = "mosquitto"
     mqtt_port: int = 1883

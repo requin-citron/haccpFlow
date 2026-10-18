@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -26,6 +28,9 @@ Montant: << amount >>\\
 Societe: << company >>
 \end{document}
 """
+PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+)
 
 
 def _upload_template(
@@ -296,7 +301,8 @@ Client: << client >>\\
 <% set totals.pots = totals.pots + ligne.pots %>
 <% set totals.montant = totals.montant
    + (ligne.pots * ligne.prix) %>
-Ligne: << ligne.designation >> / << ligne.pots >> / << ligne.prix|euro >> / << (ligne.pots * ligne.prix)|euro >>\\
+Ligne: << ligne.designation >> / << ligne.pots >> / << ligne.prix|euro >> /
+<< (ligne.pots * ligne.prix)|euro >>\\
 <% endfor %>
 Total: << totals.pots >> / << totals.montant|euro >>
 \end{document}
@@ -319,8 +325,7 @@ Total: << totals.pots >> / << totals.montant|euro >>
     )
 
     rows = [
-        {"designation": f"Produit {index}", "pots": 10, "prix": "3.95"}
-        for index in range(1, 6)
+        {"designation": f"Produit {index}", "pots": 10, "prix": "3.95"} for index in range(1, 6)
     ]
     values = {"client": "A & B", "lignes_produits": rows}
 
@@ -346,3 +351,105 @@ Total: << totals.pots >> / << totals.montant|euro >>
         "pots": 10,
         "prix": "3.95",
     }
+
+
+def test_static_image_is_embedded_in_the_pdf(
+    templates_client: TestClient,
+    admin_headers: dict[str, str],
+    operator_headers: dict[str, str],
+    template_settings: Settings,
+) -> None:
+    source = r"""\documentclass{article}
+\usepackage{graphicx}
+\begin{document}
+\includegraphics[width=1cm]{<< logo >>}
+\end{document}
+"""
+    template = _upload_template(
+        templates_client,
+        admin_headers,
+        name="Image",
+        source=source,
+    )
+    template_id = template["id"]
+    variable = templates_client.post(
+        f"{TEMPLATES}/{template_id}/variables",
+        headers=admin_headers,
+        json={
+            "name": "logo",
+            "label": "Logo",
+            "kind": "static",
+            "value_type": "image",
+            "value": None,
+        },
+    )
+    assert variable.status_code == 201
+    variable_id = variable.json()["id"]
+    uploaded = templates_client.put(
+        f"{TEMPLATES}/{template_id}/variables/{variable_id}/image",
+        headers=admin_headers,
+        files={"file": ("logo.png", PNG, "image/png")},
+    )
+    assert uploaded.status_code == 200
+
+    generated = templates_client.post(
+        f"{TEMPLATES}/{template_id}/generate",
+        headers=operator_headers,
+        json={"values": {}},
+    )
+    assert generated.status_code == 201, generated.text
+    document = generated.json()
+    assert document["values"]["logo"]["filename"] == "logo.png"
+
+    pdf_path = next(template_settings.template_document_storage_dir.iterdir())
+    assert pdf_path.read_bytes().startswith(b"%PDF")
+    if shutil.which("pdfimages"):
+        listing = subprocess.run(
+            ["pdfimages", "-list", str(pdf_path)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert listing.returncode == 0
+        assert "image" in listing.stdout
+
+
+def test_missing_image_asset_is_reported_before_compilation(
+    templates_client: TestClient,
+    admin_headers: dict[str, str],
+    operator_headers: dict[str, str],
+) -> None:
+    source = r"""\documentclass{article}
+\usepackage{graphicx}
+\begin{document}
+\includegraphics{<< logo >>}
+\end{document}
+"""
+    template = _upload_template(
+        templates_client,
+        admin_headers,
+        name="Image absente",
+        source=source,
+    )
+    template_id = template["id"]
+    templates_client.post(
+        f"{TEMPLATES}/{template_id}/variables",
+        headers=admin_headers,
+        json={
+            "name": "logo",
+            "label": "Logo",
+            "kind": "static",
+            "value_type": "image",
+            "value": None,
+        },
+    )
+
+    response = templates_client.post(
+        f"{TEMPLATES}/{template_id}/generate",
+        headers=operator_headers,
+        json={"values": {}},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "template_image_missing"
+    assert templates_client.get(DOCUMENTS, headers=operator_headers).json() == []

@@ -32,6 +32,7 @@ type Draft = {
   valueType: TemplateVariableValueType;
   value: string;
   rows: ProductRowDraft[];
+  imageFile: File | null;
 };
 
 type ErrorPayload = {
@@ -48,6 +49,7 @@ const EMPTY_DRAFT: Draft = {
   valueType: "text",
   value: "",
   rows: [],
+  imageFile: null,
 };
 
 const KIND_LABELS: Record<TemplateVariableKind, string> = {
@@ -60,6 +62,7 @@ const TYPE_LABELS: Record<TemplateVariableValueType, string> = {
   number: "Nombre",
   date: "Date",
   products: "Lignes produits",
+  image: "Image",
 };
 
 function describeError(payload: ErrorPayload | null): string {
@@ -70,6 +73,12 @@ function describeError(payload: ErrorPayload | null): string {
       return payload.detail ?? "La variable est invalide.";
     case "template_value_invalid":
       return payload.detail ?? "La valeur est invalide.";
+    case "template_image_type_not_allowed":
+      return "Formats acceptés : JPEG ou PNG.";
+    case "template_image_too_large":
+      return "L'image dépasse la taille maximale autorisée (5 Mio).";
+    case "template_image_not_found":
+      return "Aucune image n'est associée à cette variable.";
     default:
       return payload?.detail ?? "L'enregistrement a échoué. Réessaie dans un instant.";
   }
@@ -84,6 +93,7 @@ function draftFrom(variable: TemplateVariable): Draft {
     valueType: variable.value_type,
     value: typeof variable.value === "string" ? variable.value : "",
     rows: productRowsFromValue(variable.value),
+    imageFile: null,
   };
 }
 
@@ -100,11 +110,16 @@ export function VariableEditor({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [imageInputKey, setImageInputKey] = useState(0);
+  const editingVariable = editingId
+    ? (variables.find((variable) => variable.id === editingId) ?? null)
+    : null;
 
   function reset(): void {
     setDraft(EMPTY_DRAFT);
     setEditingId(null);
     setError(null);
+    setImageInputKey((current) => current + 1);
   }
 
   function update<K extends keyof Draft>(key: K, value: Draft[K]): void {
@@ -121,8 +136,17 @@ export function VariableEditor({
       return;
     }
     const isProducts = draft.valueType === "products";
-    if (draft.kind === "static" && !isProducts && !draft.value.trim()) {
+    const isImage = draft.valueType === "image";
+    if (draft.kind === "static" && !isProducts && !isImage && !draft.value.trim()) {
       setError("Une variable statique doit avoir une valeur.");
+      return;
+    }
+    if (isImage && draft.kind !== "static") {
+      setError("Une variable image doit être statique.");
+      return;
+    }
+    if (isImage && !draft.imageFile && !editingVariable?.image) {
+      setError("Choisis une image JPEG ou PNG.");
       return;
     }
     if (isProducts) {
@@ -141,9 +165,11 @@ export function VariableEditor({
       value_type: draft.valueType,
       value: isProducts
         ? productRowsToPayload(draft.rows)
-        : draft.value.trim()
-          ? draft.value
-          : null,
+        : isImage
+          ? null
+          : draft.value.trim()
+            ? draft.value
+            : null,
     };
     const endpoint = editingId
       ? `/api/templates/${templateId}/variables/${editingId}`
@@ -165,8 +191,62 @@ export function VariableEditor({
         setError(describeError(body));
         return;
       }
+      const saved = (await response.json().catch(() => null)) as { id?: string } | null;
+      if (isImage && draft.imageFile) {
+        if (!saved?.id) {
+          setError("La variable a été enregistrée, mais son identifiant est introuvable.");
+          router.refresh();
+          return;
+        }
+        const formData = new FormData();
+        formData.append("file", draft.imageFile);
+        const upload = await fetch(
+          `/api/templates/${templateId}/variables/${saved.id}/image`,
+          { method: "PUT", body: formData },
+        );
+        if (upload.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        if (!upload.ok) {
+          const body = (await upload.json().catch(() => null)) as ErrorPayload | null;
+          setError(`Variable enregistrée, mais l'image n'a pas pu être téléversée : ${describeError(body)}`);
+          router.refresh();
+          return;
+        }
+      }
       setSuccess(editingId ? "Variable mise à jour." : "Variable créée.");
       reset();
+      router.refresh();
+    } catch {
+      setError("Impossible de joindre le serveur. Réessaie dans un instant.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function removeImage(): Promise<void> {
+    if (!editingId || !window.confirm("Supprimer l'image de cette variable ?")) {
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setPending(true);
+    try {
+      const response = await fetch(
+        `/api/templates/${templateId}/variables/${editingId}/image`,
+        { method: "DELETE" },
+      );
+      if (response.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as ErrorPayload | null;
+        setError(describeError(body));
+        return;
+      }
+      setSuccess("Image supprimée.");
       router.refresh();
     } catch {
       setError("Impossible de joindre le serveur. Réessaie dans un instant.");
@@ -272,10 +352,11 @@ export function VariableEditor({
               <select
                 id="variable-kind"
                 value={draft.kind}
+                disabled={draft.valueType === "image"}
                 onChange={(event) =>
                   update("kind", event.target.value as TemplateVariableKind)
                 }
-                className={`mt-1.5 ${FIELD_CLASS}`}
+                className={`mt-1.5 ${FIELD_CLASS} disabled:bg-slate-100 disabled:text-slate-500`}
               >
                 <option value="local">Locale</option>
                 <option value="static">Statique</option>
@@ -288,19 +369,24 @@ export function VariableEditor({
               <select
                 id="variable-type"
                 value={draft.valueType}
-                onChange={(event) =>
-                  update("valueType", event.target.value as TemplateVariableValueType)
-                }
+                onChange={(event) => {
+                  const nextType = event.target.value as TemplateVariableValueType;
+                  update("valueType", nextType);
+                  if (nextType === "image") {
+                    update("kind", "static");
+                  }
+                }}
                 className={`mt-1.5 ${FIELD_CLASS}`}
               >
                 <option value="text">Texte</option>
                 <option value="number">Nombre</option>
                 <option value="date">Date</option>
                 <option value="products">Lignes produits</option>
+                <option value="image">Image</option>
               </select>
             </div>
           </div>
-          {draft.valueType !== "products" ? (
+          {draft.valueType !== "products" && draft.valueType !== "image" ? (
             <div>
               <label htmlFor="variable-value" className={LABEL_CLASS}>
                 {draft.kind === "static" ? "Valeur" : "Valeur par défaut"}
@@ -323,6 +409,53 @@ export function VariableEditor({
                 onChange={(rows) => update("rows", rows)}
                 label={draft.kind === "static" ? "Lignes fixes" : "Lignes par défaut"}
               />
+            </div>
+          ) : null}
+          {draft.valueType === "image" ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 sm:col-span-2 lg:col-span-3">
+              <p className="text-sm font-medium text-slate-700">
+                Image <span className="font-normal text-slate-400">(JPEG ou PNG, 5 Mio max)</span>
+              </p>
+              {editingVariable?.image ? (
+                <div className="mt-3 flex items-center gap-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/api/templates/${templateId}/variables/${editingVariable.id}/image?v=${encodeURIComponent(
+                      editingVariable.image.updated_at,
+                    )}`}
+                    alt=""
+                    className="h-20 w-20 rounded-lg border border-slate-200 bg-slate-50 object-contain"
+                  />
+                  <div>
+                    <p className="font-mono text-xs text-slate-600">
+                      {editingVariable.image.filename}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      disabled={pending}
+                      className="mt-1 text-xs font-medium text-rose-600 hover:underline disabled:opacity-50"
+                    >
+                      Supprimer l&apos;image
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-slate-500">Aucune image pour le moment.</p>
+              )}
+              <input
+                key={imageInputKey}
+                type="file"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                disabled={pending}
+                onChange={(event) => update("imageFile", event.target.files?.[0] ?? null)}
+                className="mt-3 block w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-teal-700"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                {editingVariable?.image
+                  ? "Sélectionne un fichier pour remplacer l'image."
+                  : "Sélectionne l'image à associer à la variable."}
+              </p>
             </div>
           ) : null}
           <div className="sm:col-span-2">
@@ -424,6 +557,8 @@ export function VariableEditor({
                   <td className="px-5 py-3 text-slate-600">
                     {variable.value_type === "products" ? (
                       `${Array.isArray(variable.value) ? variable.value.length : 0} ligne(s)`
+                    ) : variable.value_type === "image" ? (
+                      variable.image?.filename ?? "Aucune image"
                     ) : typeof variable.value === "string" && variable.value ? (
                       variable.value
                     ) : (
@@ -448,6 +583,7 @@ export function VariableEditor({
                         onClick={() => {
                           setDraft(draftFrom(variable));
                           setEditingId(variable.id);
+                          setImageInputKey((current) => current + 1);
                           setError(null);
                           setSuccess(null);
                         }}

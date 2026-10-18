@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import base64
+
 from fastapi.testclient import TestClient
 
+from app.config import Settings
+
 TEMPLATES = "/api/v1/templates"
+PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+)
 SOURCE = (
     b"\\documentclass{article}\n\\begin{document}\n<< client >> << company >>\n\\end{document}\n"
 )
@@ -238,13 +245,9 @@ def test_products_variable_round_trip(
     )
 
     assert created.status_code == 201
-    assert created.json()["value"] == [
-        {"designation": "Bocal", "pots": 10, "prix": "3.95"}
-    ]
+    assert created.json()["value"] == [{"designation": "Bocal", "pots": 10, "prix": "3.95"}]
     listing = templates_client.get(variables_path, headers=admin_headers)
-    assert listing.json()[0]["value"] == [
-        {"designation": "Bocal", "pots": 10, "prix": "3.95"}
-    ]
+    assert listing.json()[0]["value"] == [{"designation": "Bocal", "pots": 10, "prix": "3.95"}]
 
     invalid = templates_client.post(
         variables_path,
@@ -257,3 +260,72 @@ def test_products_variable_round_trip(
     )
     assert invalid.status_code == 422
     assert invalid.json()["code"] == "template_value_invalid"
+
+
+def test_admin_can_manage_a_static_image_variable(
+    templates_client: TestClient,
+    admin_headers: dict[str, str],
+    operator_headers: dict[str, str],
+    template_settings: Settings,
+) -> None:
+    template = _upload_template(templates_client, admin_headers)
+    variables_path = f"{TEMPLATES}/{template['id']}/variables"
+
+    created = templates_client.post(
+        variables_path,
+        headers=admin_headers,
+        json=_variable("logo", kind="static", value_type="image"),
+    )
+    assert created.status_code == 201
+    assert created.json()["image"] is None
+    variable_id = created.json()["id"]
+    image_path = f"{variables_path}/{variable_id}/image"
+
+    local_image = templates_client.post(
+        variables_path,
+        headers=admin_headers,
+        json=_variable("logo_local", value_type="image"),
+    )
+    assert local_image.status_code == 422
+    assert local_image.json()["code"] == "template_variable_invalid"
+
+    uploaded = templates_client.put(
+        image_path,
+        headers=admin_headers,
+        files={"file": ("logo.png", PNG, "image/png")},
+    )
+    assert uploaded.status_code == 200
+    assert uploaded.json()["filename"] == "logo.png"
+    assert uploaded.json()["content_type"] == "image/png"
+
+    listing = templates_client.get(variables_path, headers=admin_headers)
+    assert listing.json()[0]["image"]["filename"] == "logo.png"
+    image = templates_client.get(image_path, headers=admin_headers)
+    assert image.status_code == 200
+    assert image.content == PNG
+    assert image.headers["content-type"] == "image/png"
+
+    assert (
+        templates_client.put(
+            image_path,
+            headers=operator_headers,
+            files={"file": ("refus.png", PNG, "image/png")},
+        ).status_code
+        == 403
+    )
+    assert templates_client.get(image_path, headers=operator_headers).status_code == 403
+    assert templates_client.delete(image_path, headers=operator_headers).status_code == 403
+
+    replaced = templates_client.put(
+        image_path,
+        headers=admin_headers,
+        files={"file": ("logo.png", PNG, "image/png")},
+    )
+    assert replaced.status_code == 200
+    assets = list((template_settings.template_storage_dir / "assets").iterdir())
+    assert len(assets) == 1
+
+    assert templates_client.delete(image_path, headers=admin_headers).status_code == 204
+    assert not list((template_settings.template_storage_dir / "assets").iterdir())
+    after_delete = templates_client.get(variables_path, headers=admin_headers)
+    assert after_delete.json()[0]["image"] is None

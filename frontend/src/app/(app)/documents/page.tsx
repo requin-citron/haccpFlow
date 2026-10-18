@@ -9,6 +9,14 @@ function formatValue(value: unknown): string {
   if (Array.isArray(value)) {
     return `${value.length} ligne${value.length === 1 ? "" : "s"}`;
   }
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "filename" in value &&
+    typeof (value as { filename: unknown }).filename === "string"
+  ) {
+    return `Image : ${(value as { filename: string }).filename}`;
+  }
   if (value === null || value === undefined || typeof value === "object") {
     return "—";
   }

@@ -270,12 +270,20 @@ export type LatexTemplate = {
 
 export type TemplateVariableKind = "static" | "local";
 
-export type TemplateVariableValueType = "text" | "number" | "date" | "products";
+export type TemplateVariableValueType = "text" | "number" | "date" | "products" | "image";
 
 export type ProductRow = {
   designation: string;
   pots: number;
   prix: string;
+};
+
+export type TemplateVariableImage = {
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  sha256: string;
+  updated_at: string;
 };
 
 export type TemplateVariable = {
@@ -287,6 +295,7 @@ export type TemplateVariable = {
   kind: TemplateVariableKind;
   value_type: TemplateVariableValueType;
   value: string | ProductRow[] | null;
+  image: TemplateVariableImage | null;
   used_in_template: boolean;
   created_at: string;
   updated_at: string;

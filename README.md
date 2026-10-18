@@ -142,6 +142,7 @@ sont des valeurs internes au réseau Docker. `MQTT_CLIENT_ID` (défaut
 | `TEMPLATE_PDF_TIMEOUT_SECONDS` | `30` | Délai maximal d'une passe de compilation `pdflatex`. |
 | `TEMPLATE_PDF_MAX_OUTPUT_BYTES` | `20971520` | Taille maximale d'un PDF généré (20 Mio). |
 | `TEMPLATE_PDF_CONCURRENCY` | `2` | Nombre de compilations LaTeX simultanées. |
+| `TEMPLATE_IMAGE_MAX_BYTES` | `5242880` | Taille maximale d'une image de variable (5 Mio, JPEG/PNG). |
 
 Les variables d'un modèle sont de deux natures : `static` (valeur fixée par
 l'administrateur, jamais demandée à la génération) et `local` (valeur fournie
@@ -154,6 +155,9 @@ Les délimiteurs Jinja sont choisis pour ne pas entrer en conflit avec LaTeX :
 Le type `products` gère un nombre libre de lignes (désignation, pots, prix
 unitaire) ; l'interface permet de les ajouter et de les supprimer, et le filtre
 `euro` formate les montants calculés.
+Le type `image` gère une image statique par variable (logo, par exemple),
+téléversée par un administrateur en JPEG ou PNG et copiée dans le répertoire de
+compilation.
 
 ### Seuils de température par défaut (°C)
 

@@ -125,3 +125,24 @@ def test_product_rows_are_limited() -> None:
         )
         == "template_value_invalid"
     )
+
+
+def test_image_variables_do_not_take_text_values() -> None:
+    assert (
+        validate_value(
+            None,
+            TemplateVariableValueType.IMAGE,
+            required=True,
+        )
+        is None
+    )
+    assert (
+        _error_code(
+            lambda: validate_value(
+                "image.png",
+                TemplateVariableValueType.IMAGE,
+                required=True,
+            )
+        )
+        == "template_value_invalid"
+    )

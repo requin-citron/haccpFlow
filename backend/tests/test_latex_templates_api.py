@@ -227,10 +227,7 @@ def test_admin_can_replace_a_template_source(
     created = _upload(templates_client, admin_headers)
     template_id = created.json()["id"]
     replacement = (
-        b"\\documentclass{article}\n"
-        b"\\begin{document}\n"
-        b"Version remplacee\n"
-        b"\\end{document}\n"
+        b"\\documentclass{article}\n\\begin{document}\nVersion remplacee\n\\end{document}\n"
     )
 
     response = templates_client.put(

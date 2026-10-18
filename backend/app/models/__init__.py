@@ -36,6 +36,7 @@ from app.models.temperature_reading import (
 )
 from app.models.template_variable import (
     TemplateVariable,
+    TemplateVariableAsset,
     TemplateVariableKind,
     TemplateVariableValueType,
 )
@@ -72,6 +73,7 @@ __all__ = [
     "TemperatureReading",
     "TemperatureReadingEdit",
     "TemplateVariable",
+    "TemplateVariableAsset",
     "TemplateVariableKind",
     "TemplateVariableValueType",
     "Transport",

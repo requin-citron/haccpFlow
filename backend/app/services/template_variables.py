@@ -1,25 +1,33 @@
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import json
 import re
 import uuid
 from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
 from typing import cast
 
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from starlette.datastructures import UploadFile
 
+from app.config import Settings
 from app.core.errors import ApiError
 from app.models.template_variable import (
     TemplateVariable,
+    TemplateVariableAsset,
     TemplateVariableKind,
     TemplateVariableValueType,
 )
 from app.schemas.template_variable import ProductRow, TemplateVariableWrite
+from app.services.storage import delete_file, storage_path, write_atomic
 
 MAX_TEXT_VALUE_LENGTH = 10_000
 MAX_NUMBER_LENGTH = 64
@@ -27,6 +35,7 @@ MAX_PRODUCT_ROWS = 100
 MAX_PRODUCT_DESIGNATION = 200
 MAX_PRODUCT_POTS = 1_000_000
 MAX_PRODUCT_PRICE = Decimal("1000000")
+_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
 #: C0 controls except tab, newline and carriage return.
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -123,6 +132,16 @@ def validate_value(
 ) -> str | None:
     """Validate and normalize a static value or a local default."""
 
+    if value_type is TemplateVariableValueType.IMAGE:
+        if raw_value is not None:
+            raise ApiError(
+                422,
+                "template_value_invalid",
+                "Image variables do not take a text value",
+                context={"field": "value"},
+            )
+        return None
+
     if raw_value is None:
         if required:
             raise ApiError(
@@ -148,9 +167,7 @@ def validate_value(
                 "The value must be a list of product rows",
                 context={"field": "value"},
             )
-        rows = _normalize_product_rows(
-            cast("Sequence[ProductRow | dict[str, object]]", raw_value)
-        )
+        rows = _normalize_product_rows(cast("Sequence[ProductRow | dict[str, object]]", raw_value))
         return json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
 
     if not isinstance(raw_value, str):
@@ -241,11 +258,7 @@ def _normalize_product_rows(
     normalized: list[dict[str, object]] = []
     for index, raw_row in enumerate(rows):
         try:
-            row = (
-                raw_row
-                if isinstance(raw_row, ProductRow)
-                else ProductRow.model_validate(raw_row)
-            )
+            row = raw_row if isinstance(raw_row, ProductRow) else ProductRow.model_validate(raw_row)
         except ValidationError as exc:
             raise ApiError(
                 422,
@@ -335,7 +348,145 @@ def serialize_variable_value(
     return variable.value
 
 
+def sanitize_image_filename(raw: str | None) -> str:
+    name = Path((raw or "").replace("\\", "/")).name
+    name = _CONTROL_CHARS.sub("", name).strip()
+    if not name or Path(name).suffix.lower() not in _IMAGE_EXTENSIONS:
+        raise ApiError(
+            415,
+            "template_image_type_not_allowed",
+            "Only .jpg, .jpeg and .png images are accepted",
+        )
+    return name[:255]
+
+
+def detect_image(data: bytes) -> tuple[str, str]:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png", "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "jpg", "image/jpeg"
+    raise ApiError(
+        415,
+        "template_image_type_not_allowed",
+        "Only JPEG and PNG images are accepted",
+    )
+
+
+async def read_image_upload(upload: UploadFile, max_bytes: int) -> bytes:
+    data = await upload.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        raise ApiError(
+            413,
+            "template_image_too_large",
+            f"The image must be at most {max_bytes} bytes",
+        )
+    return data
+
+
+async def save_variable_image(
+    db: AsyncSession,
+    *,
+    variable: TemplateVariable,
+    uploader_id: uuid.UUID,
+    settings: Settings,
+    filename: str,
+    data: bytes,
+) -> TemplateVariableAsset:
+    if variable.value_type is not TemplateVariableValueType.IMAGE:
+        raise ApiError(422, "template_variable_invalid", "This variable is not an image")
+    if variable.kind is not TemplateVariableKind.STATIC:
+        raise ApiError(422, "template_variable_invalid", "Image variables must be static")
+
+    original_filename = sanitize_image_filename(filename)
+    extension, content_type = detect_image(data)
+    suffix = Path(original_filename).suffix.lower().lstrip(".")
+    if (suffix == "jpeg" and extension != "jpg") or (suffix != "jpeg" and suffix != extension):
+        raise ApiError(
+            415,
+            "template_image_type_not_allowed",
+            "The image extension does not match its content",
+        )
+    if len(data) > settings.template_image_max_upload_bytes:
+        raise ApiError(413, "template_image_too_large", "The image is too large")
+
+    storage_key = f"{uuid.uuid4()}.{extension}"
+    path = storage_path(settings.template_storage_dir / "assets", storage_key)
+    await asyncio.to_thread(write_atomic, path, data)
+    digest = hashlib.sha256(data).hexdigest()
+    existing = variable.asset
+
+    if existing is not None:
+        previous_key = existing.storage_key
+        existing.storage_key = storage_key
+        existing.original_filename = original_filename
+        existing.content_type = content_type
+        existing.size_bytes = len(data)
+        existing.sha256 = digest
+        existing.uploaded_by_id = uploader_id
+        try:
+            await db.commit()
+        except BaseException:
+            await db.rollback()
+            await asyncio.to_thread(delete_file, path)
+            raise
+
+        previous_path = storage_path(
+            settings.template_storage_dir / "assets",
+            previous_key,
+        )
+        await asyncio.to_thread(delete_file, previous_path)
+        await db.refresh(existing)
+        return existing
+
+    asset = TemplateVariableAsset(
+        variable_id=variable.id,
+        storage_key=storage_key,
+        original_filename=original_filename,
+        content_type=content_type,
+        size_bytes=len(data),
+        sha256=digest,
+        uploaded_by_id=uploader_id,
+    )
+    db.add(asset)
+    try:
+        await db.commit()
+    except BaseException:
+        await db.rollback()
+        await asyncio.to_thread(delete_file, path)
+        raise
+
+    await db.refresh(asset)
+    return asset
+
+
+def image_asset_path(settings: Settings, asset: TemplateVariableAsset) -> Path:
+    path = storage_path(settings.template_storage_dir / "assets", asset.storage_key)
+    if not path.is_file():
+        raise ApiError(404, "template_image_not_found", "The image file is missing")
+    return path
+
+
+async def delete_variable_asset(
+    db: AsyncSession,
+    variable: TemplateVariable,
+    settings: Settings,
+) -> bool:
+    asset = variable.asset
+    if asset is None:
+        return False
+    path = storage_path(settings.template_storage_dir / "assets", asset.storage_key)
+    await db.delete(asset)
+    await db.commit()
+    await asyncio.to_thread(delete_file, path)
+    return True
+
+
 def _validated_fields(payload: TemplateVariableWrite) -> dict[str, object]:
+    if (
+        payload.value_type is TemplateVariableValueType.IMAGE
+        and payload.kind is TemplateVariableKind.LOCAL
+    ):
+        raise _invalid("kind", "Image variables must be static")
     return {
         "name": validate_variable_name(payload.name),
         "label": validate_label(payload.label),
@@ -356,6 +507,7 @@ async def list_variables(
 ) -> list[TemplateVariable]:
     result = await db.scalars(
         select(TemplateVariable)
+        .options(selectinload(TemplateVariable.asset))
         .where(TemplateVariable.template_id == template_id)
         .order_by(TemplateVariable.name)
     )
@@ -404,8 +556,7 @@ async def create_variable(
             "A variable with this name already exists on this template",
         ) from exc
 
-    await db.refresh(variable)
-    return variable
+    return await get_variable(db, template_id, variable.id)
 
 
 async def get_variable(
@@ -414,7 +565,9 @@ async def get_variable(
     variable_id: uuid.UUID,
 ) -> TemplateVariable:
     variable = await db.scalar(
-        select(TemplateVariable).where(
+        select(TemplateVariable)
+        .options(selectinload(TemplateVariable.asset))
+        .where(
             TemplateVariable.id == variable_id,
             TemplateVariable.template_id == template_id,
         )
@@ -457,15 +610,23 @@ async def update_variable(
             "A variable with this name already exists on this template",
         ) from exc
 
-    await db.refresh(variable)
-    return variable
+    return await get_variable(db, template_id, variable.id)
 
 
 async def delete_variable(
     db: AsyncSession,
     template_id: uuid.UUID,
     variable_id: uuid.UUID,
+    settings: Settings,
 ) -> None:
     variable = await get_variable(db, template_id, variable_id)
+    asset = variable.asset
+    asset_path = (
+        storage_path(settings.template_storage_dir / "assets", asset.storage_key)
+        if asset is not None
+        else None
+    )
     await db.delete(variable)
     await db.commit()
+    if asset_path is not None:
+        await asyncio.to_thread(delete_file, asset_path)
