@@ -58,6 +58,10 @@ Codes fréquents :
 | --- | --- |
 | `invalid_token` | access token absent/expiré/invalide |
 | `insufficient_role` | rôle insuffisant (403) |
+| `user_email_taken` | email déjà utilisé (409) |
+| `user_last_admin` | dernier admin actif protégé (409) |
+| `user_self_lockout` | tentative de retrait de ses propres droits (409) |
+| `user_not_found` | compte absent (404) |
 | `validation_error` | payload Pydantic invalide (422) |
 | `not_found` (ou code métier) | ressource absente (404) |
 | `*_conflict` / `*_taken` | doublon métier (409) |
@@ -83,6 +87,43 @@ Les tableaux ci-dessous indiquent l'accès **backend**.
 | Méthode | Route | Accès |
 | --- | --- | --- |
 | `GET` | `/api/v1/users` | admin |
+| `POST` | `/api/v1/users` | admin (crée un compte et retourne un mot de passe temporaire) |
+| `PATCH` | `/api/v1/users/{user_id}` | admin (rôle et/ou activation) |
+| `POST` | `/api/v1/users/{user_id}/reset-password` | admin (retourne un mot de passe temporaire) |
+
+Création :
+
+```json
+{
+  "email": "operateur@example.com",
+  "role": "operator"
+}
+```
+
+La réponse contient les champs publics du compte et
+`temporary_password`. Ce champ n'est jamais renvoyé par `GET /users` et les
+réponses sont marquées `Cache-Control: no-store`.
+
+Mise à jour partielle :
+
+```json
+{
+  "role": "admin",
+  "is_active": false
+}
+```
+
+Au moins un champ est requis. Un changement de rôle ou de statut invalide les
+access tokens existants via `auth_version`; une désactivation révoque aussi tous
+les refresh tokens du compte. Le dernier admin actif et l'auto-modification de
+ses propres droits sont refusés.
+
+Réinitialisation :
+
+- route admin uniquement ;
+- génère un mot de passe fort, le retourne une seule fois et révoque les
+  sessions existantes ;
+- aucun changement en libre-service n'est exposé.
 
 ## Matériel et relevés
 

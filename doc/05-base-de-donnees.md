@@ -26,7 +26,7 @@
 
 | Table | Rôle |
 | --- | --- |
-| `users` | Comptes, email unique, hash Argon2id, rôle `admin`/`operator`, actif. |
+| `users` | Comptes, email unique, hash Argon2id, rôle `admin`/`operator`, actif, `auth_version`. |
 | `refresh_tokens` | Refresh tokens hachés, expiration, révocation, chaîne de remplacement. |
 
 ### Chaîne du froid
@@ -127,6 +127,13 @@ Les révisions vivent dans `backend/alembic/versions/` :
 | `0010_template_variables` | Variables et documents générés. |
 | `0011_product_rows_variable` | Type `products`. |
 | `0012_template_image_variables` | Type `image` et assets. |
+| `0013_refresh_token_family` | Famille de rotation des refresh tokens. |
+| `0014_user_auth_version` | Version d'authentification des comptes. |
+
+`users.auth_version` est incrémenté lors d'un changement de rôle, d'une
+désactivation ou d'une réinitialisation de mot de passe. Les access tokens
+portent cette version dans le claim JWT `ver` ; un token qui ne correspond plus
+à la version du compte est rejeté.
 
 ### Ajouter une migration
 

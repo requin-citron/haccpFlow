@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Enum, String, Uuid
+from sqlalchemy import Boolean, Enum, Integer, String, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, enum_values
@@ -37,3 +37,11 @@ class User(TimestampMixin, Base):
         default=UserRole.OPERATOR,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    #: Incremented when access rights or credentials change. Access tokens carry
+    #: this value and are rejected as soon as it no longer matches the account.
+    auth_version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default=text("0"),
+    )

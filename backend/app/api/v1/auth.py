@@ -47,6 +47,7 @@ async def _issue_token_pair(db: DbSession, user: User) -> TokenPair:
         settings,
         subject=str(user.id),
         role=user.role.value,
+        auth_version=user.auth_version,
     )
     refresh_expires_in = int(timedelta(days=settings.refresh_token_expire_days).total_seconds())
 
@@ -145,6 +146,7 @@ async def refresh(body: RefreshRequest, db: DbSession) -> TokenPair:
         settings,
         subject=str(user.id),
         role=user.role.value,
+        auth_version=user.auth_version,
     )
     return TokenPair(
         access_token=access_token,

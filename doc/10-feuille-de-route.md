@@ -10,10 +10,10 @@
 
 ### Utilisateurs
 
-- Pas de création/modification d'utilisateur dans l'interface ni dans l'API
-  (seulement `GET /users`).
-- Seul l'administrateur initial est créé au démarrage.
-- Ajouter un opérateur demande pour l'instant une insertion en base.
+- API backend disponible : création, rôle, désactivation et réinitialisation
+  du mot de passe.
+- L'interface de gestion des utilisateurs reste à ajouter.
+- Les changements de comptes ne sont pas journalisés dans l'historique métier.
 
 ### Capteurs et MQTT
 
@@ -67,8 +67,7 @@
 
 ### Priorités fonctionnelles
 
-1. Gestion complète des utilisateurs (création, rôle, désactivation, mot de
-   passe) avec audit.
+1. Interface de gestion des utilisateurs (le backend est prêt).
 2. Ingestion Zigbee2MQTT : abonnement, mapping capteur → matériel, relevés
    `sensor`, idempotence et gestion des doublons.
 3. Multi-tenant : `tenant_id`, filtrage backend, index et contraintes par

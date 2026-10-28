@@ -185,6 +185,23 @@ phase de pasteurisation sont accessibles aux deux rôles ; seul le flux global
 
 ## Utilisateurs
 
-Seule la liste des utilisateurs est exposée (`GET /api/v1/users`, admin). Il
-n'existe pas encore de création/modification d'utilisateur depuis l'interface :
-seul l'admin initial est créé au démarrage.
+La gestion backend est réservée aux administrateurs. Un admin peut :
+
+- lister les comptes (`GET /api/v1/users`) ;
+- créer un compte avec un email et un rôle (`POST /api/v1/users`) ;
+- changer le rôle ou désactiver un compte (`PATCH /api/v1/users/{id}`) ;
+- générer un nouveau mot de passe (`POST /api/v1/users/{id}/reset-password`).
+
+Les rôles restent fixes : `admin` et `operator`. Un mot de passe généré est
+affiché une seule fois dans la réponse de création ou de réinitialisation ; il
+n'est jamais stocké en clair ni renvoyé par la liste des utilisateurs. Il n'y a
+pas de changement de mot de passe en libre-service : seul un admin peut en
+générer un nouveau, y compris pour son propre compte.
+
+La désactivation est douce (`is_active = false`) et révoque les refresh tokens
+du compte. Les access tokens sont aussi invalidés immédiatement via
+`auth_version`. Un admin ne peut pas modifier son propre rôle ou se désactiver,
+et le dernier admin actif ne peut pas être retiré. Les changements de comptes ne
+sont pas journalisés dans l'historique métier.
+
+Le frontend de gestion des utilisateurs n'est pas encore disponible.

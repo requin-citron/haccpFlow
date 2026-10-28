@@ -58,9 +58,9 @@ l'application.
 uniquement si la table est vide ; le mot de passe n'est jamais réécrit si le
 compte existe déjà.
 
-Il n'existe pas encore d'écran de gestion des utilisateurs. Pour ajouter un
-opérateur, il faut pour l'instant une insertion en base ou une évolution de
-l'API.
+La gestion des comptes est disponible via l'API admin (`/api/v1/users`) ; le
+frontend correspondant n'est pas encore présent. Les mots de passe générés sont
+retournés une seule fois lors de la création ou de la réinitialisation.
 
 ## Développement local
 

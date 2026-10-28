@@ -7,6 +7,7 @@ dependencies = [
     "alembic>=1.14,<2",
     "argon2-cffi>=23.1",
     "asyncpg>=0.30,<0.31",
+    "email-validator>=2.2,<3",
     "fastapi>=0.115,<1",
     "jinja2>=3.1,<4",
     "paho-mqtt>=2.1,<3",

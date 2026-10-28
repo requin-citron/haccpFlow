@@ -14,6 +14,7 @@ from app.config import Settings
 
 ACCESS_TOKEN_TYPE: Final = "access"
 REFRESH_TOKEN_BYTES: Final = 48
+TEMPORARY_PASSWORD_BYTES: Final = 24
 
 _hasher = PasswordHasher()
 
@@ -38,6 +39,7 @@ def create_access_token(
     *,
     subject: str,
     role: str,
+    auth_version: int = 0,
     now: datetime | None = None,
 ) -> tuple[str, int]:
     """Return the encoded access token and its lifetime in seconds."""
@@ -47,6 +49,7 @@ def create_access_token(
     payload: dict[str, Any] = {
         "sub": subject,
         "role": role,
+        "ver": auth_version,
         "type": ACCESS_TOKEN_TYPE,
         "iat": int(issued_at.timestamp()),
         "exp": int((issued_at + lifetime).timestamp()),
@@ -80,6 +83,12 @@ def generate_refresh_token() -> str:
     """Opaque, high-entropy refresh token. Only its hash is persisted."""
 
     return secrets.token_urlsafe(REFRESH_TOKEN_BYTES)
+
+
+def generate_temporary_password() -> str:
+    """Return a high-entropy password generated when an admin provisions a user."""
+
+    return secrets.token_urlsafe(TEMPORARY_PASSWORD_BYTES)
 
 
 def hash_refresh_token(token: str) -> str:

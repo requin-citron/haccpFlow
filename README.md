@@ -229,13 +229,13 @@ inaccessibles.
 | Importer un modèle LaTeX | ❌ | ✅ |
 | Créer et modifier les variables d'un modèle | ❌ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
+| Créer, promouvoir, désactiver ou réinitialiser un utilisateur | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
 retirer quelque chose du référentiel.
 
-> **Limite connue** : il n'existe pas encore de route de gestion des
-> utilisateurs. Seul l'administrateur initial est créé au démarrage. Ajouter un
-> opérateur demande pour l'instant une insertion en base.
+La gestion des utilisateurs est disponible côté API ; l'écran d'administration
+correspondant reste à ajouter au frontend.
 
 ## Développement
 
@@ -311,6 +311,8 @@ dessus.
   et l'accès à l'API se fait côté serveur.
 - Mots de passe hachés en Argon2id, refresh tokens opaques stockés hachés et
   révoqués en cas de rejeu.
+- Mots de passe initiaux générés par le backend, affichés une seule fois et
+  jamais journalisés.
 - Autorisations vérifiées sur chaque route, jamais dans l'interface seule.
 - Seuils HACCP configurables par matériel, jamais figés dans le code.
 - Modifications des relevés et des nettoyages journalisées : auteur, valeur

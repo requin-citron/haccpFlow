@@ -53,6 +53,8 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/transports/{{transport_id}}",
     f"{API_V1_PREFIX}/transports/{{transport_id}}/readings",
     f"{API_V1_PREFIX}/users",
+    f"{API_V1_PREFIX}/users/{{user_id}}",
+    f"{API_V1_PREFIX}/users/{{user_id}}/reset-password",
     f"{API_V1_PREFIX}/vehicles",
     f"{API_V1_PREFIX}/vehicles/{{vehicle_id}}",
 }
@@ -145,6 +147,15 @@ def test_the_export_route_is_read_only() -> None:
     schema = create_app().openapi()
 
     assert set(schema["paths"][f"{API_V1_PREFIX}/exports/{{dataset}}"]) == {"get"}
+
+
+def test_user_management_routes_expose_the_expected_methods() -> None:
+    schema = create_app().openapi()
+    prefix = API_V1_PREFIX
+
+    assert set(schema["paths"][f"{prefix}/users"]) == {"get", "post"}
+    assert set(schema["paths"][f"{prefix}/users/{{user_id}}"]) == {"patch"}
+    assert set(schema["paths"][f"{prefix}/users/{{user_id}}/reset-password"]) == {"post"}
 
 
 def test_cash_register_routes_expose_the_expected_methods() -> None:

@@ -22,6 +22,7 @@ def test_user_email_is_unique_and_hashed_password_is_required() -> None:
     assert columns.email.unique is True
     assert columns.hashed_password.nullable is False
     assert columns.role.nullable is False
+    assert columns.auth_version.nullable is False
 
 
 def test_equipment_type_persists_enum_values_not_member_names() -> None:

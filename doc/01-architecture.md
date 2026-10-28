@@ -49,6 +49,10 @@ flowchart LR
    d'être tourné, pour absorber les requêtes concurrentes. Un rejeu après cette
    fenêtre révoque toute la famille de rotation, sans toucher aux autres
    connexions de l'utilisateur.
+8. Chaque access token porte `ver`, la valeur de `users.auth_version`. Un
+   changement de rôle, une désactivation ou une réinitialisation de mot de passe
+   incrémente cette version et invalide immédiatement les access tokens
+   existants ; désactivation et reset révoquent aussi les refresh tokens.
 
 Voir [Frontend](./06-frontend.md) et [API](./04-api.md).
 

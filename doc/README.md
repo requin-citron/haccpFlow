@@ -29,6 +29,8 @@ exploitation et procédure de mise à jour de la documentation.
   broker, l'ingestion des capteurs n'est pas encore implémentée.
 - Deux rôles : `admin` et `operator`. L'autorisation est toujours appliquée par
   le backend.
+- Les admins peuvent créer, promouvoir, désactiver et réinitialiser les comptes
+  via l'API ; l'écran frontend reste à venir.
 - Les relevés, nettoyages, pasteurisations et transports ont un journal de
   corrections ; les documents générés conservent un snapshot des variables.
 - Les horodatages sont stockés en UTC et affichés en français côté interface.
@@ -49,4 +51,4 @@ Tout changement d'API, de modèle de données, de configuration, de déploiement
 ou de règle métier doit mettre à jour la page correspondante et, si nécessaire,
 le tableau de maintenance de [09-maintenance.md](./09-maintenance.md).
 
-Dernière revue : **2026-10-18**.
+Dernière revue : **2026-10-28**.

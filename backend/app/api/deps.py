@@ -63,6 +63,14 @@ async def get_current_user(
             "Could not validate credentials",
             headers=_UNAUTHORIZED_HEADERS,
         )
+    token_version = payload.get("ver", 0)
+    if not isinstance(token_version, int) or token_version != user.auth_version:
+        raise ApiError(
+            401,
+            "invalid_token",
+            "Could not validate credentials",
+            headers=_UNAUTHORIZED_HEADERS,
+        )
     return user
 
 

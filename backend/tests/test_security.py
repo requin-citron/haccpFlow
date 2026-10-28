@@ -10,6 +10,7 @@ from app.core.security import (
     create_access_token,
     decode_access_token,
     generate_refresh_token,
+    generate_temporary_password,
     hash_password,
     hash_refresh_token,
     verify_password,
@@ -48,6 +49,7 @@ def test_access_token_roundtrip() -> None:
 
     assert payload["sub"] == "user-1"
     assert payload["role"] == "admin"
+    assert payload["ver"] == 0
     assert payload["type"] == "access"
     assert expires_in == 3600
 
@@ -57,6 +59,19 @@ def test_access_token_rejects_another_signature() -> None:
 
     with pytest.raises(TokenError):
         decode_access_token(_settings(SECRET_B), token)
+
+
+def test_access_token_keeps_the_account_auth_version() -> None:
+    settings = _settings(SECRET_A)
+
+    token, _ = create_access_token(
+        settings,
+        subject="user-1",
+        role="admin",
+        auth_version=4,
+    )
+
+    assert decode_access_token(settings, token)["ver"] == 4
 
 
 def test_expired_access_token_is_rejected() -> None:
@@ -79,3 +94,11 @@ def test_refresh_token_hash_is_opaque_and_deterministic() -> None:
 
 def test_refresh_tokens_are_unique() -> None:
     assert generate_refresh_token() != generate_refresh_token()
+
+
+def test_temporary_passwords_are_strong_and_unique() -> None:
+    first = generate_temporary_password()
+    second = generate_temporary_password()
+
+    assert first != second
+    assert len(first) >= 32
