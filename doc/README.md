@@ -29,8 +29,9 @@ exploitation et procédure de mise à jour de la documentation.
   broker, l'ingestion des capteurs n'est pas encore implémentée.
 - Deux rôles : `admin` et `operator`. L'autorisation est toujours appliquée par
   le backend.
-- Les admins peuvent créer, promouvoir, désactiver et réinitialiser les comptes
-  depuis la page `/users`.
+- Les admins peuvent créer, promouvoir, désactiver, réinitialiser ou supprimer
+  définitivement les comptes depuis la page `/users`. Les traces métier d'un
+  compte supprimé sont conservées et anonymisées.
 - Les relevés, nettoyages, pasteurisations et transports ont un journal de
   corrections ; les documents générés conservent un snapshot des variables.
 - Les horodatages sont stockés en UTC et affichés en français côté interface.

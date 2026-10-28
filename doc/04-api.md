@@ -89,6 +89,7 @@ Les tableaux ci-dessous indiquent l'accès **backend**.
 | `GET` | `/api/v1/users` | admin |
 | `POST` | `/api/v1/users` | admin (crée un compte et retourne un mot de passe temporaire) |
 | `PATCH` | `/api/v1/users/{user_id}` | admin (rôle et/ou activation) |
+| `DELETE` | `/api/v1/users/{user_id}` | admin (suppression définitive, réponse `204`) |
 | `POST` | `/api/v1/users/{user_id}/reset-password` | admin (retourne un mot de passe temporaire) |
 
 Création :
@@ -124,6 +125,19 @@ Réinitialisation :
 - génère un mot de passe fort, le retourne une seule fois et révoque les
   sessions existantes ;
 - aucun changement en libre-service n'est exposé.
+
+Suppression définitive :
+
+- `DELETE /api/v1/users/{user_id}` supprime le compte et répond `204` sans
+  corps ; l'email redevient disponible ;
+- les refresh tokens sont supprimés en cascade et les access tokens existants
+  ne peuvent plus retrouver le compte ;
+- les traces métier sont conservées. Leurs clés étrangères vers l'auteur
+  passent à `NULL`, donc les API d'historique exposent `actor_email: null` ;
+- le compte courant et le dernier administrateur actif ne peuvent pas être
+  supprimés (`user_self_lockout` ou `user_last_admin`, statut `409`) ;
+- aucune migration n'est nécessaire : le schéma applique déjà `ON DELETE SET
+  NULL` aux traces et `ON DELETE CASCADE` aux refresh tokens.
 
 ## Matériel et relevés
 

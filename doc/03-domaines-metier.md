@@ -190,6 +190,7 @@ La gestion backend est réservée aux administrateurs. Un admin peut :
 - lister les comptes (`GET /api/v1/users`) ;
 - créer un compte avec un email et un rôle (`POST /api/v1/users`) ;
 - changer le rôle ou désactiver un compte (`PATCH /api/v1/users/{id}`) ;
+- supprimer définitivement un compte (`DELETE /api/v1/users/{id}`) ;
 - générer un nouveau mot de passe (`POST /api/v1/users/{id}/reset-password`).
 
 Les rôles restent fixes : `admin` et `operator`. Un mot de passe généré est
@@ -201,8 +202,19 @@ générer un nouveau, y compris pour son propre compte.
 La désactivation est douce (`is_active = false`) et révoque les refresh tokens
 du compte. Les access tokens sont aussi invalidés immédiatement via
 `auth_version`. Un admin ne peut pas modifier son propre rôle ou se désactiver,
-et le dernier admin actif ne peut pas être retiré. Les changements de comptes ne
-sont pas journalisés dans l'historique métier.
+et le dernier admin actif ne peut pas être retiré.
+
+La suppression définitive est réservée aux admins. Elle retire le compte et
+libère son email, mais conserve toutes les traces métier : seules les
+références à l'auteur sont anonymisées. Un admin ne peut pas supprimer son
+propre compte ni le dernier admin actif. En cas de doute, la désactivation est
+la meilleure option car elle bloque les accès sans perdre l'association entre
+le compte et son historique.
+
+Les changements de comptes ne créent pas une entrée d'audit dédiée. La
+suppression ne transforme donc pas les actions passées en nouvelles entrées :
+les entrées existantes restent présentes et leur auteur devient anonyme.
 
 Le frontend expose cette gestion sur `/users`, avec un tableau et des dialogues
-de création, modification et réinitialisation du mot de passe.
+de création, modification, réinitialisation du mot de passe et suppression
+définitive.

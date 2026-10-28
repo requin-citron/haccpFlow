@@ -155,6 +155,39 @@ async def update_user(
     return target
 
 
+async def delete_user(
+    db: AsyncSession,
+    *,
+    actor: User,
+    target_id: uuid.UUID,
+) -> None:
+    target = await get_user(db, target_id, for_update=True)
+    if target.id == actor.id:
+        raise ApiError(
+            409,
+            "user_self_lockout",
+            "An administrator cannot delete their own account",
+        )
+
+    if (
+        target.role is UserRole.ADMIN
+        and target.is_active
+        and await _count_other_active_admins(db, excluded_user_id=target.id) == 0
+    ):
+        raise ApiError(
+            409,
+            "user_last_admin",
+            "The last active administrator cannot be deleted",
+        )
+
+    await db.delete(target)
+    try:
+        await db.commit()
+    except BaseException:
+        await db.rollback()
+        raise
+
+
 async def reset_user_password(
     db: AsyncSession,
     *,

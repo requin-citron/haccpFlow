@@ -229,12 +229,14 @@ inaccessibles.
 | Importer un modèle LaTeX | ❌ | ✅ |
 | Créer et modifier les variables d'un modèle | ❌ | ✅ |
 | Lister les utilisateurs | ❌ | ✅ |
-| Créer, promouvoir, désactiver ou réinitialiser un utilisateur | ❌ | ✅ |
+| Créer, promouvoir, désactiver, réinitialiser ou supprimer un utilisateur | ❌ | ✅ |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
 retirer quelque chose du référentiel.
 
-La gestion des utilisateurs est disponible dans la page admin `/users`.
+La gestion des utilisateurs est disponible dans la page admin `/users`. Une
+suppression définitive demande la saisie exacte de l'email ; elle conserve
+l'historique métier mais anonymise son auteur.
 
 ## Développement
 

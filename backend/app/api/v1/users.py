@@ -15,7 +15,7 @@ from app.schemas.user import (
     UserRead,
     UserUpdate,
 )
-from app.services.users import create_user, reset_user_password, update_user
+from app.services.users import create_user, delete_user, reset_user_password, update_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -76,6 +76,15 @@ async def update_user_account(
         payload=payload,
     )
     return _read(user)
+
+
+@router.delete("/{user_id}", status_code=204)
+async def delete_user_account(
+    user_id: uuid.UUID,
+    db: DbSession,
+    actor: AdminUser,
+) -> None:
+    await delete_user(db, actor=actor, target_id=user_id)
 
 
 @router.post(

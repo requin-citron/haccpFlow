@@ -154,7 +154,7 @@ def test_user_management_routes_expose_the_expected_methods() -> None:
     prefix = API_V1_PREFIX
 
     assert set(schema["paths"][f"{prefix}/users"]) == {"get", "post"}
-    assert set(schema["paths"][f"{prefix}/users/{{user_id}}"]) == {"patch"}
+    assert set(schema["paths"][f"{prefix}/users/{{user_id}}"]) == {"delete", "patch"}
     assert set(schema["paths"][f"{prefix}/users/{{user_id}}/reset-password"]) == {"post"}
 
 

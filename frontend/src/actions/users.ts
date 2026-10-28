@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
-import type { PasswordResetState, UserFormState } from "@/lib/form-state";
+import type { DeleteUserState, PasswordResetState, UserFormState } from "@/lib/form-state";
 import type { CreatedUserAccount, UserAccount, UserRole } from "@/lib/types";
 
 const USERS_PATH = "/api/v1/users";
@@ -14,10 +14,10 @@ function describeError(error: unknown): string {
       return "Un compte utilise déjà cet email.";
     }
     if (error.code === "user_last_admin") {
-      return "Le dernier administrateur actif ne peut pas être retiré.";
+      return "Le dernier administrateur actif ne peut pas être désactivé ou supprimé.";
     }
     if (error.code === "user_self_lockout") {
-      return "Tu ne peux pas modifier tes propres droits ou désactiver ton compte.";
+      return "Tu ne peux pas modifier tes propres droits, désactiver ou supprimer ton compte.";
     }
     switch (error.status) {
       case 404:
@@ -114,6 +114,22 @@ export async function resetUserPasswordAction(userId: string): Promise<PasswordR
       status: "success",
       temporaryPassword: result.temporary_password,
     };
+  } catch (error) {
+    return { status: "error", message: describeError(error) };
+  }
+}
+
+export async function deleteUserAction(userId: string): Promise<DeleteUserState> {
+  if (!userId) {
+    return { status: "error", message: "Compte introuvable." };
+  }
+
+  try {
+    await apiFetch<void>(`${USERS_PATH}/${encodeURIComponent(userId)}`, {
+      method: "DELETE",
+    });
+    revalidatePath("/users");
+    return { status: "success" };
   } catch (error) {
     return { status: "error", message: describeError(error) };
   }

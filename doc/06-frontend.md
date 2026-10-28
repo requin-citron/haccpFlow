@@ -89,7 +89,16 @@ Ces handlers gardent le jeton côté serveur et propagent les erreurs
   `src/actions/users.ts`.
 - Le mot de passe généré est affiché dans une modale dédiée avec copie et
   avertissement de non-réaffichage.
-- Le compte courant ne peut pas modifier son rôle ou son état depuis l'UI.
+- Chaque ligne propose une suppression définitive rouge. Le bouton est désactivé
+  pour le compte courant et le dernier admin actif, avec l'explication au
+  survol.
+- La suppression ouvre une modale qui affiche l'email et avertit que l'action
+  est irréversible. L'historique est conservé, mais les actions du compte
+  deviennent anonymes ; la désactivation est recommandée en cas de doute.
+- Le bouton « Supprimer définitivement » reste désactivé tant que l'email exact
+  du compte n'a pas été saisi. Une erreur backend laisse la modale ouverte.
+- Le compte courant ne peut pas modifier ses droits, être désactivé ni être
+  supprimé depuis l'UI.
 - Un admin peut réinitialiser son propre mot de passe ; après copie, la modale
   redirige vers `/login` car la session est révoquée.
 

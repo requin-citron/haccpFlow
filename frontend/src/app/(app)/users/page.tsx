@@ -1,5 +1,6 @@
 import { UsersIcon } from "@/components/icons";
 import { CreateUserDialog } from "@/components/users/create-user-dialog";
+import { DeleteUserDialog } from "@/components/users/delete-user-dialog";
 import { EditUserDialog } from "@/components/users/edit-user-dialog";
 import { ResetPasswordButton } from "@/components/users/reset-password-button";
 import { apiFetch } from "@/lib/api";
@@ -34,6 +35,9 @@ export default async function UsersPage() {
   }
 
   const users = await apiFetch<UserAccount[]>("/api/v1/users");
+  const activeAdminCount = users.filter(
+    (user) => user.role === "admin" && user.is_active,
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -68,23 +72,27 @@ export default async function UsersPage() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[860px] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-3 font-semibold">Email</th>
-                  <th className="px-5 py-3 font-semibold">Rôle</th>
-                  <th className="px-5 py-3 font-semibold">Statut</th>
-                  <th className="px-5 py-3 font-semibold">Créé le</th>
-                  <th className="px-5 py-3 font-semibold">Modifié le</th>
-                  <th className="px-5 py-3 text-right font-semibold">Actions</th>
+                  <th className="px-4 py-3 font-semibold">Email</th>
+                  <th className="px-4 py-3 font-semibold">Rôle</th>
+                  <th className="px-4 py-3 font-semibold">Statut</th>
+                  <th className="px-4 py-3 font-semibold">Créé le</th>
+                  <th className="px-4 py-3 font-semibold">Modifié le</th>
+                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {users.map((user) => {
                   const isSelf = user.id === currentUser.id;
+                  const isLastActiveAdmin =
+                    user.role === "admin" &&
+                    user.is_active &&
+                    activeAdminCount === 1;
                   return (
                     <tr key={`${user.id}:${user.updated_at}`} className="align-middle">
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-slate-900">{user.email}</span>
                           {isSelf ? (
@@ -94,14 +102,14 @@ export default async function UsersPage() {
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <span
                           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${USER_ROLE_BADGES[user.role]}`}
                         >
                           {USER_ROLE_LABELS[user.role]}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <span
                           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${
                             user.is_active ? USER_STATUS_BADGES.active : USER_STATUS_BADGES.inactive
@@ -110,16 +118,21 @@ export default async function UsersPage() {
                           {user.is_active ? "Actif" : "Inactif"}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-slate-600">
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                         {formatDateTimeUtc(user.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-slate-600">
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                         {formatDateTimeUtc(user.updated_at)}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <div className="flex items-start justify-end gap-1">
                           <EditUserDialog user={user} isSelf={isSelf} />
                           <ResetPasswordButton user={user} isSelf={isSelf} />
+                          <DeleteUserDialog
+                            user={user}
+                            isSelf={isSelf}
+                            isLastActiveAdmin={isLastActiveAdmin}
+                          />
                         </div>
                       </td>
                     </tr>

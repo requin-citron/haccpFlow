@@ -76,7 +76,7 @@ def main() -> None:
         report.check(f"page Matériel : « {label} » rendu", label in html)
 
     status, html = fetch_page("/users", cookie=cookie)
-    for label in ("Nouvel utilisateur", "Comptes", "Administrateur"):
+    for label in ("Nouvel utilisateur", "Comptes", "Administrateur", "Supprimer"):
         report.check(f"page Utilisateurs : « {label} » rendu", label in html)
 
     status, transports = call("GET", f"{API_V1}/transports", token=token)

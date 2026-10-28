@@ -11,9 +11,12 @@
 ### Utilisateurs
 
 - Gestion backend et page `/users` disponibles : création, rôle, désactivation,
-  réinitialisation et affichage unique du mot de passe.
+  réinitialisation, suppression définitive confirmée par email et affichage
+  unique du mot de passe.
 - Pas encore de recherche, de filtre ni de pagination sur la liste des comptes.
 - Les changements de comptes ne sont pas journalisés dans l'historique métier.
+- Une suppression est irréversible et aucune restauration de compte n'est
+  proposée.
 
 ### Capteurs et MQTT
 

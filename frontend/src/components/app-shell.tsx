@@ -39,7 +39,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 lg:px-10 lg:py-10">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-8 lg:px-10 lg:py-10">
           {children}
         </main>
         <footer className="px-5 pb-6 text-xs text-slate-400 lg:px-10">

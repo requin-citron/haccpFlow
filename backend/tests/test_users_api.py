@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
@@ -12,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.errors import ApiError
 from app.models.user import User, UserRole
 from app.schemas.user import UserUpdate
-from app.services.users import update_user
+from app.services.users import delete_user, update_user
 
 USERS = "/api/v1/users"
 LOGIN = "/api/v1/auth/login"
@@ -274,3 +275,124 @@ def test_last_admin_guard_is_enforced_at_the_service_layer(
             assert excinfo.value.code == "user_last_admin"
 
     asyncio.run(run())
+
+
+def test_delete_user_removes_credentials_and_frees_the_email(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+) -> None:
+    created = _create_user(api_client, admin_headers, email="delete@example.com")
+    user_id = str(created["id"])
+    password = str(created["temporary_password"])
+    login = _login(api_client, email="delete@example.com", password=password)
+
+    response = api_client.delete(f"{USERS}/{user_id}", headers=admin_headers)
+
+    assert response.status_code == 204
+    assert response.content == b""
+    assert all(
+        user["id"] != user_id for user in api_client.get(USERS, headers=admin_headers).json()
+    )
+    assert (
+        api_client.get(
+            ME,
+            headers={"Authorization": f"Bearer {login['access_token']}"},
+        ).status_code
+        == 401
+    )
+    assert (
+        api_client.post(REFRESH, json={"refresh_token": login["refresh_token"]}).status_code == 401
+    )
+    assert (
+        api_client.post(
+            LOGIN,
+            data={"username": "delete@example.com", "password": password},
+        ).status_code
+        == 401
+    )
+
+    recreated = _create_user(api_client, admin_headers, email="delete@example.com")
+    assert recreated["id"] != user_id
+
+
+def test_delete_user_keeps_audited_history_and_anonymizes_the_actor(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+) -> None:
+    created = _create_user(api_client, admin_headers, email="audited-delete@example.com")
+    user_id = str(created["id"])
+    password = str(created["temporary_password"])
+    operator = _login(api_client, email="audited-delete@example.com", password=password)
+    operator_headers = {"Authorization": f"Bearer {operator['access_token']}"}
+
+    plan = api_client.post(
+        "/api/v1/cleaning-plans",
+        headers=admin_headers,
+        json={"name": "Zone audit suppression", "frequency": "daily"},
+    )
+    assert plan.status_code == 201, plan.text
+    record = api_client.post(
+        f"/api/v1/cleaning-plans/{plan.json()['id']}/records",
+        headers=operator_headers,
+        json={"cleaning_date": datetime.now(UTC).date().isoformat()},
+    )
+    assert record.status_code == 201, record.text
+
+    deletion = api_client.delete(f"{USERS}/{user_id}", headers=admin_headers)
+    assert deletion.status_code == 204
+
+    history = api_client.get(
+        "/api/v1/history?entity=cleaning_record",
+        headers=admin_headers,
+    )
+    assert history.status_code == 200
+    entry = next(item for item in history.json() if item["subject"] == "Zone audit suppression")
+    assert entry["action"] == "created"
+    assert entry["actor_email"] is None
+
+
+def test_admin_cannot_delete_their_own_account(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+) -> None:
+    admin_id = api_client.get(ME, headers=admin_headers).json()["id"]
+
+    response = api_client.delete(f"{USERS}/{admin_id}", headers=admin_headers)
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "user_self_lockout"
+
+
+def test_last_active_admin_cannot_be_deleted_at_the_service_layer(
+    admin_headers: dict[str, str],
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    del admin_headers
+
+    async def run() -> None:
+        async with session_factory() as session:
+            target = await session.scalar(select(User).where(User.email == "admin@test.local"))
+            assert target is not None
+            actor = SimpleNamespace(id=uuid.uuid4())
+            with pytest.raises(ApiError) as excinfo:
+                await delete_user(
+                    session,
+                    actor=actor,  # type: ignore[arg-type]
+                    target_id=target.id,
+                )
+            assert excinfo.value.code == "user_last_admin"
+
+    asyncio.run(run())
+
+
+def test_delete_user_is_admin_only(
+    api_client: TestClient,
+    operator_headers: dict[str, str],
+) -> None:
+    target_id = uuid.uuid4()
+
+    unauthenticated = api_client.delete(f"{USERS}/{target_id}")
+    forbidden = api_client.delete(f"{USERS}/{target_id}", headers=operator_headers)
+
+    assert unauthenticated.status_code == 401
+    assert forbidden.status_code == 403

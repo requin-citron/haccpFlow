@@ -85,3 +85,10 @@ export type PasswordResetState = {
 };
 
 export const INITIAL_PASSWORD_RESET_STATE: PasswordResetState = { status: "idle" };
+
+export type DeleteUserState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export const INITIAL_DELETE_USER_STATE: DeleteUserState = { status: "idle" };
