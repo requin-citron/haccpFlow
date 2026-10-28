@@ -204,4 +204,5 @@ du compte. Les access tokens sont aussi invalidés immédiatement via
 et le dernier admin actif ne peut pas être retiré. Les changements de comptes ne
 sont pas journalisés dans l'historique métier.
 
-Le frontend de gestion des utilisateurs n'est pas encore disponible.
+Le frontend expose cette gestion sur `/users`, avec un tableau et des dialogues
+de création, modification et réinitialisation du mot de passe.

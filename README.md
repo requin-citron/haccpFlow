@@ -234,8 +234,7 @@ inaccessibles.
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
 retirer quelque chose du référentiel.
 
-La gestion des utilisateurs est disponible côté API ; l'écran d'administration
-correspondant reste à ajouter au frontend.
+La gestion des utilisateurs est disponible dans la page admin `/users`.
 
 ## Développement
 
@@ -324,7 +323,6 @@ dessus.
 - Enrôlement de capteurs et ingestion MQTT : les relevés automatiques viendront
   compléter les créneaux laissés vides (`source = sensor` est déjà prévu).
 - Alerte quand un lot de pasteurisation reste incomplet.
-- Gestion des utilisateurs depuis l'interface.
 - Listener TLS sur le broker pour les sites on-premise.
 - Export du plan de maîtrise sanitaire en PDF.
 

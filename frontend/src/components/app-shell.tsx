@@ -3,12 +3,8 @@ import Link from "next/link";
 import { logoutAction } from "@/actions/auth";
 import { LogOutIcon, SnowflakeIcon } from "@/components/icons";
 import { NavLinks } from "@/components/nav-links";
-import type { CurrentUser, UserRole } from "@/lib/types";
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Administrateur",
-  operator: "Opérateur",
-};
+import type { CurrentUser } from "@/lib/types";
+import { USER_ROLE_LABELS } from "@/lib/users";
 
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (
@@ -28,7 +24,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
         <div className="mt-auto space-y-3 border-t border-slate-800 pt-4">
           <div className="hidden px-1 lg:block">
             <p className="truncate text-sm font-medium text-slate-200">{user.email}</p>
-            <p className="text-xs text-slate-500">{ROLE_LABELS[user.role]}</p>
+            <p className="text-xs text-slate-500">{USER_ROLE_LABELS[user.role]}</p>
           </div>
           <form action={logoutAction}>
             <button

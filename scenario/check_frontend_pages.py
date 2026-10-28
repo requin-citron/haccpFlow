@@ -16,6 +16,7 @@ PAGES: list[tuple[str, str]] = [
     ("/templates", "Modèles LaTeX"),
     ("/documents", "Documents générés"),
     ("/history", "Historique"),
+    ("/users", "Utilisateurs"),
 ]
 
 
@@ -45,6 +46,7 @@ def main() -> None:
         "Suivi de caisse",
         "Modèles LaTeX",
         "Documents générés",
+        "Utilisateurs",
     ):
         report.check(f"onglet « {label} » présent", f">{label}<" in html)
 
@@ -72,6 +74,10 @@ def main() -> None:
         "Nouvelle caisse",
     ):
         report.check(f"page Matériel : « {label} » rendu", label in html)
+
+    status, html = fetch_page("/users", cookie=cookie)
+    for label in ("Nouvel utilisateur", "Comptes", "Administrateur"):
+        report.check(f"page Utilisateurs : « {label} » rendu", label in html)
 
     status, transports = call("GET", f"{API_V1}/transports", token=token)
     report.status("registre des transports", status)

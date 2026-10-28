@@ -1,3 +1,5 @@
+import type { UserAccount } from "@/lib/types";
+
 export type LoginState = {
   error?: string;
 };
@@ -66,3 +68,20 @@ export type CashSessionFormState = {
 };
 
 export const INITIAL_CASH_SESSION_FORM_STATE: CashSessionFormState = { status: "idle" };
+
+export type UserFormState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+  user?: UserAccount;
+  temporaryPassword?: string;
+};
+
+export const INITIAL_USER_FORM_STATE: UserFormState = { status: "idle" };
+
+export type PasswordResetState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+  temporaryPassword?: string;
+};
+
+export const INITIAL_PASSWORD_RESET_STATE: PasswordResetState = { status: "idle" };

@@ -15,6 +15,7 @@ import {
   GridIcon,
   HistoryIcon,
   TruckIcon,
+  UsersIcon,
 } from "@/components/icons";
 
 const NAV_ITEMS = [
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: "/templates", label: "Modèles LaTeX", icon: FileTextIcon },
   { href: "/documents", label: "Documents générés", icon: FileDownIcon },
   { href: "/history", label: "Historique", icon: HistoryIcon, adminOnly: true },
+  { href: "/users", label: "Utilisateurs", icon: UsersIcon, adminOnly: true },
 ];
 
 export function NavLinks({ isAdmin }: { isAdmin: boolean }) {

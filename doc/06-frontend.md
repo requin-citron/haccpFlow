@@ -44,6 +44,7 @@ role.
 | `/templates/[templateId]` | Variables, aperçu, génération, renommage. |
 | `/documents` | Historique des PDF générés. |
 | `/history` | Journal d'audit (admin). |
+| `/users` | Gestion des comptes et des rôles (admin). |
 
 ## Session et appels API
 
@@ -79,6 +80,19 @@ Deux patterns coexistent :
 Ces handlers gardent le jeton côté serveur et propagent les erreurs
 `{ code, detail, context }`.
 
+## Gestion des utilisateurs
+
+- La page `/users` est réservée aux admins et masquée de la navigation pour les
+  opérateurs.
+- Le tableau affiche email, rôle, état, dates et actions.
+- La création et la modification passent par des Server Actions dans
+  `src/actions/users.ts`.
+- Le mot de passe généré est affiché dans une modale dédiée avec copie et
+  avertissement de non-réaffichage.
+- Le compte courant ne peut pas modifier son rôle ou son état depuis l'UI.
+- Un admin peut réinitialiser son propre mot de passe ; après copie, la modale
+  redirige vers `/login` car la session est révoquée.
+
 ### Proxies existants
 
 - `/api/exports/[dataset]`
@@ -96,7 +110,7 @@ Ces handlers gardent le jeton côté serveur et propagent les erreurs
 ## RBAC côté interface
 
 - `NavLinks` masque les entrées `adminOnly`.
-- Les pages admin (historique, modèles, variables, renommage) vérifient
+- Les pages admin (historique, modèles, variables, renommage, utilisateurs) vérifient
   `user.role === "admin"` et affichent un panneau « accès refusé ».
 - **Rappel** : ces contrôles sont uniquement ergonomiques ; le backend refuse
   toujours les actions non autorisées.

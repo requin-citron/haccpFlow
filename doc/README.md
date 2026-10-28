@@ -30,7 +30,7 @@ exploitation et procédure de mise à jour de la documentation.
 - Deux rôles : `admin` et `operator`. L'autorisation est toujours appliquée par
   le backend.
 - Les admins peuvent créer, promouvoir, désactiver et réinitialiser les comptes
-  via l'API ; l'écran frontend reste à venir.
+  depuis la page `/users`.
 - Les relevés, nettoyages, pasteurisations et transports ont un journal de
   corrections ; les documents générés conservent un snapshot des variables.
 - Les horodatages sont stockés en UTC et affichés en français côté interface.

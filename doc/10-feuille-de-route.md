@@ -10,9 +10,9 @@
 
 ### Utilisateurs
 
-- API backend disponible : création, rôle, désactivation et réinitialisation
-  du mot de passe.
-- L'interface de gestion des utilisateurs reste à ajouter.
+- Gestion backend et page `/users` disponibles : création, rôle, désactivation,
+  réinitialisation et affichage unique du mot de passe.
+- Pas encore de recherche, de filtre ni de pagination sur la liste des comptes.
 - Les changements de comptes ne sont pas journalisés dans l'historique métier.
 
 ### Capteurs et MQTT
@@ -67,14 +67,13 @@
 
 ### Priorités fonctionnelles
 
-1. Interface de gestion des utilisateurs (le backend est prêt).
-2. Ingestion Zigbee2MQTT : abonnement, mapping capteur → matériel, relevés
+1. Ingestion Zigbee2MQTT : abonnement, mapping capteur → matériel, relevés
    `sensor`, idempotence et gestion des doublons.
-3. Multi-tenant : `tenant_id`, filtrage backend, index et contraintes par
+2. Multi-tenant : `tenant_id`, filtrage backend, index et contraintes par
    tenant, migration des données existantes.
-4. Versionnement/suppression des modèles LaTeX et gestion d'assets générique.
-5. Images locales par génération (upload temporaire, expiration, nettoyage).
-6. Export PDF du plan de maîtrise sanitaire.
+3. Versionnement/suppression des modèles LaTeX et gestion d'assets générique.
+4. Images locales par génération (upload temporaire, expiration, nettoyage).
+5. Export PDF du plan de maîtrise sanitaire.
 
 ### Qualité et exploitation
 

@@ -20,6 +20,20 @@ export type CurrentUser = {
   role: UserRole;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
+};
+
+export type UserAccount = {
+  id: string;
+  email: string;
+  role: UserRole;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreatedUserAccount = UserAccount & {
+  temporary_password: string;
 };
 
 export type ReadingSlot = "morning" | "evening";
