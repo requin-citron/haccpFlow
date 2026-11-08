@@ -20,6 +20,9 @@ supposent en plus le service `frontend` sur `http://127.0.0.1:3000` :
 docker compose up -d frontend
 ```
 
+Le scénario de vérification tient compte des variables `MODULE_*` du `.env`
+pour contrôler que les entrées attendues sont présentes ou masquées.
+
 ## Jeu de démonstration
 
 | Script | Ce qu'il crée |

@@ -3,14 +3,23 @@ import Link from "next/link";
 import { logoutAction } from "@/actions/auth";
 import { LogOutIcon, SnowflakeIcon } from "@/components/icons";
 import { NavLinks } from "@/components/nav-links";
+import type { EnabledModules } from "@/lib/modules";
 import type { CurrentUser } from "@/lib/types";
 import { USER_ROLE_LABELS } from "@/lib/users";
 
-export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
+export function AppShell({
+  user,
+  enabledModules,
+  children,
+}: {
+  user: CurrentUser;
+  enabledModules: EnabledModules;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex min-h-screen">
       <aside className="sticky top-0 flex h-screen w-[72px] shrink-0 flex-col border-r border-slate-800 bg-slate-900 px-3 py-5 lg:w-64 lg:px-4">
-        <Link href="/equipment" className="mb-8 flex items-center gap-3 px-1">
+        <Link href="/" className="mb-8 flex items-center gap-3 px-1">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-teal-500/15 text-teal-300 ring-1 ring-teal-400/25">
             <SnowflakeIcon className="size-5" />
           </span>
@@ -19,7 +28,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </span>
         </Link>
 
-        <NavLinks isAdmin={user.role === "admin"} />
+        <NavLinks isAdmin={user.role === "admin"} enabledModules={enabledModules} />
 
         <div className="mt-auto space-y-3 border-t border-slate-800 pt-4">
           <div className="hidden px-1 lg:block">

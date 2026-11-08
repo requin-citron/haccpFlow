@@ -20,7 +20,7 @@ export async function loginAction(_previous: LoginState, formData: FormData): Pr
   }
 
   await persistSession(session);
-  redirect("/equipment");
+  redirect("/");
 }
 
 export async function logoutAction(): Promise<void> {

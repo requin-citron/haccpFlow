@@ -132,6 +132,16 @@ services:
       # Set to true when file watching does not work through the bind mount
       # (Docker Desktop, WSL): it falls back to polling.
       WATCHPACK_POLLING: ${WATCHPACK_POLLING:-false}
+      MODULE_EQUIPMENT: ${MODULE_EQUIPMENT:-1}
+      MODULE_READINGS: ${MODULE_READINGS:-1}
+      MODULE_CLEANING: ${MODULE_CLEANING:-1}
+      MODULE_PASTEURISATION: ${MODULE_PASTEURISATION:-1}
+      MODULE_TRANSPORT: ${MODULE_TRANSPORT:-1}
+      MODULE_CASH_SESSIONS: ${MODULE_CASH_SESSIONS:-1}
+      MODULE_EXPORT: ${MODULE_EXPORT:-1}
+      MODULE_DOCUMENTS: ${MODULE_DOCUMENTS:-1}
+      MODULE_HISTORY: ${MODULE_HISTORY:-1}
+      MODULE_USERS: ${MODULE_USERS:-1}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     # Source is mounted for hot reload; the anonymous volumes keep the

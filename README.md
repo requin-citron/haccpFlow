@@ -37,14 +37,14 @@ L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
 ## Stack
 
-| Composant | Technologie |
-| --- | --- |
-| Backend | FastAPI, Python 3.13, SQLAlchemy 2 async, Alembic, `uv` |
-| Frontend | Next.js (App Router), React, TypeScript strict, Tailwind CSS, `yarn` |
-| Base de données | PostgreSQL 16 |
-| Messagerie | Eclipse Mosquitto (MQTT) |
+| Composant        | Technologie                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| Backend          | FastAPI, Python 3.13, SQLAlchemy 2 async, Alembic, `uv`                                                   |
+| Frontend         | Next.js (App Router), React, TypeScript strict, Tailwind CSS, `yarn`                                      |
+| Base de données | PostgreSQL 16                                                                                               |
+| Messagerie       | Eclipse Mosquitto (MQTT)                                                                                    |
 | Ingestion Zigbee | Zigbee2MQTT, **hors de cette stack** : il tourne on-premise avec les capteurs et publie sur le broker |
-| Déploiement | Docker Compose |
+| Déploiement     | Docker Compose                                                                                              |
 
 ## Documentation
 
@@ -70,18 +70,17 @@ docker compose up -d --build
   partir de `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 `docker compose up -d` démarre toute la pile. Pour démarrer uniquement
-l'infrastructure locale, préciser les services : `docker compose up -d db
-mosquitto`. `docker compose down` arrête et retire tous les conteneurs sans
+l'infrastructure locale, préciser les services : `docker compose up -d db mosquitto`. `docker compose down` arrête et retire tous les conteneurs sans
 supprimer les volumes.
 
 ## Services et ports
 
-| Service | Port publié | Rôle |
-| --- | --- | --- |
-| `db` | `127.0.0.1:5432` | PostgreSQL |
+| Service       | Port publié       | Rôle                          |
+| ------------- | ------------------ | ------------------------------ |
+| `db`        | `127.0.0.1:5432` | PostgreSQL                     |
 | `mosquitto` | `127.0.0.1:1883` | Broker MQTT (auth obligatoire) |
-| `backend` | `0.0.0.0:8000` | API FastAPI |
-| `frontend` | `0.0.0.0:3000` | Interface Next.js |
+| `backend`   | `0.0.0.0:8000`   | API FastAPI                    |
+| `frontend`  | `0.0.0.0:3000`   | Interface Next.js              |
 
 Les ports de la base et du broker sont volontairement limités à `127.0.0.1` :
 ils servent à l'outillage local, pas au réseau. Le navigateur ne parle qu'au
@@ -91,35 +90,34 @@ exposés au navigateur.
 ## Configuration
 
 Toute la configuration passe par des variables d'environnement, regroupées dans
-`.env.example`. Les valeurs vides marquées **requis** font échouer `docker
-compose` au démarrage plutôt que de laisser tourner une instance mal
+`.env.example`. Les valeurs vides marquées **requis** font échouer `docker compose` au démarrage plutôt que de laisser tourner une instance mal
 configurée.
 
 ### Exécution
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `TZ` | `UTC` | Fuseau des conteneurs. Les horodatages sont stockés en UTC. |
-| `ENVIRONMENT` | `development` | `production` active le mode production côté backend. |
-| `LOG_LEVEL` | `info` | Niveau de journalisation du backend. |
+| Variable        | Défaut         | Description                                                  |
+| --------------- | --------------- | ------------------------------------------------------------ |
+| `TZ`          | `UTC`         | Fuseau des conteneurs. Les horodatages sont stockés en UTC. |
+| `ENVIRONMENT` | `development` | `production` active le mode production côté backend.     |
+| `LOG_LEVEL`   | `info`        | Niveau de journalisation du backend.                         |
 
 ### PostgreSQL
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `POSTGRES_USER` | `haccp` | **Requis.** Utilisateur de la base. |
-| `POSTGRES_PASSWORD` | — | **Requis.** Générer avec `openssl rand -hex 32`. |
-| `POSTGRES_DB` | `haccp` | **Requis.** Nom de la base. |
-| `POSTGRES_PORT` | `5432` | Port publié sur `127.0.0.1` pour l'outillage. |
+| Variable              | Défaut   | Description                                                |
+| --------------------- | --------- | ---------------------------------------------------------- |
+| `POSTGRES_USER`     | `haccp` | **Requis.** Utilisateur de la base.                  |
+| `POSTGRES_PASSWORD` | —        | **Requis.** Générer avec `openssl rand -hex 32`. |
+| `POSTGRES_DB`       | `haccp` | **Requis.** Nom de la base.                          |
+| `POSTGRES_PORT`     | `5432`  | Port publié sur `127.0.0.1` pour l'outillage.           |
 
 ### MQTT
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `MQTT_USERNAME` | `haccp` | **Requis.** Les connexions anonymes sont refusées. |
-| `MQTT_PASSWORD` | — | **Requis.** Le fichier de mots de passe est reconstruit à chaque démarrage depuis cette valeur. |
-| `MQTT_PORT` | `1883` | Port publié sur `127.0.0.1`. |
-| `MQTT_TOPIC_PREFIX` | `zigbee2mqtt` | Préfixe sous lequel Zigbee2MQTT publie ; le backend s'abonnera en dessous. |
+| Variable              | Défaut         | Description                                                                                             |
+| --------------------- | --------------- | ------------------------------------------------------------------------------------------------------- |
+| `MQTT_USERNAME`     | `haccp`       | **Requis.** Les connexions anonymes sont refusées.                                               |
+| `MQTT_PASSWORD`     | —              | **Requis.** Le fichier de mots de passe est reconstruit à chaque démarrage depuis cette valeur. |
+| `MQTT_PORT`         | `1883`        | Port publié sur `127.0.0.1`.                                                                         |
+| `MQTT_TOPIC_PREFIX` | `zigbee2mqtt` | Préfixe sous lequel Zigbee2MQTT publie ; le backend s'abonnera en dessous.                             |
 
 Le backend reçoit aussi `MQTT_HOST` et `MQTT_PORT`, fixés par le compose : ce
 sont des valeurs internes au réseau Docker. `MQTT_CLIENT_ID` (défaut
@@ -127,34 +125,72 @@ sont des valeurs internes au réseau Docker. `MQTT_CLIENT_ID` (défaut
 
 ### Backend et authentification
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `SECRET_KEY` | — | **Requis.** Signe les jetons JWT. Générer avec `openssl rand -hex 32`. |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | Durée de vie du jeton d'accès. |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | Durée de vie du refresh token, révocable et renouvelé à chaque usage. |
-| `DOCS_ENABLED` | `true` | Expose `/docs`, `/redoc` et `/openapi.json`. À passer à `false` en production. |
-| `PUBLIC_API_URL` | *(vide)* | URL absolue inscrite dans l'entrée `servers` de l'OpenAPI. |
-| `CORS_ORIGINS` | `http://localhost:3000` | Origines autorisées, séparées par des virgules. Inutile en pratique : le frontend appelle l'API côté serveur. |
-| `BACKEND_PORT` | `8000` | Port publié de l'API. |
+| Variable                        | Défaut                   | Description                                                                                                        |
+| ------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `SECRET_KEY`                  | —                        | **Requis.** Signe les jetons JWT. Générer avec `openssl rand -hex 32`.                                   |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60`                    | Durée de vie du jeton d'accès.                                                                                   |
+| `REFRESH_TOKEN_EXPIRE_DAYS`   | `30`                    | Durée de vie du refresh token, révocable et renouvelé à chaque usage.                                          |
+| `DOCS_ENABLED`                | `true`                  | Expose `/docs`, `/redoc` et `/openapi.json`. À passer à `false` en production.                           |
+| `PUBLIC_API_URL`              | *(vide)*                | URL absolue inscrite dans l'entrée `servers` de l'OpenAPI.                                                      |
+| `CORS_ORIGINS`                | `http://localhost:3000` | Origines autorisées, séparées par des virgules. Inutile en pratique : le frontend appelle l'API côté serveur. |
+| `BACKEND_PORT`                | `8000`                  | Port publié de l'API.                                                                                             |
 
 ### Premier administrateur
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `ADMIN_EMAIL` | `admin@example.com` | **Requis par compose.** Compte créé au premier démarrage. |
-| `ADMIN_PASSWORD` | — | **Requis par compose.** N'est jamais réécrit si l'utilisateur existe déjà. |
+| Variable           | Défaut               | Description                                                                          |
+| ------------------ | --------------------- | ------------------------------------------------------------------------------------ |
+| `ADMIN_EMAIL`    | `admin@example.com` | **Requis par compose.** Compte créé au premier démarrage.                   |
+| `ADMIN_PASSWORD` | —                    | **Requis par compose.** N'est jamais réécrit si l'utilisateur existe déjà. |
+
+### Réinitialiser le mot de passe admin
+
+La modification de `ADMIN_PASSWORD` ne réécrit pas le mot de passe d'un compte
+existant. Pour une récupération d'urgence, générer d'abord un hash Argon2 :
+
+```sh
+printf 'Nouveau mot de passe admin : '
+read -rs ADMIN_NEW_PASSWORD
+printf '\n'
+docker compose exec -T \
+  -e ADMIN_NEW_PASSWORD="$ADMIN_NEW_PASSWORD" \
+  backend python -c 'import os; from app.core.security import hash_password; print(hash_password(os.environ["ADMIN_NEW_PASSWORD"]))'
+unset ADMIN_NEW_PASSWORD
+```
+
+Se connecter ensuite à PostgreSQL avec les identifiants configurés dans
+`.env` :
+
+```sh
+docker compose exec -it db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Puis remplacer `LE_HASH` et `admin@example.com` par les valeurs souhaitées :
+
+```sql
+UPDATE users
+SET hashed_password = 'LE_HASH',
+    auth_version = auth_version + 1
+WHERE email = 'admin@example.com'
+RETURNING id, email, role, auth_version;
+
+DELETE FROM refresh_tokens
+WHERE user_id = (SELECT id FROM users WHERE email = 'admin@example.com');
+```
+
+L'incrémentation de `auth_version` invalide les jetons d'accès existants, et la
+suppression des refresh tokens déconnecte les sessions en cours.
 
 ### Modèles LaTeX
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `TEMPLATE_MAX_UPLOAD_BYTES` | `262144` | Taille maximale d'un fichier `.tex` uploadé, en octets. |
-| `TEMPLATE_STORAGE_DIR` | `data/templates` | Répertoire de stockage, relatif au répertoire de travail du backend. Avec le compose, il correspond à `backend/data/templates` et doit être inclus dans les sauvegardes. |
-| `TEMPLATE_DOCUMENT_STORAGE_DIR` | `data/documents` | Répertoire des PDF générés (`backend/data/documents` avec le compose), à sauvegarder. |
-| `TEMPLATE_PDF_TIMEOUT_SECONDS` | `30` | Délai maximal d'une passe de compilation `pdflatex`. |
-| `TEMPLATE_PDF_MAX_OUTPUT_BYTES` | `20971520` | Taille maximale d'un PDF généré (20 Mio). |
-| `TEMPLATE_PDF_CONCURRENCY` | `2` | Nombre de compilations LaTeX simultanées. |
-| `TEMPLATE_IMAGE_MAX_BYTES` | `5242880` | Taille maximale d'une image de variable (5 Mio, JPEG/PNG). |
+| Variable                          | Défaut            | Description                                                                                                                                                                    |
+| --------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TEMPLATE_MAX_UPLOAD_BYTES`     | `262144`         | Taille maximale d'un fichier `.tex` uploadé, en octets.                                                                                                                     |
+| `TEMPLATE_STORAGE_DIR`          | `data/templates` | Répertoire de stockage, relatif au répertoire de travail du backend. Avec le compose, il correspond à `backend/data/templates` et doit être inclus dans les sauvegardes. |
+| `TEMPLATE_DOCUMENT_STORAGE_DIR` | `data/documents` | Répertoire des PDF générés (`backend/data/documents` avec le compose), à sauvegarder.                                                                                   |
+| `TEMPLATE_PDF_TIMEOUT_SECONDS`  | `30`             | Délai maximal d'une passe de compilation `pdflatex`.                                                                                                                        |
+| `TEMPLATE_PDF_MAX_OUTPUT_BYTES` | `20971520`       | Taille maximale d'un PDF généré (20 Mio).                                                                                                                                   |
+| `TEMPLATE_PDF_CONCURRENCY`      | `2`              | Nombre de compilations LaTeX simultanées.                                                                                                                                     |
+| `TEMPLATE_IMAGE_MAX_BYTES`      | `5242880`        | Taille maximale d'une image de variable (5 Mio, JPEG/PNG).                                                                                                                     |
 
 Les variables d'un modèle sont de deux natures : `static` (valeur fixée par
 l'administrateur, jamais demandée à la génération) et `local` (valeur fournie
@@ -177,19 +213,40 @@ Utilisés uniquement quand un matériel est créé **sans** seuils explicites. C
 équipement stocke ensuite ses propres valeurs, et les seuils ne sont jamais
 codés en dur dans la logique : ce sont ces variables qui font foi.
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `DEFAULT_FRIDGE_MIN_TEMPERATURE_C` | `0` | Seuil bas d'un réfrigérateur. |
-| `DEFAULT_FRIDGE_MAX_TEMPERATURE_C` | `4` | Seuil haut d'un réfrigérateur. |
-| `DEFAULT_FREEZER_MIN_TEMPERATURE_C` | `-25` | Seuil bas d'un congélateur. |
-| `DEFAULT_FREEZER_MAX_TEMPERATURE_C` | `-18` | Seuil haut d'un congélateur. |
+| Variable                              | Défaut | Description                      |
+| ------------------------------------- | ------- | -------------------------------- |
+| `DEFAULT_FRIDGE_MIN_TEMPERATURE_C`  | `0`   | Seuil bas d'un réfrigérateur.  |
+| `DEFAULT_FRIDGE_MAX_TEMPERATURE_C`  | `4`   | Seuil haut d'un réfrigérateur. |
+| `DEFAULT_FREEZER_MIN_TEMPERATURE_C` | `-25` | Seuil bas d'un congélateur.     |
+| `DEFAULT_FREEZER_MAX_TEMPERATURE_C` | `-18` | Seuil haut d'un congélateur.    |
 
 ### Frontend
 
-| Variable | Défaut | Description |
-| --- | --- | --- |
-| `FRONTEND_PORT` | `3000` | Port publié de l'interface. |
+| Variable                  | Défaut   | Description                                                                                                                                        |
+| ------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FRONTEND_PORT`         | `3000`  | Port publié de l'interface.                                                                                                                       |
 | `SESSION_COOKIE_SECURE` | `false` | À passer à `true` dès que l'application est servie en HTTPS. Les cookies sont aussi `Secure` automatiquement quand `NODE_ENV=production`. |
+
+Les modules visibles dans le menu sont pilotés indépendamment. `1` active
+l'entrée, `0` la masque. Le backend et les pages restent disponibles : une URL
+directe continue de fonctionner même si son entrée est masquée.
+
+| Variable | Défaut | Entrées contrôlées |
+| --- | --- | --- |
+| `MODULE_EQUIPMENT` | `1` | Matériel |
+| `MODULE_READINGS` | `1` | Relevés |
+| `MODULE_CLEANING` | `1` | Nettoyage, Plan de nettoyage |
+| `MODULE_PASTEURISATION` | `1` | Pasteurisation |
+| `MODULE_TRANSPORT` | `1` | Transport |
+| `MODULE_CASH_SESSIONS` | `1` | Suivi de caisse |
+| `MODULE_EXPORT` | `1` | Export |
+| `MODULE_DOCUMENTS` | `1` | Modèles LaTeX, Documents générés |
+| `MODULE_HISTORY` | `1` | Historique |
+| `MODULE_USERS` | `1` | Utilisateurs |
+
+Sur la page Matériel, ces réglages masquent également le bloc Véhicules quand
+Transport est désactivé, le bloc Caisses quand Suivi de caisse est désactivé,
+et les relevés du détail d'un matériel quand Relevés est désactivé.
 
 Le frontend reçoit `API_INTERNAL_URL` (`http://backend:8000`), fixé par le
 compose : c'est l'adresse utilisée pour les appels serveur à serveur.
@@ -200,37 +257,37 @@ Deux rôles existent : `admin` et `operator`. L'autorisation est **toujours
 vérifiée côté backend** ; l'interface ne fait que masquer les actions
 inaccessibles.
 
-| Fonctionnalité | Opérateur | Administrateur |
-| --- | :---: | :---: |
-| Consulter le matériel | ✅ | ✅ |
-| Créer et modifier un matériel | ✅ | ✅ |
-| Désactiver un matériel | ❌ | ✅ |
-| Saisir, compléter et corriger un relevé de température | ✅ | ✅ |
-| Consulter l'historique des modifications (onglet Historique) | ❌ | ✅ |
-| Consulter les plans de nettoyage | ✅ | ✅ |
-| Créer et modifier un plan de nettoyage | ✅ | ✅ |
-| Désactiver un plan de nettoyage | ❌ | ✅ |
-| Déclarer, corriger ou supprimer un nettoyage | ✅ | ✅ |
-| Consulter le prévisionnel et la liste du retard | ✅ | ✅ |
-| Consulter les lots de pasteurisation | ✅ | ✅ |
-| Créer un lot et enregistrer ses phases | ✅ | ✅ |
-| Corriger une phase de pasteurisation | ✅ | ✅ |
-| Désactiver un lot de pasteurisation | ❌ | ✅ |
-| Consulter les véhicules et les transports | ✅ | ✅ |
-| Créer un véhicule et déclarer un transport | ✅ | ✅ |
-| Désactiver un véhicule ou un transport | ❌ | ✅ |
-| Enrôler une caisse et corriger son comptage | ✅ | ✅ |
-| Désactiver une caisse | ❌ | ✅ |
-| Ouvrir un suivi de caisse, saisir les frais et clôturer | ✅ | ✅ |
-| Supprimer un suivi de caisse | ❌ | ✅ |
-| Télécharger les exports CSV, y compris l'extract d'un suivi | ✅ | ✅ |
-| Consulter les modèles LaTeX | ✅ | ✅ |
-| Générer un PDF depuis un modèle | ✅ | ✅ |
-| Consulter l'historique des documents générés | ✅ | ✅ |
-| Importer un modèle LaTeX | ❌ | ✅ |
-| Créer et modifier les variables d'un modèle | ❌ | ✅ |
-| Lister les utilisateurs | ❌ | ✅ |
-| Créer, promouvoir, désactiver, réinitialiser ou supprimer un utilisateur | ❌ | ✅ |
+| Fonctionnalité                                                             | Opérateur | Administrateur |
+| --------------------------------------------------------------------------- | :--------: | :------------: |
+| Consulter le matériel                                                      |     ✅     |       ✅       |
+| Créer et modifier un matériel                                             |     ✅     |       ✅       |
+| Désactiver un matériel                                                    |     ❌     |       ✅       |
+| Saisir, compléter et corriger un relevé de température                   |     ✅     |       ✅       |
+| Consulter l'historique des modifications (onglet Historique)                |     ❌     |       ✅       |
+| Consulter les plans de nettoyage                                            |     ✅     |       ✅       |
+| Créer et modifier un plan de nettoyage                                     |     ✅     |       ✅       |
+| Désactiver un plan de nettoyage                                            |     ❌     |       ✅       |
+| Déclarer, corriger ou supprimer un nettoyage                               |     ✅     |       ✅       |
+| Consulter le prévisionnel et la liste du retard                            |     ✅     |       ✅       |
+| Consulter les lots de pasteurisation                                        |     ✅     |       ✅       |
+| Créer un lot et enregistrer ses phases                                     |     ✅     |       ✅       |
+| Corriger une phase de pasteurisation                                        |     ✅     |       ✅       |
+| Désactiver un lot de pasteurisation                                        |     ❌     |       ✅       |
+| Consulter les véhicules et les transports                                  |     ✅     |       ✅       |
+| Créer un véhicule et déclarer un transport                               |     ✅     |       ✅       |
+| Désactiver un véhicule ou un transport                                    |     ❌     |       ✅       |
+| Enrôler une caisse et corriger son comptage                                |     ✅     |       ✅       |
+| Désactiver une caisse                                                      |     ❌     |       ✅       |
+| Ouvrir un suivi de caisse, saisir les frais et clôturer                    |     ✅     |       ✅       |
+| Supprimer un suivi de caisse                                                |     ❌     |       ✅       |
+| Télécharger les exports CSV, y compris l'extract d'un suivi               |     ✅     |       ✅       |
+| Consulter les modèles LaTeX                                                |     ✅     |       ✅       |
+| Générer un PDF depuis un modèle                                          |     ✅     |       ✅       |
+| Consulter l'historique des documents générés                             |     ✅     |       ✅       |
+| Importer un modèle LaTeX                                                   |     ❌     |       ✅       |
+| Créer et modifier les variables d'un modèle                               |     ❌     |       ✅       |
+| Lister les utilisateurs                                                     |     ❌     |       ✅       |
+| Créer, promouvoir, désactiver, réinitialiser ou supprimer un utilisateur |     ❌     |       ✅       |
 
 En résumé : l'opérateur fait le quotidien, l'administrateur est seul à pouvoir
 retirer quelque chose du référentiel.
@@ -273,8 +330,7 @@ sont rechargées à chaud, sans reconstruction d'image.
 ### Migrations
 
 Chaque évolution du modèle ajoute une révision dans
-`backend/alembic/versions/`. Le conteneur backend applique `alembic upgrade
-head` à chaque démarrage, ce qui est sûr puisqu'il n'y a qu'une instance par
+`backend/alembic/versions/`. Le conteneur backend applique `alembic upgrade head` à chaque démarrage, ce qui est sûr puisqu'il n'y a qu'une instance par
 client.
 
 ### Scénarios de vérification

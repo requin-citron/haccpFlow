@@ -1,8 +1,10 @@
 """Vérifie que les pages du frontend rendent les données et restent protégées."""
 
+import re
+import sys
 import uuid
 
-from common import API_V1, Report, call, fetch_page, login, require_env
+from common import API_V1, Report, call, fetch_page, login, read_env, require_env
 
 #: chemin, texte attendu uniquement quand la page est rendue avec une session
 PAGES: list[tuple[str, str]] = [
@@ -19,9 +21,32 @@ PAGES: list[tuple[str, str]] = [
     ("/users", "Utilisateurs"),
 ]
 
+NAV_MODULES: list[tuple[str, str]] = [
+    ("MODULE_EQUIPMENT", "Matériel"),
+    ("MODULE_READINGS", "Relevés"),
+    ("MODULE_CLEANING", "Nettoyage"),
+    ("MODULE_CLEANING", "Plan de nettoyage"),
+    ("MODULE_PASTEURISATION", "Pasteurisation"),
+    ("MODULE_TRANSPORT", "Transport"),
+    ("MODULE_CASH_SESSIONS", "Suivi de caisse"),
+    ("MODULE_EXPORT", "Export"),
+    ("MODULE_DOCUMENTS", "Modèles LaTeX"),
+    ("MODULE_DOCUMENTS", "Documents générés"),
+    ("MODULE_HISTORY", "Historique"),
+    ("MODULE_USERS", "Utilisateurs"),
+]
+
+
+def module_enabled(env: dict[str, str], key: str) -> bool:
+    value = env.get(key, "1")
+    if value not in {"0", "1"}:
+        sys.exit(f"{key} doit valoir 0 ou 1 dans le .env (valeur reçue : {value!r})")
+    return value == "1"
+
 
 def main() -> None:
     env = require_env()
+    module_env = read_env()
     token, cookie = login(env["ADMIN_EMAIL"], env["ADMIN_PASSWORD"])
     report = Report("Frontend — pages et protection")
 
@@ -37,18 +62,20 @@ def main() -> None:
         report.check(f"{path} ne fuit aucune donnée", marker not in html)
 
     status, html = fetch_page("/cleaning", cookie=cookie)
-    for label in (
-        "Matériel",
-        "Relevés",
-        "Nettoyage",
-        "Plan de nettoyage",
-        "Pasteurisation",
-        "Suivi de caisse",
-        "Modèles LaTeX",
-        "Documents générés",
-        "Utilisateurs",
-    ):
-        report.check(f"onglet « {label} » présent", f">{label}<" in html)
+    navigation = re.search(
+        r'<nav aria-label="Navigation principale".*?</nav>',
+        html,
+        re.DOTALL,
+    )
+    report.check("navigation principale présente", navigation is not None)
+    navigation_html = navigation.group(0) if navigation else ""
+    for env_key, label in NAV_MODULES:
+        visible = f">{label}<" in navigation_html
+        expected = module_enabled(module_env, env_key)
+        report.check(
+            f"onglet « {label} » {'présent' if expected else 'masqué'}",
+            visible == expected,
+        )
 
     status, batches = call("GET", f"{API_V1}/pasteurisations", token=token)
     report.status("registre de pasteurisation", status)
@@ -67,13 +94,18 @@ def main() -> None:
         report.info("aucun lot : lance seed_pasteurisation.py pour voir le détail rempli")
 
     status, html = fetch_page("/equipment", cookie=cookie)
-    for label in (
-        "Véhicules",
-        "Nouveau véhicule",
-        "Caisses",
-        "Nouvelle caisse",
+    for env_key, label in (
+        ("MODULE_TRANSPORT", "Véhicules"),
+        ("MODULE_TRANSPORT", "Nouveau véhicule"),
+        ("MODULE_CASH_SESSIONS", "Caisses"),
+        ("MODULE_CASH_SESSIONS", "Nouvelle caisse"),
     ):
-        report.check(f"page Matériel : « {label} » rendu", label in html)
+        visible = label in html
+        expected = module_enabled(module_env, env_key)
+        report.check(
+            f"page Matériel : « {label} » {'rendu' if expected else 'masqué'}",
+            visible == expected,
+        )
 
     status, html = fetch_page("/users", cookie=cookie)
     for label in ("Nouvel utilisateur", "Comptes", "Administrateur", "Supprimer"):

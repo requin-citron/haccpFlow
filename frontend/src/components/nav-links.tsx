@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ComponentType, SVGProps } from "react";
 
 import {
   BanknoteIcon,
@@ -17,25 +18,36 @@ import {
   TruckIcon,
   UsersIcon,
 } from "@/components/icons";
+import { MODULE_NAV_ITEMS, type EnabledModules } from "@/lib/modules";
 
-const NAV_ITEMS = [
-  { href: "/equipment", label: "Matériel", icon: GridIcon },
-  { href: "/readings", label: "Relevés", icon: ClipboardIcon },
-  { href: "/cleaning", label: "Nettoyage", icon: CheckIcon },
-  { href: "/cleaning/plans", label: "Plan de nettoyage", icon: DropletIcon },
-  { href: "/pasteurisation", label: "Pasteurisation", icon: FlameIcon },
-  { href: "/transport", label: "Transport", icon: TruckIcon },
-  { href: "/cash-sessions", label: "Suivi de caisse", icon: BanknoteIcon },
-  { href: "/export", label: "Export", icon: DownloadIcon },
-  { href: "/templates", label: "Modèles LaTeX", icon: FileTextIcon },
-  { href: "/documents", label: "Documents générés", icon: FileDownIcon },
-  { href: "/history", label: "Historique", icon: HistoryIcon, adminOnly: true },
-  { href: "/users", label: "Utilisateurs", icon: UsersIcon, adminOnly: true },
-];
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
-export function NavLinks({ isAdmin }: { isAdmin: boolean }) {
+const NAV_ICONS: Record<string, IconComponent> = {
+  "/equipment": GridIcon,
+  "/readings": ClipboardIcon,
+  "/cleaning": CheckIcon,
+  "/cleaning/plans": DropletIcon,
+  "/pasteurisation": FlameIcon,
+  "/transport": TruckIcon,
+  "/cash-sessions": BanknoteIcon,
+  "/export": DownloadIcon,
+  "/templates": FileTextIcon,
+  "/documents": FileDownIcon,
+  "/history": HistoryIcon,
+  "/users": UsersIcon,
+};
+
+export function NavLinks({
+  isAdmin,
+  enabledModules,
+}: {
+  isAdmin: boolean;
+  enabledModules: EnabledModules;
+}) {
   const pathname = usePathname();
-  const items = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+  const items = MODULE_NAV_ITEMS.filter(
+    (item) => enabledModules[item.key] && (!item.adminOnly || isAdmin),
+  );
   // Longest matching href wins, so /cleaning/plans does not also light up
   // the /cleaning entry.
   const activeHref = items.filter(
@@ -45,7 +57,7 @@ export function NavLinks({ isAdmin }: { isAdmin: boolean }) {
   return (
     <nav aria-label="Navigation principale" className="space-y-1">
       {items.map((item) => {
-        const Icon = item.icon;
+        const Icon = NAV_ICONS[item.href] ?? GridIcon;
         const active = item.href === activeHref;
 
         return (

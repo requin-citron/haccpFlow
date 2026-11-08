@@ -23,6 +23,28 @@ Le layout `(app)/layout.tsx` appelle `GET /api/v1/auth/me`. Sans session, il
 redirige vers `/login`. Le shell affiche la navigation, l'utilisateur et le
 role.
 
+## Modules visibles
+
+Les entrées du menu sont contrôlées par dix variables d'environnement :
+`MODULE_EQUIPMENT`, `MODULE_READINGS`, `MODULE_CLEANING`,
+`MODULE_PASTEURISATION`, `MODULE_TRANSPORT`, `MODULE_CASH_SESSIONS`,
+`MODULE_EXPORT`, `MODULE_DOCUMENTS`, `MODULE_HISTORY` et `MODULE_USERS`.
+
+- `1` affiche les entrées du module, `0` les masque ; une valeur absente vaut
+  `1`, toute autre valeur provoque une erreur de configuration.
+- `MODULE_CLEANING` contrôle à la fois `/cleaning` et `/cleaning/plans`.
+- `MODULE_DOCUMENTS` contrôle à la fois `/templates` et `/documents`.
+- Sur `/equipment`, `MODULE_TRANSPORT` masque le bloc Véhicules et
+  `MODULE_CASH_SESSIONS` masque le bloc Caisses. Sur le détail d'un matériel,
+  `MODULE_READINGS` masque l'historique et l'action de saisie des relevés.
+- Les pages ne sont pas bloquées individuellement : une URL directe reste
+  accessible, conformément au choix de désactivation visuelle.
+- La racine `/` et la connexion redirigent vers le premier module actif visible
+  pour le rôle. Si aucun module n'est visible, le shell affiche « Aucun module
+  actif ».
+- Les indicateurs sont lus uniquement côté serveur puis transmis à
+  `NavLinks`; ils ne sont pas exposés via `NEXT_PUBLIC_*`.
+
 ## Pages
 
 | Route | Contenu |
