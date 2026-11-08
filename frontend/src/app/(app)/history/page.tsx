@@ -8,17 +8,20 @@ import {
   HISTORY_ACTION_TONES,
   HISTORY_ENTITY_LABELS,
   HISTORY_ENTITY_TONES,
+  HISTORY_ENTITY_MODULES,
   historyEntryLink,
 } from "@/lib/history";
-import type { CurrentUser, HistoryEntry } from "@/lib/types";
+import { getEnabledModules } from "@/lib/module-settings";
+import type { CurrentUser, HistoryEntity, HistoryEntry } from "@/lib/types";
 
 const LIMIT = 100;
 
-const ENTITY_OPTIONS = [
+const ENTITY_OPTIONS: { value: HistoryEntity | ""; label: string }[] = [
   { value: "", label: "Toutes les sources" },
   { value: "temperature_reading", label: "Relevés de température" },
   { value: "cleaning_record", label: "Nettoyages" },
   { value: "pasteurisation_phase", label: "Pasteurisation" },
+  { value: "transport", label: "Transports" },
 ];
 
 const FIELD_CLASS =
@@ -48,12 +51,23 @@ export default async function HistoryPage({
 }) {
   const params = await searchParams;
   const user = await apiFetch<CurrentUser>("/api/v1/auth/me");
+  const enabledModules = getEnabledModules();
 
   if (user.role !== "admin") {
     return <AccessDenied />;
   }
 
-  const entity = params.entity?.trim() ?? "";
+  const sourceOptions = ENTITY_OPTIONS.filter(
+    (option) =>
+      option.value !== "" && enabledModules[HISTORY_ENTITY_MODULES[option.value]],
+  );
+  const activeEntities = new Set<HistoryEntity>(
+    sourceOptions.flatMap((option) => (option.value === "" ? [] : [option.value])),
+  );
+  const requestedEntity = params.entity?.trim() ?? "";
+  const entity = activeEntities.has(requestedEntity as HistoryEntity)
+    ? requestedEntity
+    : "";
   const from = params.from?.trim() ?? "";
   const to = params.to?.trim() ?? "";
 
@@ -68,7 +82,10 @@ export default async function HistoryPage({
     query.set("to", to);
   }
 
-  const entries = await apiFetch<HistoryEntry[]>(`/api/v1/history?${query.toString()}`);
+  const historyEntries = await apiFetch<HistoryEntry[]>(
+    `/api/v1/history?${query.toString()}`,
+  );
+  const entries = historyEntries.filter((entry) => activeEntities.has(entry.entity));
 
   const groups: { day: string; entries: HistoryEntry[] }[] = [];
   for (const entry of entries) {
@@ -82,6 +99,9 @@ export default async function HistoryPage({
   }
 
   const filtered = Boolean(entity || from || to);
+  const sourceSummary = sourceOptions
+    .map((option) => option.label.toLowerCase())
+    .join(", ");
 
   return (
     <div className="space-y-8">
@@ -91,25 +111,28 @@ export default async function HistoryPage({
           Historique
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
-          Toutes les modifications enregistrées sur la plateforme, du plus récent au plus ancien :
-          relevés de température, nettoyages et pasteurisation. Les corrections y figurent avec
-          leur valeur précédente et leur auteur.
+          {sourceOptions.length > 0
+            ? `Toutes les modifications enregistrées pour les modules actifs, du plus récent au plus ancien : ${sourceSummary}. Les corrections y figurent avec leur valeur précédente et leur auteur.`
+            : "Aucun module source n'est actif. Active au moins un module métier pour alimenter ce journal."}
         </p>
       </header>
 
       <form action="/history" method="get" className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5">
-          <label htmlFor="entity" className="block text-xs font-medium text-slate-600">
-            Source
-          </label>
-          <select id="entity" name="entity" defaultValue={entity} className={FIELD_CLASS}>
-            {ENTITY_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {sourceOptions.length > 0 ? (
+          <div className="space-y-1.5">
+            <label htmlFor="entity" className="block text-xs font-medium text-slate-600">
+              Source
+            </label>
+            <select id="entity" name="entity" defaultValue={entity} className={FIELD_CLASS}>
+              <option value="">Toutes les sources</option>
+              {sourceOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         <div className="space-y-1.5">
           <label htmlFor="from" className="block text-xs font-medium text-slate-600">
             Du
@@ -153,7 +176,9 @@ export default async function HistoryPage({
             Aucune modification à afficher
           </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            {filtered
+            {sourceOptions.length === 0
+              ? "Le journal attend qu'au moins un module métier soit activé."
+              : filtered
               ? "Aucune entrée ne correspond à ces critères."
               : "Les saisies et corrections apparaîtront ici au fur et à mesure."}
           </p>
@@ -170,7 +195,10 @@ export default async function HistoryPage({
               </h2>
               <ol className="space-y-3">
                 {group.entries.map((entry) => {
-                  const link = historyEntryLink(entry);
+                  const link =
+                    entry.entity === "temperature_reading" && !enabledModules.equipment
+                      ? null
+                      : historyEntryLink(entry);
                   return (
                     <li
                       key={entry.id}

@@ -37,5 +37,14 @@ export function getEnabledModules(): EnabledModules {
   for (const key of MODULE_KEYS) {
     enabled[key] = readModuleFlag(key);
   }
+
+  // Equipment owns the configurations used by readings, transport
+  // (vehicles) and cash sessions (registers). Keep it visible while any of
+  // those dependants is active.
+  enabled.equipment =
+    enabled.equipment ||
+    enabled.readings ||
+    enabled.transport ||
+    enabled.cashSessions;
   return enabled;
 }

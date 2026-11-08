@@ -23,16 +23,16 @@ export default function LoginPage() {
 
         <div className="relative max-w-md space-y-4">
           <h1 className="text-3xl font-semibold leading-tight tracking-tight">
-            La chaîne du froid, sous contrôle.
+            La conformité HACCP, sous contrôle.
           </h1>
           <p className="text-slate-400">
-            Suivez vos enceintes réfrigérées, leurs seuils réglementaires et les relevés de
-            température — automatiques ou manuels — depuis un seul endroit.
+            Active les modules utiles à ton activité et pilote tes obligations HACCP depuis un
+            seul endroit.
           </p>
         </div>
 
         <p className="relative text-xs text-slate-500">
-          Traçabilité HACCP · Relevés horodatés en UTC
+          Traçabilité HACCP · Données horodatées en UTC
         </p>
       </section>
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Connexion</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Accède à la gestion de ton parc d&apos;équipements.
+            Accède à tes modules de gestion HACCP.
           </p>
 
           <div className="mt-8">

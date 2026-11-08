@@ -34,6 +34,9 @@ Les entrées du menu sont contrôlées par dix variables d'environnement :
   `1`, toute autre valeur provoque une erreur de configuration.
 - `MODULE_CLEANING` contrôle à la fois `/cleaning` et `/cleaning/plans`.
 - `MODULE_DOCUMENTS` contrôle à la fois `/templates` et `/documents`.
+- Matériel est un prérequis de Relevés, Transport et Suivi de caisse. Son
+  entrée reste donc visible si au moins un de ces modules est actif, même avec
+  `MODULE_EQUIPMENT=0`.
 - Sur `/equipment`, `MODULE_TRANSPORT` masque le bloc Véhicules et
   `MODULE_CASH_SESSIONS` masque le bloc Caisses. Sur le détail d'un matériel,
   `MODULE_READINGS` masque l'historique et l'action de saisie des relevés.
@@ -44,6 +47,24 @@ Les entrées du menu sont contrôlées par dix variables d'environnement :
   actif ».
 - Les indicateurs sont lus uniquement côté serveur puis transmis à
   `NavLinks`; ils ne sont pas exposés via `NEXT_PUBLIC_*`.
+
+Les références croisées suivent les mêmes indicateurs :
+
+| Module désactivé | Références également masquées |
+| --- | --- |
+| Matériel | Masqué seulement si Relevés, Transport et Suivi de caisse sont aussi désactivés ; masque alors leurs liens résiduels |
+| Relevés | Bloc de relevés du détail Matériel, carte d'export et source d'historique |
+| Nettoyage | Cartes d'export et source d'historique |
+| Pasteurisation | Cartes d'export et source d'historique |
+| Transport | Bloc Véhicules de Matériel, carte d'export et source d'historique |
+| Suivi de caisse | Bloc Caisses de Matériel et carte d'export |
+| Export | Entrée de menu |
+| Documents | Entrées Modèles LaTeX et Documents générés, ainsi que la carte d'export Documents |
+| Historique | Entrée de menu et mentions vers l'onglet Historique |
+| Utilisateurs | Entrée de menu |
+
+La page `/export` ne propose que les fichiers des modules sources actifs. La
+page `/history` filtre ses sources et ses entrées de la même façon.
 
 ## Pages
 

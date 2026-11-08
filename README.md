@@ -230,6 +230,8 @@ codés en dur dans la logique : ce sont ces variables qui font foi.
 Les modules visibles dans le menu sont pilotés indépendamment. `1` active
 l'entrée, `0` la masque. Le backend et les pages restent disponibles : une URL
 directe continue de fonctionner même si son entrée est masquée.
+Matériel reste toutefois visible tant que Relevés, Transport ou Suivi de caisse
+est actif, car il porte leurs configurations.
 
 | Variable | Défaut | Entrées contrôlées |
 | --- | --- | --- |
@@ -247,6 +249,11 @@ directe continue de fonctionner même si son entrée est masquée.
 Sur la page Matériel, ces réglages masquent également le bloc Véhicules quand
 Transport est désactivé, le bloc Caisses quand Suivi de caisse est désactivé,
 et les relevés du détail d'un matériel quand Relevés est désactivé.
+
+Les références croisées suivent les mêmes réglages : Export ne propose que les
+fichiers des modules actifs et Historique masque les sources et entrées des
+modules désactivés. Les liens de Relevés et Suivi de caisse vers Matériel sont
+également masqués lorsque Matériel est désactivé.
 
 Le frontend reçoit `API_INTERNAL_URL` (`http://backend:8000`), fixé par le
 compose : c'est l'adresse utilisée pour les appels serveur à serveur.

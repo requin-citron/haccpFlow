@@ -5,6 +5,7 @@ import { SessionCard } from "@/components/cash-sessions/session-card";
 import { BanknoteIcon, CheckIcon, GridIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import { formatEuros } from "@/lib/format";
+import { getEnabledModules } from "@/lib/module-settings";
 import type { CashRegister, CashSession } from "@/lib/types";
 
 function StatCard({
@@ -30,6 +31,7 @@ function StatCard({
 }
 
 export default async function CashSessionsPage() {
+  const enabledModules = getEnabledModules();
   const [cashRegisters, sessions] = await Promise.all([
     apiFetch<CashRegister[]>("/api/v1/cash-registers"),
     apiFetch<CashSession[]>("/api/v1/cash-sessions"),
@@ -81,14 +83,18 @@ export default async function CashSessionsPage() {
           </span>
           <h2 className="mt-4 text-base font-semibold text-slate-900">Aucune caisse enrôlée</h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            Enrôle d&apos;abord une caisse et son comptage initial dans l&apos;onglet Matériel.
+            {enabledModules.equipment
+              ? "Enrôle d'abord une caisse et son comptage initial dans l'onglet Matériel."
+              : "Aucune caisse disponible. Le module Matériel est désactivé."}
           </p>
-          <Link
-            href="/equipment"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-          >
-            Aller au matériel
-          </Link>
+          {enabledModules.equipment ? (
+            <Link
+              href="/equipment"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+            >
+              Aller au matériel
+            </Link>
+          ) : null}
         </section>
       ) : (
         <>

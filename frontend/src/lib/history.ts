@@ -1,3 +1,4 @@
+import type { ModuleKey } from "@/lib/modules";
 import type { HistoryAction, HistoryEntity } from "@/lib/types";
 
 export const HISTORY_ENTITY_LABELS: Record<HistoryEntity, string> = {
@@ -23,6 +24,13 @@ export const HISTORY_ENTITY_LINKS: Record<HistoryEntity, string | null> = {
   cleaning_record: "/cleaning",
   pasteurisation_phase: "/pasteurisation",
   transport: "/transport",
+};
+
+export const HISTORY_ENTITY_MODULES: Record<HistoryEntity, ModuleKey> = {
+  temperature_reading: "readings",
+  cleaning_record: "cleaning",
+  pasteurisation_phase: "pasteurisation",
+  transport: "transport",
 };
 
 export const HISTORY_ACTION_LABELS: Record<HistoryAction, string> = {

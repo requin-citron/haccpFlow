@@ -64,8 +64,10 @@ export default async function EquipmentPage() {
             Matériel
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-500">
-            Déclare les enceintes à surveiller et leurs seuils réglementaires. Les relevés et
-            l&apos;enrôlement des capteurs arriveront ensuite.
+            Déclare les enceintes à surveiller et leurs seuils réglementaires.
+            {enabledModules.readings
+              ? " Les relevés et l'enrôlement des capteurs arriveront ensuite."
+              : ""}
           </p>
         </div>
         <EquipmentFormDialog />

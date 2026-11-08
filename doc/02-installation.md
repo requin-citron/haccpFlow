@@ -58,9 +58,9 @@ Sans l'option `-v`, les volumes PostgreSQL et MQTT sont conservés.
 uniquement si la table est vide ; le mot de passe n'est jamais réécrit si le
 compte existe déjà.
 
-La gestion des comptes est disponible via l'API admin (`/api/v1/users`) ; le
-frontend correspondant n'est pas encore présent. Les mots de passe générés sont
-retournés une seule fois lors de la création ou de la réinitialisation.
+La gestion des comptes est disponible dans la page admin `/users` et via l'API
+(`/api/v1/users`). Les mots de passe générés sont retournés une seule fois lors
+de la création ou de la réinitialisation.
 
 ## Développement local
 

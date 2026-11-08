@@ -15,6 +15,28 @@ pas une barrière de sécurité.
 
 Tableau complet : [README — Rôles et accès](../README.md#rôles-et-accès).
 
+## Modules frontend activables
+
+Le déploiement peut masquer certaines entrées du menu avec les variables
+`MODULE_*` décrites dans l'exploitation. La racine ouvre le premier module
+actif visible pour le rôle courant ; lorsqu'aucun module ne l'est, le shell
+affiche un message dédié.
+
+Ce réglage est uniquement une adaptation de l'interface. Il ne retire aucun
+droit, ne désactive aucune route API et ne bloque pas les URL directes. Les
+rôles et les contrôles backend restent la seule barrière d'autorisation. Sur la
+page Matériel, les blocs Véhicules et Caisses suivent respectivement
+`MODULE_TRANSPORT` et `MODULE_CASH_SESSIONS`, et le détail d'un matériel masque
+ses relevés si `MODULE_READINGS` est désactivé.
+
+Matériel est un prérequis de Relevés, Transport et Suivi de caisse : son entrée
+reste visible tant qu'au moins un de ces modules est actif, même si
+`MODULE_EQUIPMENT=0`.
+
+De la même façon, Export ne propose que les fichiers des modules actifs et
+Historique masque les filtres, entrées et liens provenant des modules
+désactivés.
+
 ## Chaîne du froid
 
 ### Matériel

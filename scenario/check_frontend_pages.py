@@ -36,12 +36,42 @@ NAV_MODULES: list[tuple[str, str]] = [
     ("MODULE_USERS", "Utilisateurs"),
 ]
 
+EXPORT_DATASETS: list[tuple[str, str]] = [
+    ("MODULE_READINGS", "readings"),
+    ("MODULE_CLEANING", "cleanings"),
+    ("MODULE_PASTEURISATION", "pasteurisations"),
+    ("MODULE_TRANSPORT", "transports"),
+    ("MODULE_CASH_SESSIONS", "cash-registers"),
+    ("MODULE_DOCUMENTS", "documents"),
+]
 
-def module_enabled(env: dict[str, str], key: str) -> bool:
+HISTORY_SOURCES: list[tuple[str, str]] = [
+    ("MODULE_READINGS", "temperature_reading"),
+    ("MODULE_CLEANING", "cleaning_record"),
+    ("MODULE_PASTEURISATION", "pasteurisation_phase"),
+    ("MODULE_TRANSPORT", "transport"),
+]
+
+
+def raw_module_enabled(env: dict[str, str], key: str) -> bool:
     value = env.get(key, "1")
     if value not in {"0", "1"}:
         sys.exit(f"{key} doit valoir 0 ou 1 dans le .env (valeur reçue : {value!r})")
     return value == "1"
+
+
+def module_enabled(env: dict[str, str], key: str) -> bool:
+    enabled = raw_module_enabled(env, key)
+    if key == "MODULE_EQUIPMENT":
+        return enabled or any(
+            raw_module_enabled(env, dependency)
+            for dependency in (
+                "MODULE_READINGS",
+                "MODULE_TRANSPORT",
+                "MODULE_CASH_SESSIONS",
+            )
+        )
+    return enabled
 
 
 def main() -> None:
@@ -123,15 +153,29 @@ def main() -> None:
 
     status, html = fetch_page("/export", cookie=cookie)
     report.check("page d'export : bouton de téléchargement", "Télécharger le CSV" in html)
-    for dataset in (
-        "readings",
-        "cleanings",
-        "pasteurisations",
-        "transports",
-        "cash-registers",
-        "documents",
-    ):
-        report.check(f"export « {dataset} » proposé", f"/api/exports/{dataset}" in html)
+    for env_key, dataset in EXPORT_DATASETS:
+        visible = f"/api/exports/{dataset}" in html
+        expected = module_enabled(module_env, env_key)
+        report.check(
+            f"export « {dataset} » {'proposé' if expected else 'masqué'}",
+            visible == expected,
+        )
+
+    status, html = fetch_page("/history", cookie=cookie)
+    report.status("sources d'historique", status)
+    source_select = re.search(
+        r'<select id="entity".*?</select>',
+        html,
+        re.DOTALL,
+    )
+    source_html = source_select.group(0) if source_select else ""
+    for env_key, entity in HISTORY_SOURCES:
+        visible = f'value="{entity}"' in source_html
+        expected = module_enabled(module_env, env_key)
+        report.check(
+            f"source d'historique « {entity} » {'présente' if expected else 'masquée'}",
+            visible == expected,
+        )
 
     status, csv_text = fetch_page("/api/exports/readings", cookie=cookie)
     report.status("téléchargement via le frontend", status)

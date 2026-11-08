@@ -18,6 +18,7 @@ fidèlement, pas anticiper des fonctionnalités non implémentées.
 | Nouvelle règle métier | [03-domaines-metier.md](./03-domaines-metier.md), [04-api.md](./04-api.md) |
 | Nouvelle table / colonne / migration | [05-base-de-donnees.md](./05-base-de-donnees.md), [08-exploitation.md](./08-exploitation.md) si sauvegarde impactée |
 | Nouvelle variable d'environnement | [08-exploitation.md](./08-exploitation.md), `.env.example`, `README.md` |
+| Nouveau module frontend activable | [06-frontend.md](./06-frontend.md), [08-exploitation.md](./08-exploitation.md), [03-domaines-metier.md](./03-domaines-metier.md), `.env.example`, `README.md`, `scenario/README.md` |
 | Changement Docker / ports / volumes | [02-installation.md](./02-installation.md), [08-exploitation.md](./08-exploitation.md) |
 | Nouvelle page ou nouveau flux frontend | [06-frontend.md](./06-frontend.md), [03-domaines-metier.md](./03-domaines-metier.md) |
 | Changement du sous-système LaTeX | [07-modeles-latex.md](./07-modeles-latex.md), [03-domaines-metier.md](./03-domaines-metier.md), [08-exploitation.md](./08-exploitation.md) |

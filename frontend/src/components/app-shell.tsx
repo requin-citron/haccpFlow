@@ -52,7 +52,7 @@ export function AppShell({
           {children}
         </main>
         <footer className="px-5 pb-6 text-xs text-slate-400 lg:px-10">
-          Relevés horodatés en UTC · haccpFlow
+          Données horodatées en UTC · haccpFlow
         </footer>
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   isIsoDate,
   todayIso,
 } from "@/lib/format";
+import { getEnabledModules } from "@/lib/module-settings";
 import type { Equipment, TemperatureReadingDay, TemperatureReadingSlot } from "@/lib/types";
 
 function SlotTile({ label, slot }: { label: string; slot: TemperatureReadingSlot | null }) {
@@ -47,6 +48,7 @@ export default async function ReadingsPage({
 }) {
   const params = await searchParams;
   const date = isIsoDate(params.date) ? params.date : todayIso();
+  const enabledModules = getEnabledModules();
 
   const equipmentList = await apiFetch<Equipment[]>("/api/v1/equipment");
   const rows = await Promise.all(
@@ -117,14 +119,18 @@ export default async function ReadingsPage({
             Aucun matériel à relever
           </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            Déclare d&apos;abord un réfrigérateur ou un congélateur dans la page Matériel.
+            {enabledModules.equipment
+              ? "Déclare d'abord un réfrigérateur ou un congélateur dans la page Matériel."
+              : "Aucun matériel disponible. Le module Matériel est désactivé."}
           </p>
-          <Link
-            href="/equipment"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-          >
-            Gérer le matériel
-          </Link>
+          {enabledModules.equipment ? (
+            <Link
+              href="/equipment"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+            >
+              Gérer le matériel
+            </Link>
+          ) : null}
         </section>
       ) : (
         <section className="grid gap-4 lg:grid-cols-2">

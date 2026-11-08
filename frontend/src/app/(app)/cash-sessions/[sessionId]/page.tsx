@@ -10,6 +10,7 @@ import { ExpenseRow } from "@/components/cash-sessions/expense-row";
 import { BanknoteIcon, CheckIcon, DownloadIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDateTimeUtc, formatDayLabel, formatEuros } from "@/lib/format";
+import { getEnabledModules } from "@/lib/module-settings";
 import type { CashSession, CurrentUser } from "@/lib/types";
 
 function MoneyCard({ label, value, tone }: { label: string; value: string; tone?: string }) {
@@ -41,6 +42,7 @@ export default async function CashSessionPage({
   }
 
   const user = await apiFetch<CurrentUser>("/api/v1/auth/me");
+  const enabledModules = getEnabledModules();
   const isOpen = session.is_open;
 
   return (
@@ -201,12 +203,14 @@ export default async function CashSessionPage({
                 </span>
               ) : null}
             </p>
-            <Link
-              href="/equipment"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              Voir la caisse dans le matériel
-            </Link>
+            {enabledModules.equipment ? (
+              <Link
+                href="/equipment"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                Voir la caisse dans le matériel
+              </Link>
+            ) : null}
           </div>
         )}
       </section>

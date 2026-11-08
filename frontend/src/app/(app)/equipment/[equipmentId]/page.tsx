@@ -111,8 +111,10 @@ export default async function EquipmentDetailPage({
                 {HISTORY_DAYS} derniers jours
               </h2>
               <p className="text-xs text-slate-500">
-                Saisie du matin et du soir. Le détail des modifications est dans l&apos;onglet
-                Historique.
+                Saisie du matin et du soir.
+                {enabledModules.history
+                  ? " Le détail des modifications est dans l'onglet Historique."
+                  : ""}
               </p>
             </div>
           </header>

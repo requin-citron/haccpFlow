@@ -9,13 +9,25 @@ import {
   ThermometerIcon,
   TruckIcon,
 } from "@/components/icons";
+import { getEnabledModules } from "@/lib/module-settings";
+import type { ModuleKey } from "@/lib/modules";
 
 const FIELD_CLASS =
   "rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15";
 
-const DATASETS = [
+type Dataset = {
+  key: string;
+  module: ModuleKey;
+  title: string;
+  description: string;
+  tone: string;
+  icon: React.ReactNode;
+};
+
+const DATASETS: readonly Dataset[] = [
   {
     key: "readings",
+    module: "readings",
     title: "Relevés de température",
     description:
       "Une ligne par créneau : matériel, date, température, conformité et source.",
@@ -24,6 +36,7 @@ const DATASETS = [
   },
   {
     key: "cleanings",
+    module: "cleaning",
     title: "Nettoyages",
     description:
       "Chaque nettoyage déclaré : plan, fréquence, produits, date, commentaire et auteur de la déclaration.",
@@ -32,6 +45,7 @@ const DATASETS = [
   },
   {
     key: "pasteurisations",
+    module: "pasteurisation",
     title: "Pasteurisation",
     description:
       "Un lot par ligne, avec les trois phases en colonnes : heures, température cible, durée calculée et observations.",
@@ -40,6 +54,7 @@ const DATASETS = [
   },
   {
     key: "transports",
+    module: "transport",
     title: "Transports",
     description:
       "Un déplacement par ligne : véhicule, plaque, lieu, produit et les deux relevés de chaîne du froid.",
@@ -48,6 +63,7 @@ const DATASETS = [
   },
   {
     key: "cash-registers",
+    module: "cashSessions",
     title: "Caisses",
     description:
       "Les états successifs de chaque caisse : fond d'ouverture, frais pro et perso, comptage de clôture et détail des coupures.",
@@ -56,6 +72,7 @@ const DATASETS = [
   },
   {
     key: "documents",
+    module: "documents",
     title: "Documents générés",
     description:
       "Bons de livraison et autres PDF générés : date, modèle, auteur, fichier et valeurs des variables. Les lignes produits sont exportées en JSON.",
@@ -70,6 +87,8 @@ export default async function ExportPage({
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const params = await searchParams;
+  const enabledModules = getEnabledModules();
+  const datasets = DATASETS.filter((dataset) => enabledModules[dataset.module]);
   const from = params.from?.trim() ?? "";
   const to = params.to?.trim() ?? "";
 
@@ -136,36 +155,50 @@ export default async function ExportPage({
           : "Sans période précisée, chaque fichier contient tout l'historique — ce qu'il faut pour un archivage complet."}
       </p>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        {DATASETS.map((dataset) => (
-          <article
-            key={dataset.key}
-            className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <header className="flex items-start gap-3">
-              <span
-                className={`grid size-10 shrink-0 place-items-center rounded-xl ${dataset.tone}`}
-              >
-                {dataset.icon}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-slate-900">{dataset.title}</h2>
-                <p className="mt-0.5 text-xs text-slate-500">{dataset.description}</p>
-              </div>
-            </header>
+      {datasets.length === 0 ? (
+        <section className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center">
+          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-500">
+            <DownloadIcon className="size-6" />
+          </span>
+          <h2 className="mt-4 text-base font-semibold text-slate-900">
+            Aucune source exportable
+          </h2>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+            Active au moins un module métier pour afficher ses extractions CSV.
+          </p>
+        </section>
+      ) : (
+        <section className="grid gap-4 lg:grid-cols-2">
+          {datasets.map((dataset) => (
+            <article
+              key={dataset.key}
+              className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <header className="flex items-start gap-3">
+                <span
+                  className={`grid size-10 shrink-0 place-items-center rounded-xl ${dataset.tone}`}
+                >
+                  {dataset.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-semibold text-slate-900">{dataset.title}</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">{dataset.description}</p>
+                </div>
+              </header>
 
-            <footer className="mt-auto border-t border-slate-100 pt-4">
-              <a
-                href={`/api/exports/${dataset.key}${suffix}`}
-                className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-              >
-                <DownloadIcon className="size-4" />
-                Télécharger le CSV
-              </a>
-            </footer>
-          </article>
-        ))}
-      </section>
+              <footer className="mt-auto border-t border-slate-100 pt-4">
+                <a
+                  href={`/api/exports/${dataset.key}${suffix}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+                >
+                  <DownloadIcon className="size-4" />
+                  Télécharger le CSV
+                </a>
+              </footer>
+            </article>
+          ))}
+        </section>
+      )}
 
       <p className="text-xs text-slate-500">
         Format : séparateur point-virgule, dates au format français et encodage UTF-8 avec BOM,

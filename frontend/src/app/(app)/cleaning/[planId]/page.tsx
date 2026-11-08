@@ -13,6 +13,7 @@ import {
   formatShortDay,
   todayIso,
 } from "@/lib/format";
+import { getEnabledModules } from "@/lib/module-settings";
 import type { CleaningPlan, CleaningRecord, CurrentUser } from "@/lib/types";
 
 const RECENT_LIMIT = 20;
@@ -24,6 +25,7 @@ export default async function CleaningPlanDetailPage({
 }) {
   const { planId } = await params;
   const today = todayIso();
+  const enabledModules = getEnabledModules();
 
   const [user, plans] = await Promise.all([
     apiFetch<CurrentUser>("/api/v1/auth/me"),
@@ -86,7 +88,11 @@ export default async function CleaningPlanDetailPage({
               ? "Aucune déclaration pour ce plan."
               : `${records.length} déclaration${records.length > 1 ? "s" : ""}${
                   records.length > RECENT_LIMIT ? `, ${RECENT_LIMIT} plus récentes affichées` : ""
-                }. Les corrections sont visibles dans l'onglet Historique.`}
+                }.${
+                  enabledModules.history
+                    ? " Les corrections sont visibles dans l'onglet Historique."
+                    : ""
+                }`}
           </p>
         </header>
 
