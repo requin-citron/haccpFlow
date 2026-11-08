@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { createVehicleAction, updateVehicleAction } from "@/actions/vehicles";
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_VEHICLE_FORM_STATE } from "@/lib/form-state";
 import {
   CANCEL_BUTTON_CLASS,
@@ -17,6 +18,7 @@ import {
 import type { Vehicle } from "@/lib/types";
 
 export function VehicleFormDialog({ vehicle }: { vehicle?: Vehicle }) {
+  const { t } = useI18n();
   const isEdit = vehicle !== undefined;
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -49,16 +51,16 @@ export function VehicleFormDialog({ vehicle }: { vehicle?: Vehicle }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`Modifier ${vehicle.name ?? vehicle.plate}`}
+          aria-label={t("Modifier {name}", { name: vehicle.name ?? vehicle.plate ?? "" })}
           className={SECONDARY_TRIGGER_CLASS}
         >
           <PencilIcon className="size-4" />
-          Modifier
+          {t("Modifier")}
         </button>
       ) : (
         <button type="button" onClick={() => setOpen(true)} className={PRIMARY_TRIGGER_CLASS}>
           <PlusIcon className="size-4" />
-          Nouveau véhicule
+          {t("Nouveau véhicule")}
         </button>
       )}
 
@@ -81,16 +83,16 @@ export function VehicleFormDialog({ vehicle }: { vehicle?: Vehicle }) {
                   id="vehicle-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  {isEdit ? "Modifier le véhicule" : "Nouveau véhicule"}
+                  {isEdit ? t("Modifier le véhicule") : t("Nouveau véhicule")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Utilisé ensuite pour déclarer les transports.
+                  {t("Utilisé ensuite pour déclarer les transports.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -102,7 +104,7 @@ export function VehicleFormDialog({ vehicle }: { vehicle?: Vehicle }) {
 
               <div className="space-y-1.5">
                 <label htmlFor="name" className={LABEL_CLASS}>
-                  Nom du véhicule
+                  {t("Nom du véhicule")}
                 </label>
                 <input
                   id="name"
@@ -110,14 +112,14 @@ export function VehicleFormDialog({ vehicle }: { vehicle?: Vehicle }) {
                   maxLength={120}
                   autoFocus
                   defaultValue={vehicle?.name ?? ""}
-                  placeholder="Camion frigo 1"
+                  placeholder={t("Camion frigo 1")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="plate" className={LABEL_CLASS}>
-                  Numéro de plaque
+                  {t("Numéro de plaque")}
                 </label>
                 <input
                   id="plate"
@@ -128,8 +130,9 @@ export function VehicleFormDialog({ vehicle }: { vehicle?: Vehicle }) {
                   className={FIELD_CLASS}
                 />
                 <p className="text-xs text-slate-500">
-                  Renseigne au moins l&apos;un des deux. Un nom et une plaque ne peuvent pas être
-                  réutilisés par un autre véhicule actif.
+                  {t(
+                    "Renseigne au moins l'un des deux. Un nom et une plaque ne peuvent pas être réutilisés par un autre véhicule actif.",
+                  )}
                 </p>
               </div>
 
@@ -145,10 +148,14 @@ export function VehicleFormDialog({ vehicle }: { vehicle?: Vehicle }) {
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer le véhicule"}
+                  {pending
+                    ? t("Enregistrement…")
+                    : isEdit
+                      ? t("Enregistrer")
+                      : t("Créer le véhicule")}
                 </button>
               </div>
             </form>

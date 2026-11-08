@@ -4,8 +4,9 @@ import { useActionState, useEffect, useState } from "react";
 
 import { createCleaningPlanAction, updateCleaningPlanAction } from "@/actions/cleaning";
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_CLEANING_PLAN_FORM_STATE } from "@/lib/form-state";
-import { CLEANING_FREQUENCY_LABELS } from "@/lib/format";
+import { cleaningFrequencyLabel } from "@/lib/format";
 import {
   CANCEL_BUTTON_CLASS,
   FIELD_CLASS,
@@ -20,6 +21,7 @@ import type { CleaningFrequency, CleaningPlan } from "@/lib/types";
 const FREQUENCIES: CleaningFrequency[] = ["after_each_use", "daily", "weekly"];
 
 export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
+  const { locale, t } = useI18n();
   const isEdit = plan !== undefined;
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -52,16 +54,16 @@ export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`Modifier ${plan.name}`}
+          aria-label={t("Modifier {name}", { name: plan.name })}
           className={SECONDARY_TRIGGER_CLASS}
         >
           <PencilIcon className="size-4" />
-          Modifier
+          {t("Modifier")}
         </button>
       ) : (
         <button type="button" onClick={() => setOpen(true)} className={PRIMARY_TRIGGER_CLASS}>
           <PlusIcon className="size-4" />
-          Nouveau plan
+          {t("Nouveau plan")}
         </button>
       )}
 
@@ -84,16 +86,16 @@ export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
                   id="cleaning-plan-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  {isEdit ? "Modifier le plan" : "Nouveau plan de nettoyage"}
+                  {isEdit ? t("Modifier le plan") : t("Nouveau plan de nettoyage")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Une zone ou un matériel, sa fréquence et les produits à utiliser.
+                  {t("Une zone ou un matériel, sa fréquence et les produits à utiliser.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -105,7 +107,7 @@ export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
 
               <div className="space-y-1.5">
                 <label htmlFor="name" className={LABEL_CLASS}>
-                  Zone ou matériel
+                  {t("Zone ou matériel")}
                 </label>
                 <input
                   id="name"
@@ -114,14 +116,14 @@ export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
                   autoFocus
                   maxLength={120}
                   defaultValue={plan?.name ?? ""}
-                  placeholder="Zone de préparation"
+                  placeholder={t("Zone de préparation")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="frequency" className={LABEL_CLASS}>
-                  Fréquence
+                  {t("Fréquence")}
                 </label>
                 <select
                   id="frequency"
@@ -131,20 +133,20 @@ export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
                 >
                   {FREQUENCIES.map((frequency) => (
                     <option key={frequency} value={frequency}>
-                      {CLEANING_FREQUENCY_LABELS[frequency]}
+                      {cleaningFrequencyLabel(locale, frequency)}
                     </option>
                   ))}
                 </select>
                 <p className="text-xs text-slate-500">
-                  Un nettoyage après chaque usage n&apos;apparaît pas dans le prévisionnel : il se
-                  déclare au fil de l&apos;eau.
+                  {t(
+                    "Un nettoyage après chaque usage n'apparaît pas dans le prévisionnel : il se déclare au fil de l'eau.",
+                  )}
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="products" className={LABEL_CLASS}>
-                  Produits à utiliser{" "}
-                  <span className="font-normal text-slate-400">(optionnel)</span>
+                  {t("Produits à utiliser {optional}", { optional: t("(optionnel)") })}
                 </label>
                 <textarea
                   id="products"
@@ -152,7 +154,7 @@ export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
                   rows={3}
                   maxLength={1000}
                   defaultValue={plan?.products ?? ""}
-                  placeholder="Détergent alimentaire, javel diluée à 0,5 %…"
+                  placeholder={t("Détergent alimentaire, javel diluée à 0,5 %…")}
                   className={`${FIELD_CLASS} resize-none`}
                 />
               </div>
@@ -169,10 +171,14 @@ export function CleaningPlanDialog({ plan }: { plan?: CleaningPlan }) {
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer le plan"}
+                  {pending
+                    ? t("Enregistrement…")
+                    : isEdit
+                      ? t("Enregistrer")
+                      : t("Créer le plan")}
                 </button>
               </div>
             </form>

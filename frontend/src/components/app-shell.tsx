@@ -2,18 +2,22 @@ import Link from "next/link";
 
 import { logoutAction } from "@/actions/auth";
 import { LogOutIcon, SnowflakeIcon } from "@/components/icons";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NavLinks } from "@/components/nav-links";
+import { t, type Locale } from "@/lib/i18n";
 import type { EnabledModules } from "@/lib/modules";
 import type { CurrentUser } from "@/lib/types";
-import { USER_ROLE_LABELS } from "@/lib/users";
+import { userRoleLabel } from "@/lib/users";
 
 export function AppShell({
   user,
   enabledModules,
+  locale,
   children,
 }: {
   user: CurrentUser;
   enabledModules: EnabledModules;
+  locale: Locale;
   children: React.ReactNode;
 }) {
   return (
@@ -33,15 +37,16 @@ export function AppShell({
         <div className="mt-auto space-y-3 border-t border-slate-800 pt-4">
           <div className="hidden px-1 lg:block">
             <p className="truncate text-sm font-medium text-slate-200">{user.email}</p>
-            <p className="text-xs text-slate-500">{USER_ROLE_LABELS[user.role]}</p>
+            <p className="text-xs text-slate-500">{userRoleLabel(locale, user.role)}</p>
           </div>
+          <LocaleSwitcher compact />
           <form action={logoutAction}>
             <button
               type="submit"
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
             >
               <LogOutIcon className="size-5 shrink-0" />
-              <span className="hidden lg:block">Se déconnecter</span>
+              <span className="hidden lg:block">{t(locale, "Se déconnecter")}</span>
             </button>
           </form>
         </div>
@@ -52,7 +57,7 @@ export function AppShell({
           {children}
         </main>
         <footer className="px-5 pb-6 text-xs text-slate-400 lg:px-10">
-          Données horodatées en UTC · haccpFlow
+          {t(locale, "Données horodatées en UTC · haccpFlow")}
         </footer>
       </div>
     </div>

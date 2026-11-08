@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { createTransportAction, updateTransportAction } from "@/actions/transport";
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_TRANSPORT_FORM_STATE } from "@/lib/form-state";
 import {
   CANCEL_BUTTON_CLASS,
@@ -16,11 +17,11 @@ import {
 } from "@/lib/ui";
 import type { Transport, Vehicle } from "@/lib/types";
 
-function vehicleLabel(vehicle: Vehicle): string {
+function vehicleLabel(vehicle: Vehicle, fallback: string): string {
   if (vehicle.name && vehicle.plate) {
     return `${vehicle.name} — ${vehicle.plate}`;
   }
-  return vehicle.name ?? vehicle.plate ?? "Véhicule";
+  return vehicle.name ?? vehicle.plate ?? fallback;
 }
 
 export function TransportFormDialog({
@@ -32,6 +33,7 @@ export function TransportFormDialog({
   transport?: Transport;
   defaultDate: string;
 }) {
+  const { t } = useI18n();
   const isEdit = transport !== undefined;
   const initialChoice = transport?.vehicle.id ?? vehicles[0]?.id ?? "external";
   const [open, setOpen] = useState(false);
@@ -66,16 +68,16 @@ export function TransportFormDialog({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`Modifier le transport ${transport.product_name}`}
+          aria-label={t("Modifier le transport {label}", { label: transport.product_name })}
           className={SECONDARY_TRIGGER_CLASS}
         >
           <PencilIcon className="size-4" />
-          Modifier
+          {t("Modifier")}
         </button>
       ) : (
         <button type="button" onClick={() => setOpen(true)} className={PRIMARY_TRIGGER_CLASS}>
           <PlusIcon className="size-4" />
-          Nouveau transport
+          {t("Nouveau transport")}
         </button>
       )}
 
@@ -98,18 +100,20 @@ export function TransportFormDialog({
                   id="transport-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  {isEdit ? "Modifier le transport" : "Nouveau transport"}
+                  {isEdit ? t("Modifier le transport") : t("Nouveau transport")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
                   {isEdit
-                    ? "Les relevés de température ne sont pas touchés."
-                    : "Les températures de départ et d'arrivée se saisissent ensuite, sur la fiche du transport."}
+                    ? t("Les relevés de température ne sont pas touchés.")
+                    : t(
+                        "Les températures de départ et d'arrivée se saisissent ensuite, sur la fiche du transport.",
+                      )}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -122,7 +126,7 @@ export function TransportFormDialog({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label htmlFor="transport_date" className={LABEL_CLASS}>
-                    Date
+                    {t("Date")}
                   </label>
                   <input
                     id="transport_date"
@@ -135,7 +139,7 @@ export function TransportFormDialog({
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="lot_number" className={LABEL_CLASS}>
-                    N° de lot <span className="font-normal text-slate-400">(optionnel)</span>
+                    {t("N° de lot {optional}", { optional: t("(optionnel)") })}
                   </label>
                   <input
                     id="lot_number"
@@ -150,7 +154,7 @@ export function TransportFormDialog({
 
               <div className="space-y-1.5">
                 <label htmlFor="product_name" className={LABEL_CLASS}>
-                  Produit transporté
+                  {t("Produit transporté")}
                 </label>
                 <input
                   id="product_name"
@@ -159,14 +163,14 @@ export function TransportFormDialog({
                   maxLength={160}
                   autoFocus
                   defaultValue={transport?.product_name ?? ""}
-                  placeholder="Crème anglaise"
+                  placeholder={t("Crème anglaise")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="place" className={LABEL_CLASS}>
-                  Lieu de livraison
+                  {t("Lieu de livraison")}
                 </label>
                 <input
                   id="place"
@@ -174,14 +178,14 @@ export function TransportFormDialog({
                   required
                   maxLength={160}
                   defaultValue={transport?.place ?? ""}
-                  placeholder="Boulangerie Martin"
+                  placeholder={t("Boulangerie Martin")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="vehicle_choice" className={LABEL_CLASS}>
-                  Véhicule
+                  {t("Véhicule")}
                 </label>
                 <select
                   id="vehicle_choice"
@@ -192,15 +196,16 @@ export function TransportFormDialog({
                 >
                   {vehicles.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
-                      {vehicleLabel(vehicle)}
+                      {vehicleLabel(vehicle, t("Véhicule"))}
                     </option>
                   ))}
-                  <option value="external">Autre véhicule (non référencé)…</option>
+                  <option value="external">{t("Autre véhicule (non référencé)…")}</option>
                 </select>
                 {vehicles.length === 0 ? (
                   <p className="text-xs text-amber-700">
-                    Aucun véhicule au référentiel : précise-le à la main, ou ajoute-le depuis la
-                    page Matériel.
+                    {t(
+                      "Aucun véhicule au référentiel : précise-le à la main, ou ajoute-le depuis la page Matériel.",
+                    )}
                   </p>
                 ) : null}
               </div>
@@ -208,14 +213,14 @@ export function TransportFormDialog({
               {isExternal ? (
                 <div className="space-y-1.5">
                   <label htmlFor="vehicle_label" className={LABEL_CLASS}>
-                    Véhicule externe
+                    {t("Véhicule externe")}
                   </label>
                   <input
                     id="vehicle_label"
                     name="vehicle_label"
                     maxLength={120}
                     defaultValue={transport?.vehicle.id === null ? transport.vehicle.name : ""}
-                    placeholder="Transporteur externe 1234 XYZ"
+                    placeholder={t("Transporteur externe 1234 XYZ")}
                     className={FIELD_CLASS}
                   />
                 </div>
@@ -233,10 +238,14 @@ export function TransportFormDialog({
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer le transport"}
+                  {pending
+                    ? t("Enregistrement…")
+                    : isEdit
+                      ? t("Enregistrer")
+                      : t("Créer le transport")}
                 </button>
               </div>
             </form>

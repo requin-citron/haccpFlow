@@ -1,3 +1,5 @@
+import type { MessageKey } from "@/lib/i18n";
+
 export const MODULE_KEYS = [
   "equipment",
   "readings",
@@ -18,23 +20,23 @@ export type EnabledModules = Record<ModuleKey, boolean>;
 type ModuleNavItem = {
   key: ModuleKey;
   href: string;
-  label: string;
+  labelKey: MessageKey;
   adminOnly?: boolean;
 };
 
 export const MODULE_NAV_ITEMS: readonly ModuleNavItem[] = [
-  { key: "equipment", href: "/equipment", label: "Matériel" },
-  { key: "readings", href: "/readings", label: "Relevés" },
-  { key: "cleaning", href: "/cleaning", label: "Nettoyage" },
-  { key: "cleaning", href: "/cleaning/plans", label: "Plan de nettoyage" },
-  { key: "pasteurisation", href: "/pasteurisation", label: "Pasteurisation" },
-  { key: "transport", href: "/transport", label: "Transport" },
-  { key: "cashSessions", href: "/cash-sessions", label: "Suivi de caisse" },
-  { key: "export", href: "/export", label: "Export" },
-  { key: "documents", href: "/templates", label: "Modèles LaTeX" },
-  { key: "documents", href: "/documents", label: "Documents générés" },
-  { key: "history", href: "/history", label: "Historique", adminOnly: true },
-  { key: "users", href: "/users", label: "Utilisateurs", adminOnly: true },
+  { key: "equipment", href: "/equipment", labelKey: "Matériel" },
+  { key: "readings", href: "/readings", labelKey: "Relevés" },
+  { key: "cleaning", href: "/cleaning", labelKey: "Nettoyage" },
+  { key: "cleaning", href: "/cleaning/plans", labelKey: "Plan de nettoyage" },
+  { key: "pasteurisation", href: "/pasteurisation", labelKey: "Pasteurisation" },
+  { key: "transport", href: "/transport", labelKey: "Transport" },
+  { key: "cashSessions", href: "/cash-sessions", labelKey: "Suivi de caisse" },
+  { key: "export", href: "/export", labelKey: "Export" },
+  { key: "documents", href: "/templates", labelKey: "Modèles LaTeX" },
+  { key: "documents", href: "/documents", labelKey: "Documents générés" },
+  { key: "history", href: "/history", labelKey: "Historique", adminOnly: true },
+  { key: "users", href: "/users", labelKey: "Utilisateurs", adminOnly: true },
 ];
 
 export function firstEnabledModuleHref(
@@ -47,3 +49,4 @@ export function firstEnabledModuleHref(
     )?.href ?? null
   );
 }
+

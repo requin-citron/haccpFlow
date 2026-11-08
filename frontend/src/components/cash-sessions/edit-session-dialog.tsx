@@ -5,6 +5,7 @@ import { useActionState, useEffect, useState } from "react";
 import { updateCashSessionAction } from "@/actions/cash-sessions";
 import { DenominationFields } from "@/components/cash-sessions/denomination-fields";
 import { AlertIcon, CloseIcon, PencilIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { countsDraft, draftTotalCents, type CountsDraft } from "@/lib/cash-session";
 import { INITIAL_CASH_SESSION_FORM_STATE } from "@/lib/form-state";
 import { formatEuros } from "@/lib/format";
@@ -20,6 +21,7 @@ import type { CashSession } from "@/lib/types";
 
 /** Corrects the date or the opening float of a session that is still open. */
 export function EditSessionDialog({ session }: { session: CashSession }) {
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CountsDraft>(() => countsDraft(session.opening_counts));
   const [state, formAction, pending] = useActionState(
@@ -57,7 +59,7 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
         className={SECONDARY_TRIGGER_CLASS}
       >
         <PencilIcon className="size-4" />
-        Modifier
+        {t("Modifier")}
       </button>
 
       {open ? (
@@ -79,16 +81,18 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
                   id="edit-session-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  Corriger le suivi
+                  {t("Corriger le suivi")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  La date et le fond de caisse restent modifiables tant que le suivi est ouvert.
+                  {t(
+                    "La date et le fond de caisse restent modifiables tant que le suivi est ouvert.",
+                  )}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -100,7 +104,7 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
 
               <div className="space-y-1.5">
                 <label htmlFor="session_date_edit" className={LABEL_CLASS}>
-                  Date du suivi
+                  {t("Date du suivi")}
                 </label>
                 <input
                   id="session_date_edit"
@@ -119,9 +123,9 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
               />
 
               <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Fond de caisse :{" "}
+                {t("Fond de caisse :")}{" "}
                 <span className="text-base font-semibold tabular-nums text-slate-900">
-                  {formatEuros(draftTotalCents(draft))}
+                  {formatEuros(locale, draftTotalCents(draft))}
                 </span>
               </p>
 
@@ -137,10 +141,10 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : "Enregistrer"}
+                  {pending ? t("Enregistrement…") : t("Enregistrer")}
                 </button>
               </div>
             </form>

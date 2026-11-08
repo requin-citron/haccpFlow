@@ -5,12 +5,14 @@ import { useActionState, useEffect, useState } from "react";
 import { closeCashSessionAction } from "@/actions/cash-sessions";
 import { DenominationFields } from "@/components/cash-sessions/denomination-fields";
 import { AlertIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { countsDraft, draftTotalCents, type CountsDraft } from "@/lib/cash-session";
 import { INITIAL_CASH_SESSION_FORM_STATE } from "@/lib/form-state";
 import { formatEuros } from "@/lib/format";
 import { SUBMIT_BUTTON_CLASS } from "@/lib/ui";
 
 export function CloseSessionForm({ sessionId }: { sessionId: string }) {
+  const { locale, t } = useI18n();
   const [draft, setDraft] = useState<CountsDraft>(() => countsDraft());
   const [confirming, setConfirming] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -32,10 +34,11 @@ export function CloseSessionForm({ sessionId }: { sessionId: string }) {
       <input type="hidden" name="session_id" value={sessionId} />
 
       <div>
-        <h3 className="font-semibold text-slate-900">Clôturer le suivi</h3>
+        <h3 className="font-semibold text-slate-900">{t("Clôturer le suivi")}</h3>
         <p className="mt-0.5 text-xs text-slate-500">
-          Recompte le contenu de la caisse : ce comptage remplace l&apos;état enregistré et le
-          suivi devient définitif. Laisser une coupure vide revient à zéro.
+          {t(
+            "Recompte le contenu de la caisse : ce comptage remplace l'état enregistré et le suivi devient définitif. Laisser une coupure vide revient à zéro.",
+          )}
         </p>
       </div>
 
@@ -46,9 +49,9 @@ export function CloseSessionForm({ sessionId }: { sessionId: string }) {
       />
 
       <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-        Total recompté :{" "}
+        {t("Total recompté :")}{" "}
         <span className="text-base font-semibold tabular-nums text-slate-900">
-          {formatEuros(total)}
+          {formatEuros(locale, total)}
         </span>
       </p>
 
@@ -70,10 +73,12 @@ export function CloseSessionForm({ sessionId }: { sessionId: string }) {
               onClick={() => setConfirming(false)}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
-              Annuler
+              {t("Annuler")}
             </button>
             <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-              {pending ? "Clôture…" : `Confirmer ${formatEuros(total)}`}
+              {pending
+                ? t("Clôture…")
+                : t("Confirmer {amount}", { amount: formatEuros(locale, total) })}
             </button>
           </>
         ) : (
@@ -82,7 +87,7 @@ export function CloseSessionForm({ sessionId }: { sessionId: string }) {
             onClick={() => setConfirming(true)}
             className={SUBMIT_BUTTON_CLASS}
           >
-            Clôturer le suivi
+            {t("Clôturer le suivi")}
           </button>
         )}
       </div>

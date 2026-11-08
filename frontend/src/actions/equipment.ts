@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import type { EquipmentFormState } from "@/lib/form-state";
+import { t, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { EquipmentType } from "@/lib/types";
 
 const EQUIPMENT_PATH = "/api/v1/equipment";
@@ -28,32 +31,14 @@ function readEquipmentType(formData: FormData): EquipmentType {
   return formData.get("type") === "freezer" ? "freezer" : "fridge";
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.status) {
-      case 409:
-        return "Un matériel actif porte déjà ce nom.";
-      case 422:
-        return "Vérifie les seuils : les deux doivent être renseignés ensemble, et le minimum doit rester inférieur au maximum.";
-      case 403:
-        return "Cette action est réservée aux administrateurs.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
-
 type PayloadResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
 
-function buildPayload(formData: FormData): PayloadResult {
+function buildPayload(formData: FormData, locale: Locale): PayloadResult {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
-    return { ok: false, error: "Le nom du matériel est obligatoire." };
+    return { ok: false, error: t(locale, "Le nom du matériel est obligatoire.") };
   }
 
   const minimum = readOptionalNumber(formData, "min_temperature_celsius");
@@ -61,8 +46,10 @@ function buildPayload(formData: FormData): PayloadResult {
   if ((minimum === null) !== (maximum === null)) {
     return {
       ok: false,
-      error:
+      error: t(
+        locale,
         "Renseigne les deux seuils, ou laisse les deux vides pour utiliser les valeurs par défaut.",
+      ),
     };
   }
 
@@ -84,7 +71,8 @@ export async function createEquipmentAction(
   _previous: EquipmentFormState,
   formData: FormData,
 ): Promise<EquipmentFormState> {
-  const result = buildPayload(formData);
+  const locale = await getLocale();
+  const result = buildPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -96,7 +84,14 @@ export async function createEquipmentAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        conflict: "Un matériel actif porte déjà ce nom.",
+        invalid:
+          "Vérifie les seuils : les deux doivent être renseignés ensemble, et le minimum doit rester inférieur au maximum.",
+      }),
+    };
   }
 
   revalidatePath("/equipment");
@@ -107,12 +102,13 @@ export async function updateEquipmentAction(
   _previous: EquipmentFormState,
   formData: FormData,
 ): Promise<EquipmentFormState> {
+  const locale = await getLocale();
   const equipmentId = String(formData.get("id") ?? "").trim();
   if (!equipmentId) {
-    return { status: "error", message: "Matériel introuvable." };
+    return { status: "error", message: t(locale, "Matériel introuvable.") };
   }
 
-  const result = buildPayload(formData);
+  const result = buildPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -124,7 +120,14 @@ export async function updateEquipmentAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        conflict: "Un matériel actif porte déjà ce nom.",
+        invalid:
+          "Vérifie les seuils : les deux doivent être renseignés ensemble, et le minimum doit rester inférieur au maximum.",
+      }),
+    };
   }
 
   revalidatePath("/equipment");

@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ApiError, apiFetchRaw } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 
@@ -8,12 +10,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ templateId: string }> },
 ) {
+  const locale = await getLocale();
   const { templateId } = await params;
   let payload: unknown;
   try {
     payload = await request.json();
   } catch {
-    return NextResponse.json({ detail: "Requête invalide." }, { status: 400 });
+    return NextResponse.json({ detail: t(locale, "Requête invalide.") }, { status: 400 });
   }
 
   let response: Response;
@@ -38,7 +41,7 @@ export async function POST(
 
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as Record<string, unknown> | null;
-    return NextResponse.json(body ?? { detail: "Aperçu indisponible." }, {
+    return NextResponse.json(body ?? { detail: t(locale, "Aperçu indisponible.") }, {
       status: response.status,
     });
   }

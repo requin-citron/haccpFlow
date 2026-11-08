@@ -3,7 +3,8 @@ import Link from "next/link";
 import { PinIcon, TruckIcon } from "@/components/icons";
 import { DeleteTransportButton } from "@/components/transport/delete-transport-button";
 import { formatShortDay, formatTemperature } from "@/lib/format";
-import { STATUS_ACCENTS, STATUS_BADGES, STATUS_DOTS, STATUS_LABELS } from "@/lib/status";
+import { t, type Locale } from "@/lib/i18n";
+import { STATUS_ACCENTS, STATUS_BADGES, STATUS_DOTS, statusLabel } from "@/lib/status";
 import { checkpointState } from "@/lib/transport";
 import type { Transport } from "@/lib/types";
 
@@ -11,10 +12,12 @@ function CheckpointTile({
   label,
   time,
   temperature,
+  locale,
 }: {
   label: string;
   time: string | null;
   temperature: number | null;
+  locale: Locale;
 }) {
   const state = checkpointState(time, temperature);
 
@@ -22,7 +25,7 @@ function CheckpointTile({
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-3">
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
-        <p className="mt-1 text-sm text-slate-400">Non saisi</p>
+        <p className="mt-1 text-sm text-slate-400">{t(locale, "Non saisi")}</p>
       </div>
     );
   }
@@ -31,10 +34,12 @@ function CheckpointTile({
     <div className={`rounded-xl border px-4 py-3 ${STATUS_ACCENTS[state]}`}>
       <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
-        {temperature !== null ? formatTemperature(temperature) : "—"}
+        {temperature !== null ? formatTemperature(locale, temperature) : "—"}
       </p>
       <p className="mt-0.5 text-xs text-slate-500">
-        {time ? `à ${time.slice(0, 5)}` : "heure non saisie"}
+        {time
+          ? t(locale, "à {time}", { time: time.slice(0, 5) })
+          : t(locale, "heure non saisie")}
       </p>
     </div>
   );
@@ -43,9 +48,11 @@ function CheckpointTile({
 export function TransportCard({
   transport,
   isAdmin,
+  locale,
 }: {
   transport: Transport;
   isAdmin: boolean;
+  locale: Locale;
 }) {
   const state = transport.is_complete ? "complete" : "partial";
 
@@ -60,15 +67,15 @@ export function TransportCard({
             {transport.product_name}
           </h3>
           <p className="mt-0.5 text-xs text-slate-500">
-            {formatShortDay(transport.transport_date)}
-            {transport.lot_number ? ` · Lot ${transport.lot_number}` : ""}
+            {formatShortDay(locale, transport.transport_date)}
+            {transport.lot_number ? ` · ${t(locale, "Lot {lot}", { lot: transport.lot_number })}` : ""}
           </p>
         </div>
         <span
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_BADGES[state]}`}
         >
           <span className={`size-1.5 rounded-full ${STATUS_DOTS[state]}`} />
-          {STATUS_LABELS[state]}
+          {statusLabel(locale, state)}
         </span>
       </header>
 
@@ -86,14 +93,16 @@ export function TransportCard({
 
       <div className="grid grid-cols-2 gap-3">
         <CheckpointTile
-          label="Départ"
+          label={t(locale, "Départ")}
           time={transport.departure_time}
           temperature={transport.departure_temperature_celsius}
+          locale={locale}
         />
         <CheckpointTile
-          label="Arrivée"
+          label={t(locale, "Arrivée")}
           time={transport.arrival_time}
           temperature={transport.arrival_temperature_celsius}
+          locale={locale}
         />
       </div>
 
@@ -102,7 +111,7 @@ export function TransportCard({
           href={`/transport/${transport.id}`}
           className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
         >
-          Ouvrir
+          {t(locale, "Ouvrir")}
         </Link>
         {isAdmin ? (
           <DeleteTransportButton id={transport.id} label={transport.product_name} />

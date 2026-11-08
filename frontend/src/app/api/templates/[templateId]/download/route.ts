@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ApiError, apiFetchRaw } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +10,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ templateId: string }> },
 ) {
+  const locale = await getLocale();
   const { templateId } = await params;
 
   let response: Response;
@@ -26,7 +29,10 @@ export async function GET(
     return NextResponse.redirect(new URL("/login", request.url));
   }
   if (!response.ok) {
-    return NextResponse.json({ detail: "Modèle indisponible." }, { status: response.status });
+    return NextResponse.json(
+      { detail: t(locale, "Modèle indisponible.") },
+      { status: response.status },
+    );
   }
 
   return new NextResponse(response.body, {

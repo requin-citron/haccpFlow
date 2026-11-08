@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import { DENOMINATIONS } from "@/lib/cash-register";
 import {
   draftTotals,
@@ -12,40 +13,10 @@ import {
 } from "@/lib/cash-session";
 import { isIsoDate } from "@/lib/format";
 import type { CashSessionFormState } from "@/lib/form-state";
+import { t, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 const SESSIONS_PATH = "/api/v1/cash-sessions";
-
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.code) {
-      case "cash_session_already_open":
-        return "Cette caisse a déjà un suivi ouvert : clôture-le avant d'en ouvrir un nouveau.";
-      case "cash_session_closed":
-        return "Ce suivi est clôturé : il ne peut plus être modifié.";
-      case "cash_session_date_in_future":
-        return "Impossible d'enregistrer un suivi à plus d'un jour dans le futur.";
-      case "cash_register_has_open_session":
-        return "Cette caisse a un suivi ouvert : clôture-le d'abord.";
-      default:
-        break;
-    }
-    switch (error.status) {
-      case 404:
-        return "Ce suivi de caisse n'existe plus.";
-      case 403:
-        return "Cette action est réservée aux administrateurs.";
-      case 409:
-        return error.message;
-      case 422:
-        return "Vérifie les valeurs saisies, puis réessaie.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
 
 type PayloadResult =
   | { ok: true; payload: Record<string, unknown> }
@@ -67,14 +38,14 @@ function revalidateSessions(sessionId?: string): void {
   }
 }
 
-function buildOpenPayload(formData: FormData): PayloadResult {
+function buildOpenPayload(formData: FormData, locale: Locale): PayloadResult {
   const cashRegisterId = String(formData.get("cash_register_id") ?? "").trim();
   const sessionDate = String(formData.get("session_date") ?? "").trim();
   if (!cashRegisterId) {
-    return { ok: false, error: "Choisis la caisse à suivre." };
+    return { ok: false, error: t(locale, "Choisis la caisse à suivre.") };
   }
   if (!isIsoDate(sessionDate)) {
-    return { ok: false, error: "La date du suivi est obligatoire." };
+    return { ok: false, error: t(locale, "La date du suivi est obligatoire.") };
   }
 
   // The float is copied from the register unless the override is ticked.
@@ -95,7 +66,8 @@ export async function openCashSessionAction(
   _previous: CashSessionFormState,
   formData: FormData,
 ): Promise<CashSessionFormState> {
-  const result = buildOpenPayload(formData);
+  const locale = await getLocale();
+  const result = buildOpenPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -107,7 +79,13 @@ export async function openCashSessionAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce suivi de caisse n'existe plus.",
+        invalid: "Vérifie les valeurs saisies, puis réessaie.",
+      }),
+    };
   }
 
   revalidateSessions();
@@ -118,13 +96,14 @@ export async function updateCashSessionAction(
   _previous: CashSessionFormState,
   formData: FormData,
 ): Promise<CashSessionFormState> {
+  const locale = await getLocale();
   const sessionId = String(formData.get("session_id") ?? "").trim();
   const sessionDate = String(formData.get("session_date") ?? "").trim();
   if (!sessionId) {
-    return { status: "error", message: "Suivi introuvable." };
+    return { status: "error", message: t(locale, "Suivi introuvable.") };
   }
   if (!isIsoDate(sessionDate)) {
-    return { status: "error", message: "La date du suivi est obligatoire." };
+    return { status: "error", message: t(locale, "La date du suivi est obligatoire.") };
   }
 
   try {
@@ -137,7 +116,13 @@ export async function updateCashSessionAction(
       }),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce suivi de caisse n'existe plus.",
+        invalid: "Vérifie les valeurs saisies, puis réessaie.",
+      }),
+    };
   }
 
   revalidateSessions(sessionId);
@@ -148,9 +133,10 @@ export async function closeCashSessionAction(
   _previous: CashSessionFormState,
   formData: FormData,
 ): Promise<CashSessionFormState> {
+  const locale = await getLocale();
   const sessionId = String(formData.get("session_id") ?? "").trim();
   if (!sessionId) {
-    return { status: "error", message: "Suivi introuvable." };
+    return { status: "error", message: t(locale, "Suivi introuvable.") };
   }
 
   try {
@@ -160,7 +146,13 @@ export async function closeCashSessionAction(
       body: JSON.stringify({ closing_counts: draftTotals(readCounts(formData)) }),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce suivi de caisse n'existe plus.",
+        invalid: "Vérifie les valeurs saisies, puis réessaie.",
+      }),
+    };
   }
 
   revalidateSessions(sessionId);
@@ -169,7 +161,7 @@ export async function closeCashSessionAction(
   return { status: "success" };
 }
 
-function buildExpensePayload(formData: FormData): PayloadResult {
+function buildExpensePayload(formData: FormData, locale: Locale): PayloadResult {
   const kind = String(formData.get("kind") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const quantity = Number(String(formData.get("quantity") ?? "").trim());
@@ -177,19 +169,25 @@ function buildExpensePayload(formData: FormData): PayloadResult {
   const vatRate = normalizeVatRate(String(formData.get("vat_rate") ?? ""));
 
   if (kind !== "professional" && kind !== "personal") {
-    return { ok: false, error: "Choisis un type de frais." };
+    return { ok: false, error: t(locale, "Choisis un type de frais.") };
   }
   if (!name) {
-    return { ok: false, error: "Le nom du frais est obligatoire." };
+    return { ok: false, error: t(locale, "Le nom du frais est obligatoire.") };
   }
   if (!Number.isInteger(quantity) || quantity < 1) {
-    return { ok: false, error: "Indique une quantité supérieure ou égale à 1." };
+    return { ok: false, error: t(locale, "Indique une quantité supérieure ou égale à 1.") };
   }
   if (unitPriceCents === null) {
-    return { ok: false, error: "Le montant unitaire doit être un prix en euros." };
+    return {
+      ok: false,
+      error: t(locale, "Le montant unitaire doit être un prix en euros."),
+    };
   }
   if (vatRate === null) {
-    return { ok: false, error: "La TVA doit être un pourcentage entre 0 et 100." };
+    return {
+      ok: false,
+      error: t(locale, "La TVA doit être un pourcentage entre 0 et 100."),
+    };
   }
 
   return {
@@ -208,12 +206,13 @@ export async function createCashExpenseAction(
   _previous: CashSessionFormState,
   formData: FormData,
 ): Promise<CashSessionFormState> {
+  const locale = await getLocale();
   const sessionId = String(formData.get("session_id") ?? "").trim();
   if (!sessionId) {
-    return { status: "error", message: "Suivi introuvable." };
+    return { status: "error", message: t(locale, "Suivi introuvable.") };
   }
 
-  const result = buildExpensePayload(formData);
+  const result = buildExpensePayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -225,7 +224,13 @@ export async function createCashExpenseAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce suivi de caisse n'existe plus.",
+        invalid: "Vérifie les valeurs saisies, puis réessaie.",
+      }),
+    };
   }
 
   revalidateSessions(sessionId);
@@ -236,13 +241,14 @@ export async function updateCashExpenseAction(
   _previous: CashSessionFormState,
   formData: FormData,
 ): Promise<CashSessionFormState> {
+  const locale = await getLocale();
   const sessionId = String(formData.get("session_id") ?? "").trim();
   const expenseId = String(formData.get("expense_id") ?? "").trim();
   if (!sessionId || !expenseId) {
-    return { status: "error", message: "Frais introuvable." };
+    return { status: "error", message: t(locale, "Frais introuvable.") };
   }
 
-  const result = buildExpensePayload(formData);
+  const result = buildExpensePayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -257,7 +263,13 @@ export async function updateCashExpenseAction(
       },
     );
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Frais introuvable.",
+        invalid: "Vérifie les valeurs saisies, puis réessaie.",
+      }),
+    };
   }
 
   revalidateSessions(sessionId);

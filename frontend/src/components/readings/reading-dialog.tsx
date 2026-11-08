@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import { saveReadingAction } from "@/actions/readings";
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_READING_FORM_STATE } from "@/lib/form-state";
 import { formatDayLabel } from "@/lib/format";
 import { CANCEL_BUTTON_CLASS, FIELD_CLASS, ICON_BUTTON_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
@@ -18,6 +19,7 @@ export function ReadingDialog({
   readingDate: string;
   day: TemperatureReadingDay;
 }) {
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     saveReadingAction,
@@ -57,7 +59,7 @@ export function ReadingDialog({
         }
       >
         {isComplete ? <PencilIcon className="size-4" /> : <PlusIcon className="size-4" />}
-        {isComplete ? "Modifier" : "Saisir"}
+        {isComplete ? t("Modifier") : t("Saisir")}
       </button>
 
       {open ? (
@@ -82,13 +84,13 @@ export function ReadingDialog({
                   {equipment.name}
                 </h2>
                 <p className="mt-0.5 text-sm capitalize text-slate-500">
-                  {formatDayLabel(readingDate)}
+                  {formatDayLabel(locale, readingDate)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -102,7 +104,7 @@ export function ReadingDialog({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label htmlFor="morning_celsius" className="block text-sm font-medium text-slate-700">
-                    Matin (°C)
+                    {t("Matin (°C)")}
                   </label>
                   <input
                     id="morning_celsius"
@@ -118,7 +120,7 @@ export function ReadingDialog({
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="evening_celsius" className="block text-sm font-medium text-slate-700">
-                    Soir (°C)
+                    {t("Soir (°C)")}
                   </label>
                   <input
                     id="evening_celsius"
@@ -134,9 +136,10 @@ export function ReadingDialog({
               </div>
 
               <p className="text-xs text-slate-500">
-                Plage cible : {equipment.min_temperature_celsius} °C à{" "}
-                {equipment.max_temperature_celsius} °C. Laisse un champ vide pour ne pas le
-                modifier.
+                {t("Plage cible : {min} à {max}. Laisse un champ vide pour ne pas le modifier.", {
+                  min: `${equipment.min_temperature_celsius} °C`,
+                  max: `${equipment.max_temperature_celsius} °C`,
+                })}
               </p>
 
               {state.status === "error" && state.message ? (
@@ -155,14 +158,14 @@ export function ReadingDialog({
                   onClick={() => setOpen(false)}
                   className={CANCEL_BUTTON_CLASS}
                 >
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button
                   type="submit"
                   disabled={pending}
                   className={SUBMIT_BUTTON_CLASS}
                 >
-                  {pending ? "Enregistrement…" : "Enregistrer"}
+                  {pending ? t("Enregistrement…") : t("Enregistrer")}
                 </button>
               </div>
             </form>

@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import type { VehicleFormState } from "@/lib/form-state";
+import { t, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 const VEHICLES_PATH = "/api/v1/vehicles";
 
@@ -12,35 +15,15 @@ function readOptionalText(formData: FormData, field: string): string | null {
   return value === "" ? null : value;
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.status) {
-      case 404:
-        return "Ce véhicule n'existe plus.";
-      case 409:
-        return "Un véhicule actif utilise déjà ce nom ou cette plaque.";
-      case 403:
-        return "Cette action est réservée aux administrateurs.";
-      case 422:
-        return "Renseigne au moins un nom ou une plaque.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
-
 type PayloadResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
 
-function buildPayload(formData: FormData): PayloadResult {
+function buildPayload(formData: FormData, locale: Locale): PayloadResult {
   const name = readOptionalText(formData, "name");
   const plate = readOptionalText(formData, "plate");
   if (name === null && plate === null) {
-    return { ok: false, error: "Renseigne au moins un nom ou une plaque." };
+    return { ok: false, error: t(locale, "Renseigne au moins un nom ou une plaque.") };
   }
   return { ok: true, payload: { name, plate } };
 }
@@ -49,7 +32,8 @@ export async function createVehicleAction(
   _previous: VehicleFormState,
   formData: FormData,
 ): Promise<VehicleFormState> {
-  const result = buildPayload(formData);
+  const locale = await getLocale();
+  const result = buildPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -61,7 +45,14 @@ export async function createVehicleAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce véhicule n'existe plus.",
+        conflict: "Un véhicule actif utilise déjà ce nom ou cette plaque.",
+        invalid: "Renseigne au moins un nom ou une plaque.",
+      }),
+    };
   }
 
   revalidatePath("/equipment");
@@ -72,12 +63,13 @@ export async function updateVehicleAction(
   _previous: VehicleFormState,
   formData: FormData,
 ): Promise<VehicleFormState> {
+  const locale = await getLocale();
   const vehicleId = String(formData.get("id") ?? "").trim();
   if (!vehicleId) {
-    return { status: "error", message: "Véhicule introuvable." };
+    return { status: "error", message: t(locale, "Véhicule introuvable.") };
   }
 
-  const result = buildPayload(formData);
+  const result = buildPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -89,7 +81,14 @@ export async function updateVehicleAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce véhicule n'existe plus.",
+        conflict: "Un véhicule actif utilise déjà ce nom ou cette plaque.",
+        invalid: "Renseigne au moins un nom ou une plaque.",
+      }),
+    };
   }
 
   revalidatePath("/equipment");

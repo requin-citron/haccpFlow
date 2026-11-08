@@ -1,12 +1,18 @@
 /** Shared "how filled is this block" states, used by phases and checkpoints. */
+import { t, type Locale } from "@/lib/i18n";
 
 export type CheckpointStatus = "complete" | "partial" | "empty";
 
-export const STATUS_LABELS: Record<CheckpointStatus, string> = {
-  complete: "Complet",
-  partial: "En cours",
-  empty: "À remplir",
-};
+export function statusLabel(locale: Locale, status: CheckpointStatus): string {
+  switch (status) {
+    case "complete":
+      return t(locale, "Complet");
+    case "partial":
+      return t(locale, "En cours");
+    case "empty":
+      return t(locale, "À remplir");
+  }
+}
 
 export const STATUS_BADGES: Record<CheckpointStatus, string> = {
   complete: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -25,3 +31,4 @@ export const STATUS_DOTS: Record<CheckpointStatus, string> = {
   partial: "bg-amber-500",
   empty: "bg-slate-300",
 };
+

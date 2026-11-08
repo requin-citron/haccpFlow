@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import type { CleaningPlanFormState, CleaningRecordFormState } from "@/lib/form-state";
+import { t, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 const PLANS_PATH = "/api/v1/cleaning-plans";
 const FREQUENCIES = ["after_each_use", "daily", "weekly"];
@@ -13,40 +16,18 @@ function readOptionalText(formData: FormData, field: string): string | null {
   return value === "" ? null : value;
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.status) {
-      case 404:
-        return "Ce plan de nettoyage n'existe plus.";
-      case 409:
-        return "Un plan actif porte déjà ce nom.";
-      case 403:
-        return "Cette action est réservée aux administrateurs.";
-      case 422:
-        return error.code === "cleaning_date_out_of_range"
-          ? "Impossible de déclarer un nettoyage à plus d'un jour dans le futur."
-          : "Vérifie les champs saisis, puis réessaie.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
-
 type PlanPayloadResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
 
-function buildPlanPayload(formData: FormData): PlanPayloadResult {
+function buildPlanPayload(formData: FormData, locale: Locale): PlanPayloadResult {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
-    return { ok: false, error: "Le nom du plan est obligatoire." };
+    return { ok: false, error: t(locale, "Le nom du plan est obligatoire.") };
   }
   const frequency = String(formData.get("frequency") ?? "");
   if (!FREQUENCIES.includes(frequency)) {
-    return { ok: false, error: "Choisis une fréquence de nettoyage." };
+    return { ok: false, error: t(locale, "Choisis une fréquence de nettoyage.") };
   }
   return {
     ok: true,
@@ -69,7 +50,8 @@ export async function createCleaningPlanAction(
   _previous: CleaningPlanFormState,
   formData: FormData,
 ): Promise<CleaningPlanFormState> {
-  const result = buildPlanPayload(formData);
+  const locale = await getLocale();
+  const result = buildPlanPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -81,7 +63,14 @@ export async function createCleaningPlanAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce plan de nettoyage n'existe plus.",
+        conflict: "Un plan actif porte déjà ce nom.",
+        invalid: "Vérifie les champs saisis, puis réessaie.",
+      }),
+    };
   }
 
   revalidateCleaning();
@@ -92,12 +81,13 @@ export async function updateCleaningPlanAction(
   _previous: CleaningPlanFormState,
   formData: FormData,
 ): Promise<CleaningPlanFormState> {
+  const locale = await getLocale();
   const planId = String(formData.get("id") ?? "").trim();
   if (!planId) {
-    return { status: "error", message: "Plan introuvable." };
+    return { status: "error", message: t(locale, "Plan introuvable.") };
   }
 
-  const result = buildPlanPayload(formData);
+  const result = buildPlanPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -109,7 +99,14 @@ export async function updateCleaningPlanAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce plan de nettoyage n'existe plus.",
+        conflict: "Un plan actif porte déjà ce nom.",
+        invalid: "Vérifie les champs saisis, puis réessaie.",
+      }),
+    };
   }
 
   revalidateCleaning(planId);
@@ -131,10 +128,11 @@ export async function declareCleaningAction(
   _previous: CleaningRecordFormState,
   formData: FormData,
 ): Promise<CleaningRecordFormState> {
+  const locale = await getLocale();
   const planId = String(formData.get("plan_id") ?? "").trim();
   const cleaningDate = String(formData.get("cleaning_date") ?? "").trim();
   if (!planId || !cleaningDate) {
-    return { status: "error", message: "La date du nettoyage est obligatoire." };
+    return { status: "error", message: t(locale, "La date du nettoyage est obligatoire.") };
   }
 
   try {
@@ -147,7 +145,13 @@ export async function declareCleaningAction(
       }),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce plan de nettoyage n'existe plus.",
+        invalid: "Vérifie les champs saisis, puis réessaie.",
+      }),
+    };
   }
 
   revalidateCleaning(planId);
@@ -158,11 +162,12 @@ export async function updateCleaningRecordAction(
   _previous: CleaningRecordFormState,
   formData: FormData,
 ): Promise<CleaningRecordFormState> {
+  const locale = await getLocale();
   const planId = String(formData.get("plan_id") ?? "").trim();
   const recordId = String(formData.get("record_id") ?? "").trim();
   const cleaningDate = String(formData.get("cleaning_date") ?? "").trim();
   if (!planId || !recordId || !cleaningDate) {
-    return { status: "error", message: "Déclaration introuvable." };
+    return { status: "error", message: t(locale, "Déclaration introuvable.") };
   }
 
   try {
@@ -178,7 +183,13 @@ export async function updateCleaningRecordAction(
       },
     );
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Déclaration introuvable.",
+        invalid: "Vérifie les champs saisis, puis réessaie.",
+      }),
+    };
   }
 
   revalidateCleaning(planId);

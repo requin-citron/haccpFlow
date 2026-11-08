@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ApiError, apiFetchRaw } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ dataset: string }> },
 ) {
+  const locale = await getLocale();
   const { dataset } = await params;
   if (!DATASETS.has(dataset)) {
     return NextResponse.json({ detail: "Unknown dataset" }, { status: 404 });
@@ -50,7 +53,10 @@ export async function GET(
     return NextResponse.redirect(new URL("/login", request.url));
   }
   if (!response.ok) {
-    return NextResponse.json({ detail: "Export indisponible" }, { status: response.status });
+    return NextResponse.json(
+      { detail: t(locale, "Export indisponible") },
+      { status: response.status },
+    );
   }
 
   return new NextResponse(response.body, {

@@ -5,18 +5,26 @@ import { FridgeIcon, PinIcon, SnowflakeIcon } from "@/components/icons";
 import { ReadingDialog } from "@/components/readings/reading-dialog";
 import { apiFetch } from "@/lib/api";
 import {
-  EQUIPMENT_TYPE_LABELS,
   addDays,
+  equipmentTypeLabel,
   formatShortDay,
   formatTemperature,
   todayIso,
 } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { getEnabledModules } from "@/lib/module-settings";
 import type { Equipment, TemperatureReadingDay, TemperatureReadingSlot } from "@/lib/types";
 
 const HISTORY_DAYS = 14;
 
-function SlotValue({ slot }: { slot: TemperatureReadingSlot | null }) {
+function SlotValue({
+  slot,
+  locale,
+}: {
+  slot: TemperatureReadingSlot | null;
+  locale: Awaited<ReturnType<typeof getLocale>>;
+}) {
   if (slot === null) {
     return <span className="text-slate-400">—</span>;
   }
@@ -26,7 +34,7 @@ function SlotValue({ slot }: { slot: TemperatureReadingSlot | null }) {
         slot.is_compliant ? "text-emerald-700" : "text-rose-700"
       }`}
     >
-      {formatTemperature(slot.temperature_celsius)}
+      {formatTemperature(locale, slot.temperature_celsius)}
     </span>
   );
 }
@@ -36,6 +44,7 @@ export default async function EquipmentDetailPage({
 }: {
   params: Promise<{ equipmentId: string }>;
 }) {
+  const locale = await getLocale();
   const { equipmentId } = await params;
   const enabledModules = getEnabledModules();
 
@@ -64,7 +73,7 @@ export default async function EquipmentDetailPage({
           href="/equipment"
           className="text-sm font-medium text-slate-500 transition hover:text-slate-800"
         >
-          ← Retour au matériel
+          ← {t(locale, "Retour au matériel")}
         </Link>
       </div>
 
@@ -78,9 +87,9 @@ export default async function EquipmentDetailPage({
               {equipment.name}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              {EQUIPMENT_TYPE_LABELS[equipment.type]} · plage cible{" "}
-              {formatTemperature(equipment.min_temperature_celsius)} à{" "}
-              {formatTemperature(equipment.max_temperature_celsius)}
+              {equipmentTypeLabel(locale, equipment.type)} · {t(locale, "Plage cible").toLowerCase()}{" "}
+              {formatTemperature(locale, equipment.min_temperature_celsius)} {t(locale, "à")}{" "}
+              {formatTemperature(locale, equipment.max_temperature_celsius)}
             </p>
             {equipment.location ? (
               <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
@@ -98,7 +107,7 @@ export default async function EquipmentDetailPage({
             href="/readings"
             className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
           >
-            Saisir un relevé
+            {t(locale, "Saisir un relevé")}
           </Link>
         ) : null}
       </header>
@@ -108,12 +117,12 @@ export default async function EquipmentDetailPage({
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <div>
               <h2 className="text-base font-semibold text-slate-900">
-                {HISTORY_DAYS} derniers jours
+                {t(locale, "{days} derniers jours", { days: HISTORY_DAYS })}
               </h2>
               <p className="text-xs text-slate-500">
-                Saisie du matin et du soir.
+                {t(locale, "Saisie du matin et du soir.")}
                 {enabledModules.history
-                  ? " Le détail des modifications est dans l'onglet Historique."
+                  ? t(locale, " Le détail des modifications est dans l'onglet Historique.")
                   : ""}
               </p>
             </div>
@@ -123,23 +132,23 @@ export default async function EquipmentDetailPage({
             <table className="w-full min-w-[36rem] text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 font-medium">Jour</th>
-                  <th className="px-5 py-3 font-medium">Matin</th>
-                  <th className="px-5 py-3 font-medium">Soir</th>
-                  <th className="px-5 py-3 font-medium">Saisie</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Jour")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Matin")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Soir")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Saisie")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {rows.map((day) => (
                   <tr key={day.reading_date} className="align-top">
                     <td className="whitespace-nowrap px-5 py-3 capitalize text-slate-700">
-                      {formatShortDay(day.reading_date)}
+                      {formatShortDay(locale, day.reading_date)}
                     </td>
                     <td className="px-5 py-3">
-                      <SlotValue slot={day.morning} />
+                      <SlotValue slot={day.morning} locale={locale} />
                     </td>
                     <td className="px-5 py-3">
-                      <SlotValue slot={day.evening} />
+                      <SlotValue slot={day.evening} locale={locale} />
                     </td>
                     <td className="px-5 py-3">
                       <ReadingDialog equipment={equipment} readingDate={day.reading_date} day={day} />

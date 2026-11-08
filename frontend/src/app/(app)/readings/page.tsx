@@ -5,21 +5,31 @@ import { ReadingDialog } from "@/components/readings/reading-dialog";
 import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import {
-  EQUIPMENT_TYPE_LABELS,
-  SOURCE_LABELS,
+  equipmentTypeLabel,
   formatTemperature,
   isIsoDate,
+  readingSourceLabel,
   todayIso,
 } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { getEnabledModules } from "@/lib/module-settings";
 import type { Equipment, TemperatureReadingDay, TemperatureReadingSlot } from "@/lib/types";
 
-function SlotTile({ label, slot }: { label: string; slot: TemperatureReadingSlot | null }) {
+function SlotTile({
+  label,
+  slot,
+  locale,
+}: {
+  label: string;
+  slot: TemperatureReadingSlot | null;
+  locale: Awaited<ReturnType<typeof getLocale>>;
+}) {
   if (slot === null) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-3">
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
-        <p className="mt-1 text-sm text-slate-400">Non saisi</p>
+        <p className="mt-1 text-sm text-slate-400">{t(locale, "Non saisi")}</p>
       </div>
     );
   }
@@ -32,10 +42,11 @@ function SlotTile({ label, slot }: { label: string; slot: TemperatureReadingSlot
     <div className={`rounded-xl border px-4 py-3 ${tone.box}`}>
       <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
       <p className={`mt-1 text-lg font-semibold tabular-nums ${tone.value}`}>
-        {formatTemperature(slot.temperature_celsius)}
+        {formatTemperature(locale, slot.temperature_celsius)}
       </p>
       <p className="mt-0.5 text-xs text-slate-500">
-        {SOURCE_LABELS[slot.source]} · {slot.is_compliant ? "conforme" : "hors seuils"}
+        {readingSourceLabel(locale, slot.source)} ·{" "}
+        {slot.is_compliant ? t(locale, "conforme") : t(locale, "hors seuils")}
       </p>
     </div>
   );
@@ -46,6 +57,7 @@ export default async function ReadingsPage({
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
+  const locale = await getLocale();
   const params = await searchParams;
   const date = isIsoDate(params.date) ? params.date : todayIso();
   const enabledModules = getEnabledModules();
@@ -72,13 +84,15 @@ export default async function ReadingsPage({
       <header className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-teal-700">Chaîne du froid</p>
+            <p className="text-sm font-medium text-teal-700">{t(locale, "Chaîne du froid")}</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
-              Relevés de température
+              {t(locale, "Relevés de température")}
             </h1>
             <p className="mt-1 max-w-xl text-sm text-slate-500">
-              Deux relevés par jour et par équipement. Tu peux compléter le soir après avoir saisi
-              le matin, ou rattraper une journée oubliée.
+              {t(
+                locale,
+                "Deux relevés par jour et par équipement. Tu peux compléter le soir après avoir saisi le matin, ou rattraper une journée oubliée.",
+              )}
             </p>
           </div>
           <DayNavigation date={date} />
@@ -92,7 +106,7 @@ export default async function ReadingsPage({
               </span>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Créneaux saisis
+                  {t(locale, "Créneaux saisis")}
                 </p>
                 <p className="text-xl font-semibold tabular-nums text-slate-900">
                   {filledSlots} / {totalSlots}
@@ -101,10 +115,10 @@ export default async function ReadingsPage({
             </div>
             <p className="text-sm text-slate-500">
               {missingSlots === 0
-                ? "Journée complète, tout est saisi."
-                : `${missingSlots} créneau${missingSlots > 1 ? "x" : ""} restant${
-                    missingSlots > 1 ? "s" : ""
-                  } à saisir.`}
+                ? t(locale, "Journée complète, tout est saisi.")
+                : missingSlots === 1
+                  ? t(locale, "{count} créneau restant à saisir.", { count: missingSlots })
+                  : t(locale, "{count} créneaux restants à saisir.", { count: missingSlots })}
             </p>
           </div>
         ) : null}
@@ -116,19 +130,19 @@ export default async function ReadingsPage({
             <FridgeIcon className="size-6" />
           </span>
           <h2 className="mt-4 text-base font-semibold text-slate-900">
-            Aucun matériel à relever
+            {t(locale, "Aucun matériel à relever")}
           </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
             {enabledModules.equipment
-              ? "Déclare d'abord un réfrigérateur ou un congélateur dans la page Matériel."
-              : "Aucun matériel disponible. Le module Matériel est désactivé."}
+              ? t(locale, "Déclare d'abord un réfrigérateur ou un congélateur dans la page Matériel.")
+              : t(locale, "Aucun matériel disponible. Le module Matériel est désactivé.")}
           </p>
           {enabledModules.equipment ? (
             <Link
               href="/equipment"
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
             >
-              Gérer le matériel
+              {t(locale, "Gérer le matériel")}
             </Link>
           ) : null}
         </section>
@@ -148,17 +162,17 @@ export default async function ReadingsPage({
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate font-semibold text-slate-900">{equipment.name}</h3>
                     <p className="text-xs text-slate-500">
-                      {EQUIPMENT_TYPE_LABELS[equipment.type]} ·{" "}
-                      {formatTemperature(equipment.min_temperature_celsius)} à{" "}
-                      {formatTemperature(equipment.max_temperature_celsius)}
+                      {equipmentTypeLabel(locale, equipment.type)} ·{" "}
+                      {formatTemperature(locale, equipment.min_temperature_celsius)} –{" "}
+                      {formatTemperature(locale, equipment.max_temperature_celsius)}
                     </p>
                   </div>
                   <ReadingDialog equipment={equipment} readingDate={date} day={day} />
                 </header>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <SlotTile label="Matin" slot={day.morning} />
-                  <SlotTile label="Soir" slot={day.evening} />
+                  <SlotTile label={t(locale, "Matin")} slot={day.morning} locale={locale} />
+                  <SlotTile label={t(locale, "Soir")} slot={day.evening} locale={locale} />
                 </div>
               </article>
             );

@@ -18,6 +18,7 @@ import {
   TruckIcon,
   UsersIcon,
 } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { MODULE_NAV_ITEMS, type EnabledModules } from "@/lib/modules";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -45,6 +46,7 @@ export function NavLinks({
   enabledModules: EnabledModules;
 }) {
   const pathname = usePathname();
+  const { t } = useI18n();
   const items = MODULE_NAV_ITEMS.filter(
     (item) => enabledModules[item.key] && (!item.adminOnly || isAdmin),
   );
@@ -55,7 +57,7 @@ export function NavLinks({
   ).sort((first, second) => second.href.length - first.href.length)[0]?.href;
 
   return (
-    <nav aria-label="Navigation principale" className="space-y-1">
+    <nav aria-label={t("Navigation principale")} className="space-y-1">
       {items.map((item) => {
         const Icon = NAV_ICONS[item.href] ?? GridIcon;
         const active = item.href === activeHref;
@@ -72,7 +74,7 @@ export function NavLinks({
             }`}
           >
             <Icon className="size-5 shrink-0" />
-            <span className="hidden lg:block">{item.label}</span>
+            <span className="hidden lg:block">{t(item.labelKey)}</span>
           </Link>
         );
       })}

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { DeleteEquipmentButton } from "@/components/equipment/delete-equipment-button";
 import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialog";
 import { FridgeIcon, PinIcon, SnowflakeIcon } from "@/components/icons";
-import { EQUIPMENT_TYPE_LABELS, formatDate, formatTemperatureRange } from "@/lib/format";
+import { equipmentTypeLabel, formatDate, formatTemperatureRange } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 import type { Equipment } from "@/lib/types";
 
 const TYPE_STYLES = {
@@ -17,7 +18,13 @@ const TYPE_STYLES = {
   },
 } as const;
 
-export function EquipmentCard({ equipment }: { equipment: Equipment }) {
+export function EquipmentCard({
+  equipment,
+  locale,
+}: {
+  equipment: Equipment;
+  locale: Locale;
+}) {
   const styles = TYPE_STYLES[equipment.type];
   const Icon = equipment.type === "freezer" ? SnowflakeIcon : FridgeIcon;
 
@@ -39,17 +46,18 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
           <span
             className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${styles.badge}`}
           >
-            {EQUIPMENT_TYPE_LABELS[equipment.type]}
+            {equipmentTypeLabel(locale, equipment.type)}
           </span>
         </div>
       </header>
 
       <div className="rounded-xl bg-slate-50 px-4 py-3">
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-          Plage cible
+          {t(locale, "Plage cible")}
         </p>
         <p className="mt-0.5 text-lg font-semibold tabular-nums text-slate-900">
           {formatTemperatureRange(
+            locale,
             equipment.min_temperature_celsius,
             equipment.max_temperature_celsius,
           )}
@@ -70,7 +78,7 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
       ) : null}
 
       <p className="mt-auto text-xs text-slate-400">
-        Ajouté le {formatDate(equipment.created_at)}
+        {t(locale, "Ajouté le {date}", { date: formatDate(locale, equipment.created_at) })}
       </p>
 
       <footer className="flex items-center justify-between gap-2 border-t border-slate-100 pt-4">

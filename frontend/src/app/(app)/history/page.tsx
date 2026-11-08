@@ -4,41 +4,45 @@ import { HistoryIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import { dayFromIso, formatDayLabel, timeFromIso } from "@/lib/format";
 import {
-  HISTORY_ACTION_LABELS,
   HISTORY_ACTION_TONES,
-  HISTORY_ENTITY_LABELS,
   HISTORY_ENTITY_TONES,
   HISTORY_ENTITY_MODULES,
+  historyActionLabel,
+  historyEntityLabel,
   historyEntryLink,
 } from "@/lib/history";
 import { getEnabledModules } from "@/lib/module-settings";
+import { t, type Locale, type MessageKey } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CurrentUser, HistoryEntity, HistoryEntry } from "@/lib/types";
 
 const LIMIT = 100;
 
-const ENTITY_OPTIONS: { value: HistoryEntity | ""; label: string }[] = [
-  { value: "", label: "Toutes les sources" },
-  { value: "temperature_reading", label: "Relevés de température" },
-  { value: "cleaning_record", label: "Nettoyages" },
-  { value: "pasteurisation_phase", label: "Pasteurisation" },
-  { value: "transport", label: "Transports" },
+const ENTITY_OPTIONS: { value: HistoryEntity | ""; labelKey: MessageKey }[] = [
+  { value: "", labelKey: "Toutes les sources" },
+  { value: "temperature_reading", labelKey: "Relevés de température" },
+  { value: "cleaning_record", labelKey: "Nettoyages" },
+  { value: "pasteurisation_phase", labelKey: "Pasteurisation" },
+  { value: "transport", labelKey: "Transports" },
 ];
 
 const FIELD_CLASS =
   "rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15";
 
-function AccessDenied() {
+function AccessDenied({ locale }: { locale: Locale }) {
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-12 text-center">
       <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-amber-100 text-amber-700">
         <HistoryIcon className="size-6" />
       </span>
       <h1 className="mt-4 text-base font-semibold text-slate-900">
-        Historique réservé aux administrateurs
+        {t(locale, "Historique réservé aux administrateurs")}
       </h1>
       <p className="mx-auto mt-1 max-w-sm text-sm text-slate-600">
-        Ce journal regroupe toutes les modifications du plan de maîtrise sanitaire. Demande à un
-        administrateur s&apos;il te le faut.
+        {t(
+          locale,
+          "Ce journal regroupe toutes les modifications du plan de maîtrise sanitaire. Demande à un administrateur s'il te le faut.",
+        )}
       </p>
     </div>
   );
@@ -49,12 +53,13 @@ export default async function HistoryPage({
 }: {
   searchParams: Promise<{ entity?: string; from?: string; to?: string }>;
 }) {
+  const locale = await getLocale();
   const params = await searchParams;
   const user = await apiFetch<CurrentUser>("/api/v1/auth/me");
   const enabledModules = getEnabledModules();
 
   if (user.role !== "admin") {
-    return <AccessDenied />;
+    return <AccessDenied locale={locale} />;
   }
 
   const sourceOptions = ENTITY_OPTIONS.filter(
@@ -100,20 +105,27 @@ export default async function HistoryPage({
 
   const filtered = Boolean(entity || from || to);
   const sourceSummary = sourceOptions
-    .map((option) => option.label.toLowerCase())
+    .map((option) => t(locale, option.labelKey).toLowerCase())
     .join(", ");
 
   return (
     <div className="space-y-8">
       <header>
-        <p className="text-sm font-medium text-teal-700">Traçabilité</p>
+        <p className="text-sm font-medium text-teal-700">{t(locale, "Traçabilité")}</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
-          Historique
+          {t(locale, "Historique")}
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-slate-500">
           {sourceOptions.length > 0
-            ? `Toutes les modifications enregistrées pour les modules actifs, du plus récent au plus ancien : ${sourceSummary}. Les corrections y figurent avec leur valeur précédente et leur auteur.`
-            : "Aucun module source n'est actif. Active au moins un module métier pour alimenter ce journal."}
+            ? t(
+                locale,
+                "Toutes les modifications enregistrées pour les modules actifs, du plus récent au plus ancien : {sources}. Les corrections y figurent avec leur valeur précédente et leur auteur.",
+                { sources: sourceSummary },
+              )
+            : t(
+                locale,
+                "Aucun module source n'est actif. Active au moins un module métier pour alimenter ce journal.",
+              )}
         </p>
       </header>
 
@@ -121,13 +133,13 @@ export default async function HistoryPage({
         {sourceOptions.length > 0 ? (
           <div className="space-y-1.5">
             <label htmlFor="entity" className="block text-xs font-medium text-slate-600">
-              Source
+              {t(locale, "Source")}
             </label>
             <select id="entity" name="entity" defaultValue={entity} className={FIELD_CLASS}>
-              <option value="">Toutes les sources</option>
+              <option value="">{t(locale, "Toutes les sources")}</option>
               {sourceOptions.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(locale, option.labelKey)}
                 </option>
               ))}
             </select>
@@ -135,13 +147,13 @@ export default async function HistoryPage({
         ) : null}
         <div className="space-y-1.5">
           <label htmlFor="from" className="block text-xs font-medium text-slate-600">
-            Du
+            {t(locale, "Du")}
           </label>
           <input id="from" name="from" type="date" defaultValue={from} className={FIELD_CLASS} />
         </div>
         <div className="space-y-1.5">
           <label htmlFor="to" className="block text-xs font-medium text-slate-600">
-            Au
+            {t(locale, "Au")}
           </label>
           <input id="to" name="to" type="date" defaultValue={to} className={FIELD_CLASS} />
         </div>
@@ -149,22 +161,29 @@ export default async function HistoryPage({
           type="submit"
           className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
-          Filtrer
+          {t(locale, "Filtrer")}
         </button>
         {filtered ? (
           <Link
             href="/history"
             className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-sm font-medium text-teal-700 transition hover:bg-teal-100"
           >
-            Réinitialiser
+            {t(locale, "Réinitialiser")}
           </Link>
         ) : null}
       </form>
 
       <p className="text-xs text-slate-500">
-        {entries.length} modification{entries.length > 1 ? "s" : ""} affichée
-        {entries.length > 1 ? "s" : ""} · heures en UTC
-        {entries.length === LIMIT ? ` · limité aux ${LIMIT} plus récentes` : ""}
+        {entries.length === 1
+          ? t(locale, "{count} modification affichée · heures en UTC", {
+              count: entries.length,
+            })
+          : t(locale, "{count} modifications affichées · heures en UTC", {
+              count: entries.length,
+            })}
+        {entries.length === LIMIT
+          ? t(locale, " · limité aux {count} plus récentes", { count: LIMIT })
+          : ""}
       </p>
 
       {entries.length === 0 ? (
@@ -173,14 +192,14 @@ export default async function HistoryPage({
             <HistoryIcon className="size-6" />
           </span>
           <h2 className="mt-4 text-base font-semibold text-slate-900">
-            Aucune modification à afficher
+            {t(locale, "Aucune modification à afficher")}
           </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
             {sourceOptions.length === 0
-              ? "Le journal attend qu'au moins un module métier soit activé."
+              ? t(locale, "Le journal attend qu'au moins un module métier soit activé.")
               : filtered
-              ? "Aucune entrée ne correspond à ces critères."
-              : "Les saisies et corrections apparaîtront ici au fur et à mesure."}
+              ? t(locale, "Aucune entrée ne correspond à ces critères.")
+              : t(locale, "Les saisies et corrections apparaîtront ici au fur et à mesure.")}
           </p>
         </div>
       ) : (
@@ -188,7 +207,7 @@ export default async function HistoryPage({
           {groups.map((group) => (
             <section key={group.day} className="space-y-3">
               <h2 className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-                <span className="capitalize">{formatDayLabel(group.day)}</span>
+                <span className="capitalize">{formatDayLabel(locale, group.day)}</span>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                   {group.entries.length}
                 </span>
@@ -207,7 +226,7 @@ export default async function HistoryPage({
                       <span
                         className={`h-fit shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${HISTORY_ENTITY_TONES[entry.entity]}`}
                       >
-                        {HISTORY_ENTITY_LABELS[entry.entity]}
+                        {historyEntityLabel(locale, entry.entity)}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline gap-2">
@@ -224,7 +243,7 @@ export default async function HistoryPage({
                           <span
                             className={`text-xs font-semibold ${HISTORY_ACTION_TONES[entry.action]}`}
                           >
-                            {HISTORY_ACTION_LABELS[entry.action]}
+                            {historyActionLabel(locale, entry.action)}
                           </span>
                         </div>
                         <p className="mt-0.5 text-xs text-slate-500">

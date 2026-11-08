@@ -4,8 +4,10 @@ import { useState, useTransition } from "react";
 
 import { deleteVehicleAction } from "@/actions/vehicles";
 import { CloseIcon, TrashIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 
 export function DeleteVehicleButton({ id, label }: { id: string; label: string }) {
+  const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -14,8 +16,8 @@ export function DeleteVehicleButton({ id, label }: { id: string; label: string }
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        aria-label={`Désactiver ${label}`}
-        title={`Désactiver ${label}`}
+        aria-label={t("Désactiver {name}", { name: label })}
+        title={t("Désactiver {name}", { name: label })}
         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
       >
         <TrashIcon className="size-4" />
@@ -35,12 +37,12 @@ export function DeleteVehicleButton({ id, label }: { id: string; label: string }
         }
         className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
       >
-        {pending ? "Désactivation…" : "Désactiver"}
+        {pending ? t("Désactivation…") : t("Désactiver")}
       </button>
       <button
         type="button"
         onClick={() => setConfirming(false)}
-        aria-label="Annuler"
+        aria-label={t("Annuler")}
         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
       >
         <CloseIcon className="size-4" />

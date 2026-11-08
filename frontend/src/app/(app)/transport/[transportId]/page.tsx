@@ -8,6 +8,8 @@ import { TransportFormDialog } from "@/components/transport/transport-form-dialo
 import { TransportNoteForm } from "@/components/transport/transport-note-form";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDayLabel, todayIso } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { STATUS_BADGES } from "@/lib/status";
 import type { CurrentUser, Transport, Vehicle } from "@/lib/types";
 
@@ -16,6 +18,7 @@ export default async function TransportDetailPage({
 }: {
   params: Promise<{ transportId: string }>;
 }) {
+  const locale = await getLocale();
   const { transportId } = await params;
 
   let transport: Transport;
@@ -40,7 +43,7 @@ export default async function TransportDetailPage({
           href="/transport"
           className="text-sm font-medium text-slate-500 transition hover:text-slate-800"
         >
-          ← Retour aux transports
+          ← {t(locale, "Retour aux transports")}
         </Link>
       </div>
 
@@ -56,10 +59,13 @@ export default async function TransportDetailPage({
             <p className="mt-1 text-sm text-slate-500">
               {transport.lot_number ? (
                 <>
-                  Lot <span className="font-mono text-slate-700">{transport.lot_number}</span> ·{" "}
+                  {t(locale, "Lot")}{" "}
+                  <span className="font-mono text-slate-700">{transport.lot_number}</span> ·{" "}
                 </>
               ) : null}
-              <span className="capitalize">{formatDayLabel(transport.transport_date)}</span>
+              <span className="capitalize">
+                {formatDayLabel(locale, transport.transport_date)}
+              </span>
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
               <span className="flex items-center gap-1.5">
@@ -70,7 +76,7 @@ export default async function TransportDetailPage({
                 <TruckIcon className="size-4 shrink-0" />
                 {transport.vehicle.name}
                 {transport.vehicle.plate ? ` (${transport.vehicle.plate})` : ""}
-                {transport.vehicle.id === null ? " · non référencé" : ""}
+                {transport.vehicle.id === null ? ` · ${t(locale, "non référencé")}` : ""}
               </span>
             </p>
             <p className="mt-3">
@@ -79,7 +85,9 @@ export default async function TransportDetailPage({
                   STATUS_BADGES[transport.is_complete ? "complete" : "partial"]
                 }`}
               >
-                {transport.is_complete ? "Chaîne du froid complète" : "Transport en cours"}
+                {transport.is_complete
+                  ? t(locale, "Chaîne du froid complète")
+                  : t(locale, "Transport en cours")}
               </span>
             </p>
           </div>
@@ -98,10 +106,14 @@ export default async function TransportDetailPage({
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Relevés de température</h2>
+          <h2 className="text-base font-semibold text-slate-900">
+            {t(locale, "Relevés de température")}
+          </h2>
           <p className="text-xs text-slate-500">
-            Saisis le départ avant de partir, puis l&apos;arrivée à la livraison. Chaque
-            enregistrement est indépendant, et les corrections sont journalisées.
+            {t(
+              locale,
+              "Saisis le départ avant de partir, puis l'arrivée à la livraison. Chaque enregistrement est indépendant, et les corrections sont journalisées.",
+            )}
           </p>
         </div>
 
@@ -109,7 +121,7 @@ export default async function TransportDetailPage({
           <TransportCheckpointForm
             transportId={transport.id}
             kind="departure"
-            title="Départ"
+            title={t(locale, "Départ")}
             rank={1}
             time={transport.departure_time}
             temperature={transport.departure_temperature_celsius}
@@ -117,7 +129,7 @@ export default async function TransportDetailPage({
           <TransportCheckpointForm
             transportId={transport.id}
             kind="arrival"
-            title="Arrivée"
+            title={t(locale, "Arrivée")}
             rank={2}
             time={transport.arrival_time}
             temperature={transport.arrival_temperature_celsius}

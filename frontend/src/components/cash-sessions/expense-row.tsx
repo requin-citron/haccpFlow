@@ -1,17 +1,20 @@
 import { DeleteExpenseButton } from "@/components/cash-sessions/delete-expense-button";
 import { ExpenseFormDialog } from "@/components/cash-sessions/expense-form-dialog";
-import { EXPENSE_KIND_LABELS, formatVatRate } from "@/lib/cash-session";
+import { expenseKindLabel, formatVatRate } from "@/lib/cash-session";
 import { formatEuros } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 import type { CashExpense } from "@/lib/types";
 
 export function ExpenseRow({
   sessionId,
   expense,
   isOpen,
+  locale,
 }: {
   sessionId: string;
   expense: CashExpense;
   isOpen: boolean;
+  locale: Locale;
 }) {
   const badge =
     expense.kind === "professional"
@@ -25,21 +28,21 @@ export function ExpenseRow({
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${badge}`}
           >
-            {EXPENSE_KIND_LABELS[expense.kind]}
+            {expenseKindLabel(locale, expense.kind)}
           </span>
           <span className="truncate" title={expense.name}>
             {expense.name}
           </span>
         </p>
         <p className="mt-0.5 text-xs tabular-nums text-slate-500">
-          {expense.quantity} × {formatEuros(expense.unit_price_cents)} · TVA{" "}
-          {formatVatRate(expense.vat_rate)}
+          {expense.quantity} × {formatEuros(locale, expense.unit_price_cents)} · TVA{" "}
+          {formatVatRate(locale, expense.vat_rate)}
         </p>
       </div>
 
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold tabular-nums text-slate-900">
-          {formatEuros(expense.total_cents)}
+          {formatEuros(locale, expense.total_cents)}
         </span>
         {isOpen ? (
           <>

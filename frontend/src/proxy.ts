@@ -9,6 +9,7 @@ import {
   type Session,
   type TokenPairPayload,
 } from "@/lib/auth-cookies";
+import { LOCALE_COOKIE, normalizeLocale, t } from "@/lib/i18n";
 
 const API_BASE_URL = (process.env.API_INTERNAL_URL ?? "http://localhost:8000").replace(
   /\/+$/,
@@ -95,8 +96,9 @@ function clearSessionCookies(response: NextResponse): void {
 
 function unauthenticatedResponse(request: NextRequest): NextResponse {
   const isApi = request.nextUrl.pathname.startsWith("/api/");
+  const locale = normalizeLocale(request.cookies.get(LOCALE_COOKIE)?.value);
   const response = isApi
-    ? NextResponse.json({ detail: "Session expirée." }, { status: 401 })
+    ? NextResponse.json({ detail: t(locale, "Session expirée.") }, { status: 401 })
     : NextResponse.redirect(new URL("/login", request.url));
   clearSessionCookies(response);
   return response;

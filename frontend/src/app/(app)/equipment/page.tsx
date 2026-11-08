@@ -7,6 +7,8 @@ import { CashRegisterCard } from "@/components/cash-registers/cash-register-card
 import { CashRegisterFormDialog } from "@/components/cash-registers/cash-register-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { getEnabledModules } from "@/lib/module-settings";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CashRegister, CurrentUser, Equipment, Vehicle } from "@/lib/types";
 
 const STAT_TONES = {
@@ -40,6 +42,7 @@ function StatCard({
 }
 
 export default async function EquipmentPage() {
+  const locale = await getLocale();
   const enabledModules = getEnabledModules();
   const [user, equipment, vehicles, cashRegisters] = await Promise.all([
     apiFetch<CurrentUser>("/api/v1/auth/me"),
@@ -59,14 +62,14 @@ export default async function EquipmentPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-teal-700">Parc matériel</p>
+          <p className="text-sm font-medium text-teal-700">{t(locale, "Parc matériel")}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
-            Matériel
+            {t(locale, "Matériel")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-500">
-            Déclare les enceintes à surveiller et leurs seuils réglementaires.
+            {t(locale, "Déclare les enceintes à surveiller et leurs seuils réglementaires.")}
             {enabledModules.readings
-              ? " Les relevés et l'enrôlement des capteurs arriveront ensuite."
+              ? t(locale, " Les relevés et l'enrôlement des capteurs arriveront ensuite.")
               : ""}
           </p>
         </div>
@@ -75,19 +78,19 @@ export default async function EquipmentPage() {
 
       <section className="grid gap-4 sm:grid-cols-3">
         <StatCard
-          label="Équipements actifs"
+          label={t(locale, "Équipements actifs")}
           value={equipment.length}
           tone="slate"
           icon={<GridIcon className="size-5" />}
         />
         <StatCard
-          label="Réfrigérateurs"
+          label={t(locale, "Réfrigérateurs")}
           value={fridgeCount}
           tone="sky"
           icon={<FridgeIcon className="size-5" />}
         />
         <StatCard
-          label="Congélateurs"
+          label={t(locale, "Congélateurs")}
           value={freezerCount}
           tone="indigo"
           icon={<SnowflakeIcon className="size-5" />}
@@ -100,17 +103,19 @@ export default async function EquipmentPage() {
             <FridgeIcon className="size-6" />
           </span>
           <h2 className="mt-4 text-base font-semibold text-slate-900">
-            Aucun matériel pour l&apos;instant
+            {t(locale, "Aucun matériel pour l'instant")}
           </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            Ajoute ton premier réfrigérateur ou congélateur pour commencer à suivre la chaîne du
-            froid.
+            {t(
+              locale,
+              "Ajoute ton premier réfrigérateur ou congélateur pour commencer à suivre la chaîne du froid.",
+            )}
           </p>
         </section>
       ) : (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {equipment.map((item) => (
-            <EquipmentCard key={item.id} equipment={item} />
+            <EquipmentCard key={item.id} equipment={item} locale={locale} />
           ))}
         </section>
       )}
@@ -119,10 +124,12 @@ export default async function EquipmentPage() {
         <section className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Véhicules</h2>
+              <h2 className="text-base font-semibold text-slate-900">{t(locale, "Véhicules")}</h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                Les véhicules utilisés pour le suivi de transport. Ils se choisissent ensuite lors
-                de la déclaration d&apos;un transport.
+                {t(
+                  locale,
+                  "Les véhicules utilisés pour le suivi de transport. Ils se choisissent ensuite lors de la déclaration d'un transport.",
+                )}
               </p>
             </div>
             <VehicleFormDialog />
@@ -131,14 +138,21 @@ export default async function EquipmentPage() {
           {vehicles.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
               <p className="text-sm text-slate-500">
-                Aucun véhicule enregistré. Ajoute un nom ou une plaque pour pouvoir déclarer des
-                transports.
+                {t(
+                  locale,
+                  "Aucun véhicule enregistré. Ajoute un nom ou une plaque pour pouvoir déclarer des transports.",
+                )}
               </p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {vehicles.map((vehicle) => (
-                <VehicleCard key={vehicle.id} vehicle={vehicle} isAdmin={isAdmin} />
+                <VehicleCard
+                  key={vehicle.id}
+                  vehicle={vehicle}
+                  isAdmin={isAdmin}
+                  locale={locale}
+                />
               ))}
             </div>
           )}
@@ -149,10 +163,12 @@ export default async function EquipmentPage() {
         <section className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Caisses</h2>
+              <h2 className="text-base font-semibold text-slate-900">{t(locale, "Caisses")}</h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                Les caisses enrôlées avec leur comptage initial, coupure par coupure. Le suivi des
-                comptages viendra ensuite.
+                {t(
+                  locale,
+                  "Les caisses enrôlées avec leur comptage initial, coupure par coupure. Le suivi des comptages viendra ensuite.",
+                )}
               </p>
             </div>
             <CashRegisterFormDialog />
@@ -161,8 +177,10 @@ export default async function EquipmentPage() {
           {cashRegisters.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
               <p className="text-sm text-slate-500">
-                Aucune caisse enregistrée. Déclare une caisse et son comptage initial pour préparer
-                le suivi.
+                {t(
+                  locale,
+                  "Aucune caisse enregistrée. Déclare une caisse et son comptage initial pour préparer le suivi.",
+                )}
               </p>
             </div>
           ) : (
@@ -172,6 +190,7 @@ export default async function EquipmentPage() {
                   key={cashRegister.id}
                   cashRegister={cashRegister}
                   isAdmin={isAdmin}
+                  locale={locale}
                 />
               ))}
             </div>

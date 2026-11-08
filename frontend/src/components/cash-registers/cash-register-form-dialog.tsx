@@ -7,6 +7,7 @@ import {
   updateCashRegisterAction,
 } from "@/actions/cash-registers";
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import {
   COIN_DENOMINATIONS,
   DENOMINATIONS,
@@ -80,6 +81,7 @@ function CountField({
 }
 
 export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRegister }) {
+  const { locale, t } = useI18n();
   const isEdit = cashRegister !== undefined;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => toDraft(cashRegister));
@@ -121,11 +123,11 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
             setDraft(toDraft(cashRegister));
             setOpen(true);
           }}
-          aria-label={`Modifier ${cashRegister.name}`}
+          aria-label={t("Modifier {name}", { name: cashRegister.name })}
           className={SECONDARY_TRIGGER_CLASS}
         >
           <PencilIcon className="size-4" />
-          Modifier
+          {t("Modifier")}
         </button>
       ) : (
         <button
@@ -137,7 +139,7 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
           className={PRIMARY_TRIGGER_CLASS}
         >
           <PlusIcon className="size-4" />
-          Nouvelle caisse
+          {t("Nouvelle caisse")}
         </button>
       )}
 
@@ -160,16 +162,16 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
                   id="cash-register-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  {isEdit ? "Modifier la caisse" : "Nouvelle caisse"}
+                  {isEdit ? t("Modifier la caisse") : t("Nouvelle caisse")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Saisis le comptage initial, coupure par coupure.
+                  {t("Saisis le comptage initial, coupure par coupure.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -181,7 +183,7 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
 
               <div className="space-y-1.5">
                 <label htmlFor="name" className={LABEL_CLASS}>
-                  Nom de la caisse
+                  {t("Nom de la caisse")}
                 </label>
                 <input
                   id="name"
@@ -190,13 +192,13 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
                   maxLength={120}
                   autoFocus
                   defaultValue={cashRegister?.name ?? ""}
-                  placeholder="Caisse principale"
+                  placeholder={t("Caisse principale")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <fieldset className="space-y-2">
-                <legend className={LABEL_CLASS}>Pièces</legend>
+                <legend className={LABEL_CLASS}>{t("Pièces")}</legend>
                 <div className="grid grid-cols-4 gap-3">
                   {COIN_DENOMINATIONS.map((denomination) => (
                     <CountField
@@ -210,7 +212,7 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
               </fieldset>
 
               <fieldset className="space-y-2">
-                <legend className={LABEL_CLASS}>Billets</legend>
+                <legend className={LABEL_CLASS}>{t("Billets")}</legend>
                 <div className="grid grid-cols-4 gap-3">
                   {NOTE_DENOMINATIONS.map((denomination) => (
                     <CountField
@@ -224,9 +226,9 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
               </fieldset>
 
               <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Total du comptage :{" "}
+                {t("Total du comptage :")}{" "}
                 <span className="text-base font-semibold tabular-nums text-slate-900">
-                  {formatEuros(draftTotal(draft))}
+                  {formatEuros(locale, draftTotal(draft))}
                 </span>
               </p>
 
@@ -242,10 +244,14 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer la caisse"}
+                  {pending
+                    ? t("Enregistrement…")
+                    : isEdit
+                      ? t("Enregistrer")
+                      : t("Créer la caisse")}
                 </button>
               </div>
             </form>

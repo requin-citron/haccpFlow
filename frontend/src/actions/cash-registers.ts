@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import { DENOMINATIONS } from "@/lib/cash-register";
 import type { CashRegisterFormState } from "@/lib/form-state";
+import { t, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 const CASH_REGISTERS_PATH = "/api/v1/cash-registers";
 
@@ -17,34 +20,14 @@ function readCount(formData: FormData, field: string): number | null {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.status) {
-      case 404:
-        return "Cette caisse n'existe plus.";
-      case 409:
-        return "Une caisse active porte déjà ce nom.";
-      case 403:
-        return "Cette action est réservée aux administrateurs.";
-      case 422:
-        return "Vérifie les compteurs : ils doivent être des nombres entiers positifs.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
-
 type PayloadResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
 
-function buildPayload(formData: FormData): PayloadResult {
+function buildPayload(formData: FormData, locale: Locale): PayloadResult {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
-    return { ok: false, error: "Le nom de la caisse est obligatoire." };
+    return { ok: false, error: t(locale, "Le nom de la caisse est obligatoire.") };
   }
 
   const counts: Record<string, number> = {};
@@ -53,7 +36,9 @@ function buildPayload(formData: FormData): PayloadResult {
     if (count === null) {
       return {
         ok: false,
-        error: `Le compteur « ${denomination.label} » doit être un entier positif.`,
+        error: t(locale, "Le compteur « {name} » doit être un entier positif.", {
+          name: denomination.label,
+        }),
       };
     }
     counts[denomination.field] = count;
@@ -66,7 +51,8 @@ export async function createCashRegisterAction(
   _previous: CashRegisterFormState,
   formData: FormData,
 ): Promise<CashRegisterFormState> {
-  const result = buildPayload(formData);
+  const locale = await getLocale();
+  const result = buildPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -78,7 +64,14 @@ export async function createCashRegisterAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Cette caisse n'existe plus.",
+        conflict: "Une caisse active porte déjà ce nom.",
+        invalid: "Vérifie les compteurs : ils doivent être des nombres entiers positifs.",
+      }),
+    };
   }
 
   revalidatePath("/equipment");
@@ -89,12 +82,13 @@ export async function updateCashRegisterAction(
   _previous: CashRegisterFormState,
   formData: FormData,
 ): Promise<CashRegisterFormState> {
+  const locale = await getLocale();
   const cashRegisterId = String(formData.get("id") ?? "").trim();
   if (!cashRegisterId) {
-    return { status: "error", message: "Caisse introuvable." };
+    return { status: "error", message: t(locale, "Caisse introuvable.") };
   }
 
-  const result = buildPayload(formData);
+  const result = buildPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -106,7 +100,14 @@ export async function updateCashRegisterAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Cette caisse n'existe plus.",
+        conflict: "Une caisse active porte déjà ce nom.",
+        invalid: "Vérifie les compteurs : ils doivent être des nombres entiers positifs.",
+      }),
+    };
   }
 
   revalidatePath("/equipment");

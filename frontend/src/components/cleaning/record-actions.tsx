@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, useTransition } from "react";
 
 import { deleteCleaningRecordAction, updateCleaningRecordAction } from "@/actions/cleaning";
 import { AlertIcon, CloseIcon, PencilIcon, TrashIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_CLEANING_RECORD_FORM_STATE } from "@/lib/form-state";
 import {
   CANCEL_BUTTON_CLASS,
@@ -21,6 +22,7 @@ export function CleaningRecordActions({
   planId: string;
   record: CleaningRecord;
 }) {
+  const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -40,8 +42,8 @@ export function CleaningRecordActions({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        aria-label="Corriger la déclaration"
-        title="Corriger la déclaration"
+        aria-label={t("Corriger la déclaration")}
+        title={t("Corriger la déclaration")}
         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
       >
         <PencilIcon className="size-4" />
@@ -59,12 +61,12 @@ export function CleaningRecordActions({
             }
             className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
           >
-            {pending ? "Suppression…" : "Confirmer"}
+            {pending ? t("Suppression…") : t("Confirmer")}
           </button>
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            aria-label="Annuler"
+            aria-label={t("Annuler")}
             className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <CloseIcon className="size-4" />
@@ -74,8 +76,8 @@ export function CleaningRecordActions({
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          aria-label="Supprimer la déclaration"
-          title="Supprimer la déclaration"
+          aria-label={t("Supprimer la déclaration")}
+          title={t("Supprimer la déclaration")}
           className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
         >
           <TrashIcon className="size-4" />
@@ -97,16 +99,16 @@ export function CleaningRecordActions({
             <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-slate-900">
-                  Corriger la déclaration
+                  {t("Corriger la déclaration")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  La correction est tracée dans le journal.
+                  {t("La correction est tracée dans le journal.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -119,7 +121,7 @@ export function CleaningRecordActions({
 
               <div className="space-y-1.5">
                 <label htmlFor={`cleaning_date_${record.id}`} className={LABEL_CLASS}>
-                  Date du nettoyage
+                  {t("Date du nettoyage")}
                 </label>
                 <input
                   id={`cleaning_date_${record.id}`}
@@ -133,7 +135,7 @@ export function CleaningRecordActions({
 
               <div className="space-y-1.5">
                 <label htmlFor={`comment_${record.id}`} className={LABEL_CLASS}>
-                  Commentaire <span className="font-normal text-slate-400">(optionnel)</span>
+                  {t("Commentaire {optional}", { optional: t("(optionnel)") })}
                 </label>
                 <textarea
                   id={`comment_${record.id}`}
@@ -141,7 +143,7 @@ export function CleaningRecordActions({
                   rows={3}
                   maxLength={2000}
                   defaultValue={record.comment ?? ""}
-                  placeholder="Vider un champ efface le commentaire."
+                  placeholder={t("Vider un champ efface le commentaire.")}
                   className={`${FIELD_CLASS} resize-none`}
                 />
               </div>
@@ -162,10 +164,10 @@ export function CleaningRecordActions({
                   onClick={() => setEditing(false)}
                   className={CANCEL_BUTTON_CLASS}
                 >
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={saving} className={SUBMIT_BUTTON_CLASS}>
-                  {saving ? "Enregistrement…" : "Enregistrer"}
+                  {saving ? t("Enregistrement…") : t("Enregistrer")}
                 </button>
               </div>
             </form>

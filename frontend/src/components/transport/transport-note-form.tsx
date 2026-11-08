@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { saveTransportReadingsAction } from "@/actions/transport";
 import { AlertIcon, CheckIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_TRANSPORT_FORM_STATE } from "@/lib/form-state";
 import { FIELD_CLASS, LABEL_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
 
@@ -14,6 +15,7 @@ export function TransportNoteForm({
   transportId: string;
   observation: string | null;
 }) {
+  const { t } = useI18n();
   const [state, formAction, pending] = useActionState(
     saveTransportReadingsAction,
     INITIAL_TRANSPORT_FORM_STATE,
@@ -35,7 +37,7 @@ export function TransportNoteForm({
 
       <div className="space-y-1.5">
         <label htmlFor="observation" className={LABEL_CLASS}>
-          Observation <span className="font-normal text-slate-400">(optionnel)</span>
+          {t("Observation {optional}", { optional: t("(optionnel)") })}
         </label>
         <textarea
           id="observation"
@@ -43,7 +45,7 @@ export function TransportNoteForm({
           rows={3}
           maxLength={2000}
           defaultValue={observation ?? ""}
-          placeholder="Écart de température, remarque sur la livraison…"
+          placeholder={t("Écart de température, remarque sur la livraison…")}
           className={`${FIELD_CLASS} resize-none`}
         />
       </div>
@@ -62,11 +64,11 @@ export function TransportNoteForm({
         {saved ? (
           <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
             <CheckIcon className="size-4" />
-            Enregistré
+            {t("Enregistré")}
           </span>
         ) : null}
         <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-          {pending ? "Enregistrement…" : "Enregistrer l'observation"}
+          {pending ? t("Enregistrement…") : t("Enregistrer l'observation")}
         </button>
       </div>
     </form>

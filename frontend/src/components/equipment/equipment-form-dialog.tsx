@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import { createEquipmentAction, updateEquipmentAction } from "@/actions/equipment";
 import { AlertIcon, CloseIcon, FridgeIcon, PencilIcon, PlusIcon, SnowflakeIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_EQUIPMENT_FORM_STATE } from "@/lib/form-state";
 import {
   CANCEL_BUTTON_CLASS,
@@ -17,6 +18,7 @@ import {
 import type { Equipment } from "@/lib/types";
 
 export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
+  const { t } = useI18n();
   const isEdit = equipment !== undefined;
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -51,16 +53,16 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`Modifier ${equipment.name}`}
+          aria-label={t("Modifier {name}", { name: equipment.name })}
           className={SECONDARY_TRIGGER_CLASS}
         >
           <PencilIcon className="size-4" />
-          Modifier
+          {t("Modifier")}
         </button>
       ) : (
         <button type="button" onClick={() => setOpen(true)} className={PRIMARY_TRIGGER_CLASS}>
           <PlusIcon className="size-4" />
-          Ajouter un matériel
+          {t("Ajouter un matériel")}
         </button>
       )}
 
@@ -83,18 +85,18 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                   id="equipment-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  {isEdit ? "Modifier le matériel" : "Nouveau matériel"}
+                  {isEdit ? t("Modifier le matériel") : t("Nouveau matériel")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
                   {isEdit
-                    ? "Mets à jour les informations et les seuils réglementaires."
-                    : "Déclare une enceinte réfrigérée à surveiller."}
+                    ? t("Mets à jour les informations et les seuils réglementaires.")
+                    : t("Déclare une enceinte réfrigérée à surveiller.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -106,7 +108,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
 
               <div className="space-y-1.5">
                 <label htmlFor="name" className={LABEL_CLASS}>
-                  Nom du matériel
+                  {t("Nom du matériel")}
                 </label>
                 <input
                   id="name"
@@ -115,13 +117,13 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                   autoFocus
                   maxLength={120}
                   defaultValue={equipment?.name ?? ""}
-                  placeholder="Frigo cuisine"
+                  placeholder={t("Frigo cuisine")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <fieldset className="space-y-2">
-                <legend className={LABEL_CLASS}>Type d&apos;enceinte</legend>
+                <legend className={LABEL_CLASS}>{t("Type d'enceinte")}</legend>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="relative cursor-pointer">
                     <input
@@ -133,7 +135,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                     />
                     <span className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-medium text-slate-700 transition peer-checked:border-teal-500 peer-checked:bg-teal-50 peer-checked:text-teal-800 peer-focus-visible:ring-4 peer-focus-visible:ring-teal-500/20">
                       <FridgeIcon className="size-5 shrink-0" />
-                      Réfrigérateur
+                      {t("Réfrigérateur")}
                     </span>
                   </label>
                   <label className="relative cursor-pointer">
@@ -146,18 +148,18 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                     />
                     <span className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-medium text-slate-700 transition peer-checked:border-teal-500 peer-checked:bg-teal-50 peer-checked:text-teal-800 peer-focus-visible:ring-4 peer-focus-visible:ring-teal-500/20">
                       <SnowflakeIcon className="size-5 shrink-0" />
-                      Congélateur
+                      {t("Congélateur")}
                     </span>
                   </label>
                 </div>
               </fieldset>
 
               <fieldset className="space-y-2">
-                <legend className={LABEL_CLASS}>Seuils de température (°C)</legend>
+                <legend className={LABEL_CLASS}>{t("Seuils de température (°C)")}</legend>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label htmlFor="min_temperature_celsius" className="text-xs text-slate-500">
-                      Minimum
+                      {t("Minimum")}
                     </label>
                     <input
                       id="min_temperature_celsius"
@@ -172,7 +174,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="max_temperature_celsius" className="text-xs text-slate-500">
-                      Maximum
+                      {t("Maximum")}
                     </label>
                     <input
                       id="max_temperature_celsius"
@@ -187,28 +189,29 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                   </div>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Laisse les deux vides pour appliquer les seuils par défaut configurés sur le
-                  serveur.
+                  {t(
+                    "Laisse les deux vides pour appliquer les seuils par défaut configurés sur le serveur.",
+                  )}
                 </p>
               </fieldset>
 
               <div className="space-y-1.5">
                 <label htmlFor="location" className={LABEL_CLASS}>
-                  Emplacement <span className="font-normal text-slate-400">(optionnel)</span>
+                  {t("Emplacement {optional}", { optional: t("(optionnel)") })}
                 </label>
                 <input
                   id="location"
                   name="location"
                   maxLength={120}
                   defaultValue={equipment?.location ?? ""}
-                  placeholder="Cuisine, réserve…"
+                  placeholder={t("Cuisine, réserve…")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="notes" className={LABEL_CLASS}>
-                  Notes <span className="font-normal text-slate-400">(optionnel)</span>
+                  {t("Notes {optional}", { optional: t("(optionnel)") })}
                 </label>
                 <textarea
                   id="notes"
@@ -216,7 +219,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                   rows={3}
                   maxLength={2000}
                   defaultValue={equipment?.notes ?? ""}
-                  placeholder="Sous le plan de travail, à côté de la chambre froide…"
+                  placeholder={t("Sous le plan de travail, à côté de la chambre froide…")}
                   className={`${FIELD_CLASS} resize-none`}
                 />
               </div>
@@ -237,14 +240,18 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                   onClick={() => setOpen(false)}
                   className={CANCEL_BUTTON_CLASS}
                 >
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button
                   type="submit"
                   disabled={pending}
                   className={SUBMIT_BUTTON_CLASS}
                 >
-                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer le matériel"}
+                  {pending
+                    ? t("Enregistrement…")
+                    : isEdit
+                      ? t("Enregistrer")
+                      : t("Créer le matériel")}
                 </button>
               </div>
             </form>

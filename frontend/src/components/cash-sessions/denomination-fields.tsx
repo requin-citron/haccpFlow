@@ -1,4 +1,5 @@
 import { COIN_DENOMINATIONS, NOTE_DENOMINATIONS, type Denomination } from "@/lib/cash-register";
+import { useI18n } from "@/components/locale-provider";
 import type { CountsDraft } from "@/lib/cash-session";
 import { LABEL_CLASS } from "@/lib/ui";
 
@@ -46,10 +47,11 @@ export function DenominationFields({
   onChange: (field: string, value: string) => void;
   idPrefix?: string;
 }) {
+  const { t } = useI18n();
   return (
     <>
       <fieldset className="space-y-2">
-        <legend className={LABEL_CLASS}>Pièces</legend>
+        <legend className={LABEL_CLASS}>{t("Pièces")}</legend>
         <div className="grid grid-cols-4 gap-3">
           {COIN_DENOMINATIONS.map((denomination) => (
             <CountField
@@ -64,7 +66,7 @@ export function DenominationFields({
       </fieldset>
 
       <fieldset className="space-y-2">
-        <legend className={LABEL_CLASS}>Billets</legend>
+        <legend className={LABEL_CLASS}>{t("Billets")}</legend>
         <div className="grid grid-cols-4 gap-3">
           {NOTE_DENOMINATIONS.map((denomination) => (
             <CountField

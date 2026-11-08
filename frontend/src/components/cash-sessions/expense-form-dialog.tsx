@@ -4,10 +4,11 @@ import { useActionState, useEffect, useState } from "react";
 
 import { createCashExpenseAction, updateCashExpenseAction } from "@/actions/cash-sessions";
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import {
-  EXPENSE_KIND_HINTS,
-  EXPENSE_KIND_LABELS,
   centsToEurosInput,
+  expenseKindHint,
+  expenseKindLabel,
   eurosToCents,
 } from "@/lib/cash-session";
 import { INITIAL_CASH_SESSION_FORM_STATE } from "@/lib/form-state";
@@ -34,6 +35,7 @@ export function ExpenseFormDialog({
   sessionId: string;
   expense?: CashExpense;
 }) {
+  const { locale, t } = useI18n();
   const isEdit = expense !== undefined;
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<CashExpenseKind>(expense?.kind ?? "professional");
@@ -87,8 +89,8 @@ export function ExpenseFormDialog({
         <button
           type="button"
           onClick={startEditing}
-          aria-label={`Modifier ${expense.name}`}
-          title={`Modifier ${expense.name}`}
+          aria-label={t("Modifier {name}", { name: expense.name })}
+          title={t("Modifier {name}", { name: expense.name })}
           className={SECONDARY_TRIGGER_CLASS}
         >
           <PencilIcon className="size-4" />
@@ -96,7 +98,7 @@ export function ExpenseFormDialog({
       ) : (
         <button type="button" onClick={startEditing} className={PRIMARY_TRIGGER_CLASS}>
           <PlusIcon className="size-4" />
-          Ajouter un frais
+          {t("Ajouter un frais")}
         </button>
       )}
 
@@ -119,16 +121,16 @@ export function ExpenseFormDialog({
                   id="expense-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  {isEdit ? "Modifier le frais" : "Nouveau frais"}
+                  {isEdit ? t("Modifier le frais") : t("Nouveau frais")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Argent sorti de la caisse pendant le suivi.
+                  {t("Argent sorti de la caisse pendant le suivi.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -140,7 +142,7 @@ export function ExpenseFormDialog({
               {isEdit ? <input type="hidden" name="expense_id" value={expense.id} /> : null}
 
               <div className="space-y-2">
-                <span className={LABEL_CLASS}>Type de frais</span>
+                <span className={LABEL_CLASS}>{t("Type de frais")}</span>
                 <div className="grid grid-cols-2 gap-2">
                   {(["professional", "personal"] as const).map((option) => (
                     <label
@@ -163,9 +165,9 @@ export function ExpenseFormDialog({
                         className="mt-0.5 size-4 border-slate-300 text-teal-600 focus:ring-teal-500/30"
                       />
                       <span>
-                        <span className="block font-medium">{EXPENSE_KIND_LABELS[option]}</span>
+                        <span className="block font-medium">{expenseKindLabel(locale, option)}</span>
                         <span className="mt-0.5 block text-[11px] leading-snug text-slate-500">
-                          {EXPENSE_KIND_HINTS[option]}
+                          {expenseKindHint(locale, option)}
                         </span>
                       </span>
                     </label>
@@ -175,7 +177,7 @@ export function ExpenseFormDialog({
 
               <div className="space-y-1.5">
                 <label htmlFor="expense_name" className={LABEL_CLASS}>
-                  Nom du frais
+                  {t("Nom du frais")}
                 </label>
                 <input
                   id="expense_name"
@@ -184,7 +186,7 @@ export function ExpenseFormDialog({
                   maxLength={160}
                   autoFocus
                   defaultValue={expense?.name ?? ""}
-                  placeholder="Sacs poubelle"
+                  placeholder={t("Sacs poubelle")}
                   className={FIELD_CLASS}
                 />
               </div>
@@ -192,7 +194,7 @@ export function ExpenseFormDialog({
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-1.5">
                   <label htmlFor="expense_quantity" className={LABEL_CLASS}>
-                    Quantité
+                    {t("Quantité")}
                   </label>
                   <input
                     id="expense_quantity"
@@ -209,7 +211,7 @@ export function ExpenseFormDialog({
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="expense_unit_price" className={LABEL_CLASS}>
-                    Prix unitaire (€)
+                    {t("Prix unitaire (€)")}
                   </label>
                   <input
                     id="expense_unit_price"
@@ -227,7 +229,7 @@ export function ExpenseFormDialog({
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="expense_vat_rate" className={LABEL_CLASS}>
-                    TVA (%)
+                    {t("TVA (%)")}
                   </label>
                   <input
                     id="expense_vat_rate"
@@ -245,12 +247,12 @@ export function ExpenseFormDialog({
               </div>
 
               <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Total du frais :{" "}
+                {t("Total du frais :")}{" "}
                 <span className="text-base font-semibold tabular-nums text-slate-900">
-                  {formatEuros(lineTotalCents)}
+                  {formatEuros(locale, lineTotalCents)}
                 </span>
                 <span className="mt-0.5 block text-xs text-slate-500">
-                  Prix unitaire TTC : la TVA est conservée pour l&apos;archivage.
+                  {t("Prix unitaire TTC : la TVA est conservée pour l'archivage.")}
                 </span>
               </p>
 
@@ -266,10 +268,14 @@ export function ExpenseFormDialog({
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Ajouter le frais"}
+                  {pending
+                    ? t("Enregistrement…")
+                    : isEdit
+                      ? t("Enregistrer")
+                      : t("Ajouter le frais")}
                 </button>
               </div>
             </form>

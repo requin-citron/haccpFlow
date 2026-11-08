@@ -7,6 +7,7 @@ Bibliothèque standard uniquement : ces scripts tournent sans rien installer,
 from __future__ import annotations
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.parse
@@ -42,10 +43,14 @@ def read_env() -> dict[str, str]:
 
 def require_env() -> dict[str, str]:
     env = read_env()
-    missing = [key for key in _ENV_KEYS if not env.get(key)]
+    resolved = {
+        key: os.environ.get(key) or env.get(key, "")
+        for key in _ENV_KEYS
+    }
+    missing = [key for key, value in resolved.items() if not value]
     if missing:
         sys.exit(f"Variables absentes du .env : {', '.join(missing)}")
-    return env
+    return resolved
 
 
 def _request(

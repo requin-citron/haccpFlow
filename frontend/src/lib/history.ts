@@ -1,12 +1,19 @@
 import type { ModuleKey } from "@/lib/modules";
+import { t, type Locale } from "@/lib/i18n";
 import type { HistoryAction, HistoryEntity } from "@/lib/types";
 
-export const HISTORY_ENTITY_LABELS: Record<HistoryEntity, string> = {
-  temperature_reading: "Relevé",
-  cleaning_record: "Nettoyage",
-  pasteurisation_phase: "Pasteurisation",
-  transport: "Transport",
-};
+export function historyEntityLabel(locale: Locale, entity: HistoryEntity): string {
+  switch (entity) {
+    case "temperature_reading":
+      return t(locale, "Relevé");
+    case "cleaning_record":
+      return t(locale, "Nettoyage");
+    case "pasteurisation_phase":
+      return t(locale, "Pasteurisation");
+    case "transport":
+      return t(locale, "Transport");
+  }
+}
 
 export const HISTORY_ENTITY_TONES: Record<HistoryEntity, string> = {
   temperature_reading: "bg-sky-50 text-sky-700 ring-sky-200",
@@ -33,11 +40,16 @@ export const HISTORY_ENTITY_MODULES: Record<HistoryEntity, ModuleKey> = {
   transport: "transport",
 };
 
-export const HISTORY_ACTION_LABELS: Record<HistoryAction, string> = {
-  created: "Saisie",
-  updated: "Correction",
-  deleted: "Suppression",
-};
+export function historyActionLabel(locale: Locale, action: HistoryAction): string {
+  switch (action) {
+    case "created":
+      return t(locale, "Saisie");
+    case "updated":
+      return t(locale, "Correction");
+    case "deleted":
+      return t(locale, "Suppression");
+  }
+}
 
 export const HISTORY_ACTION_TONES: Record<HistoryAction, string> = {
   created: "text-emerald-700",

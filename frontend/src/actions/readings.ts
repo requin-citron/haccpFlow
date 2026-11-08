@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import type { ReadingFormState } from "@/lib/form-state";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
 function readOptionalNumber(formData: FormData, field: string): number | null {
   const value = String(formData.get(field) ?? "")
@@ -16,39 +19,22 @@ function readOptionalNumber(formData: FormData, field: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.status) {
-      case 404:
-        return "Ce matériel n'existe plus.";
-      case 422:
-        return error.code === "reading_date_out_of_range"
-          ? "Impossible de saisir un relevé à plus d'un jour dans le futur."
-          : "Vérifie les valeurs saisies, puis réessaie.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
-
 export async function saveReadingAction(
   _previous: ReadingFormState,
   formData: FormData,
 ): Promise<ReadingFormState> {
+  const locale = await getLocale();
   const equipmentId = String(formData.get("equipment_id") ?? "").trim();
   const readingDate = String(formData.get("reading_date") ?? "").trim();
   if (!equipmentId || !readingDate) {
-    return { status: "error", message: "Relevé introuvable." };
+    return { status: "error", message: t(locale, "Relevé introuvable.") };
   }
 
   // A slot left empty is not sent: the API keeps its current value.
   const morning = readOptionalNumber(formData, "morning_celsius");
   const evening = readOptionalNumber(formData, "evening_celsius");
   if (morning === null && evening === null) {
-    return { status: "error", message: "Saisis au moins une température." };
+    return { status: "error", message: t(locale, "Saisis au moins une température.") };
   }
 
   const payload = {
@@ -66,7 +52,12 @@ export async function saveReadingAction(
       },
     );
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce matériel n'existe plus.",
+      }),
+    };
   }
 
   revalidatePath("/readings");

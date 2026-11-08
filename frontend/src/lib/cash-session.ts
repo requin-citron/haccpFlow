@@ -1,15 +1,19 @@
 import { DENOMINATIONS, emptyCounts } from "@/lib/cash-register";
+import { formatLocale, t, type Locale } from "@/lib/i18n";
 import type { CashExpenseKind, CashRegisterCounts } from "@/lib/types";
 
-export const EXPENSE_KIND_LABELS: Record<CashExpenseKind, string> = {
-  professional: "Frais pro",
-  personal: "Frais perso",
-};
+export function expenseKindLabel(locale: Locale, kind: CashExpenseKind): string {
+  return t(locale, kind === "professional" ? "Frais pro" : "Frais perso");
+}
 
-export const EXPENSE_KIND_HINTS: Record<CashExpenseKind, string> = {
-  professional: "Achat ou dépense pour l'activité, payé avec la caisse.",
-  personal: "Prélèvement pour le gérant, sorti de la caisse.",
-};
+export function expenseKindHint(locale: Locale, kind: CashExpenseKind): string {
+  return t(
+    locale,
+    kind === "professional"
+      ? "Achat ou dépense pour l'activité, payé avec la caisse."
+      : "Prélèvement pour le gérant, sorti de la caisse.",
+  );
+}
 
 /** A count being edited: a zero stays an empty field, like the register form. */
 export type CountsDraft = Record<string, string>;
@@ -78,13 +82,14 @@ export function normalizeVatRate(value: string): string | null {
   return rate.toFixed(2);
 }
 
-export function formatVatRate(value: string): string {
+export function formatVatRate(locale: Locale, value: string): string {
   const rate = Number(value);
   if (!Number.isFinite(rate)) {
     return `${value} %`;
   }
-  const rounded = Math.round(rate * 100) / 100;
-  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(2)} %`;
+  return `${new Intl.NumberFormat(formatLocale(locale), {
+    maximumFractionDigits: 2,
+  }).format(rate)} %`;
 }
 
 export function expenseTotalCents(quantity: number, unitPriceCents: number): number {

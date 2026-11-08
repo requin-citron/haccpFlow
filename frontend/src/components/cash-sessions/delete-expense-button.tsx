@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import { deleteCashExpenseAction } from "@/actions/cash-sessions";
 import { CloseIcon, TrashIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 
 export function DeleteExpenseButton({
   sessionId,
@@ -14,6 +15,7 @@ export function DeleteExpenseButton({
   expenseId: string;
   name: string;
 }) {
+  const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -22,8 +24,8 @@ export function DeleteExpenseButton({
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        aria-label={`Supprimer ${name}`}
-        title={`Supprimer ${name}`}
+        aria-label={t("Supprimer {name}", { name })}
+        title={t("Supprimer {name}", { name })}
         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
       >
         <TrashIcon className="size-4" />
@@ -43,12 +45,12 @@ export function DeleteExpenseButton({
         }
         className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
       >
-        {pending ? "Suppression…" : "Supprimer"}
+        {pending ? t("Suppression…") : t("Supprimer")}
       </button>
       <button
         type="button"
         onClick={() => setConfirming(false)}
-        aria-label="Annuler"
+        aria-label={t("Annuler")}
         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
       >
         <CloseIcon className="size-4" />

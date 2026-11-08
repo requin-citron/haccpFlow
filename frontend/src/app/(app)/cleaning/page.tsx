@@ -8,7 +8,9 @@ import {
 } from "@/components/cleaning/schedule-timeline";
 import { AlertIcon, CheckIcon, DropletIcon, GridIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
-import { CLEANING_FREQUENCY_LABELS, formatShortDay, todayIso } from "@/lib/format";
+import { cleaningFrequencyLabel, formatShortDay, todayIso } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CleaningPlan, CleaningScheduleEntry } from "@/lib/types";
 
 function StatCard({
@@ -34,6 +36,7 @@ function StatCard({
 }
 
 export default async function CleaningPage() {
+  const locale = await getLocale();
   const today = todayIso();
   const [plans, schedule] = await Promise.all([
     apiFetch<CleaningPlan[]>("/api/v1/cleaning-plans"),
@@ -46,7 +49,7 @@ export default async function CleaningPage() {
   const perUsePlans = plans.filter((plan) => plan.frequency === "after_each_use");
 
   let runningRank = 1;
-  const groups = groupByUrgency(schedule).map((group) => {
+  const groups = groupByUrgency(locale, schedule).map((group) => {
     const startRank = runningRank;
     runningRank += group.entries.length;
     return { ...group, startRank };
@@ -56,20 +59,24 @@ export default async function CleaningPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-teal-700">Plan de maîtrise sanitaire</p>
+          <p className="text-sm font-medium text-teal-700">
+            {t(locale, "Plan de maîtrise sanitaire")}
+          </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
-            Nettoyage
+            {t(locale, "Nettoyage")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-500">
-            Ce qu&apos;il reste à nettoyer, et la déclaration des nettoyages réalisés. Le
-            prévisionnel se recalcule à partir du dernier nettoyage déclaré.
+            {t(
+              locale,
+              "Ce qu'il reste à nettoyer, et la déclaration des nettoyages réalisés. Le prévisionnel se recalcule à partir du dernier nettoyage déclaré.",
+            )}
           </p>
         </div>
         <Link
           href="/cleaning/plans"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
-          Gérer les plans
+          {t(locale, "Gérer les plans")}
         </Link>
       </header>
 
@@ -78,36 +85,38 @@ export default async function CleaningPage() {
           <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-500">
             <DropletIcon className="size-6" />
           </span>
-          <h2 className="mt-4 text-base font-semibold text-slate-900">Aucun plan défini</h2>
+          <h2 className="mt-4 text-base font-semibold text-slate-900">
+            {t(locale, "Aucun plan défini")}
+          </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            Commence par créer un plan dans l&apos;onglet « Plan de nettoyage ».
+            {t(locale, "Commence par créer un plan dans l'onglet « Plan de nettoyage ».")}
           </p>
           <Link
             href="/cleaning/plans"
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
           >
-            Créer un plan
+            {t(locale, "Créer un plan")}
           </Link>
         </section>
       ) : (
         <>
-          {next ? <NextCleaningCard entry={next} today={today} /> : null}
+          {next ? <NextCleaningCard entry={next} today={today} locale={locale} /> : null}
 
           <section className="grid gap-4 sm:grid-cols-3">
             <StatCard
-              label="En retard"
+              label={t(locale, "En retard")}
               value={overdue.length}
               tone="bg-rose-50 text-rose-600"
               icon={<AlertIcon className="size-5" />}
             />
             <StatCard
-              label="À faire aujourd'hui"
+              label={t(locale, "À faire aujourd'hui")}
               value={dueToday.length}
               tone="bg-amber-50 text-amber-600"
               icon={<CheckIcon className="size-5" />}
             />
             <StatCard
-              label="Plans actifs"
+              label={t(locale, "Plans actifs")}
               value={plans.length}
               tone="bg-slate-100 text-slate-600"
               icon={<GridIcon className="size-5" />}
@@ -116,17 +125,22 @@ export default async function CleaningPage() {
 
           <section className="space-y-6">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Dans l&apos;ordre</h2>
+              <h2 className="text-base font-semibold text-slate-900">{t(locale, "Dans l'ordre")}</h2>
               <p className="text-xs text-slate-500">
-                Du plus urgent au plus lointain. Déclare un nettoyage quand il est fait, la suite
-                se recalcule automatiquement.
+                {t(
+                  locale,
+                  "Du plus urgent au plus lointain. Déclare un nettoyage quand il est fait, la suite se recalcule automatiquement.",
+                )}
               </p>
             </div>
 
             {groups.length === 0 ? (
               <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
                 <CheckIcon className="size-5 shrink-0" />
-                Aucun nettoyage planifié : seuls des plans après chaque usage sont actifs.
+                {t(
+                  locale,
+                  "Aucun nettoyage planifié : seuls des plans après chaque usage sont actifs.",
+                )}
               </div>
             ) : (
               groups.map((group) => (
@@ -141,6 +155,7 @@ export default async function CleaningPage() {
                     entries={group.entries}
                     today={today}
                     startRank={group.startRank}
+                    locale={locale}
                   />
                 </div>
               ))
@@ -150,10 +165,14 @@ export default async function CleaningPage() {
           {perUsePlans.length > 0 ? (
             <section className="space-y-3">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Après chaque usage</h2>
+                <h2 className="text-base font-semibold text-slate-900">
+                  {t(locale, "Après chaque usage")}
+                </h2>
                 <p className="text-xs text-slate-500">
-                  Pas d&apos;échéance : à déclarer au fil de l&apos;eau, autant de fois que
-                  nécessaire.
+                  {t(
+                    locale,
+                    "Pas d'échéance : à déclarer au fil de l'eau, autant de fois que nécessaire.",
+                  )}
                 </p>
               </div>
               <ul className="space-y-3">
@@ -172,10 +191,12 @@ export default async function CleaningPage() {
                         </Link>
                       </h3>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {CLEANING_FREQUENCY_LABELS[plan.frequency]}
+                        {cleaningFrequencyLabel(locale, plan.frequency)}
                         {plan.last_cleaning_date
-                          ? ` · dernier nettoyage le ${formatShortDay(plan.last_cleaning_date)}`
-                          : " · jamais nettoyé"}
+                          ? ` · ${t(locale, "dernier nettoyage le {date}", {
+                              date: formatShortDay(locale, plan.last_cleaning_date),
+                            })}`
+                          : ` · ${t(locale, "jamais nettoyé")}`}
                       </p>
                       {plan.products ? (
                         <p className="mt-1 text-xs text-slate-500">{plan.products}</p>

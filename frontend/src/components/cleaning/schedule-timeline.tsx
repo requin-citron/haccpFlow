@@ -1,11 +1,12 @@
 import { DeclareCleaningDialog } from "@/components/cleaning/declare-cleaning-dialog";
 import { CheckIcon } from "@/components/icons";
 import {
-  CLEANING_FREQUENCY_LABELS,
+  cleaningFrequencyLabel,
   daysBetween,
   formatRelativeDue,
   formatShortDay,
 } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 import type { CleaningScheduleEntry, CleaningStatus } from "@/lib/types";
 
 const TONES: Record<CleaningStatus, { card: string; rank: string; badge: string }> = {
@@ -26,11 +27,11 @@ const TONES: Record<CleaningStatus, { card: string; rank: string; badge: string 
   },
 };
 
-function urgencyLabel(entry: CleaningScheduleEntry, today: string): string {
+function urgencyLabel(locale: Locale, entry: CleaningScheduleEntry, today: string): string {
   if (entry.status === "overdue") {
-    return `En retard de ${entry.days_late} j`;
+    return t(locale, "En retard de {days} j", { days: entry.days_late });
   }
-  return formatRelativeDue(entry.next_due_date, today).replace(/^./, (char) =>
+  return formatRelativeDue(locale, entry.next_due_date, today).replace(/^./, (char) =>
     char.toUpperCase(),
   );
 }
@@ -39,10 +40,12 @@ function ScheduleRow({
   entry,
   today,
   rank,
+  locale,
 }: {
   entry: CleaningScheduleEntry;
   today: string;
   rank: number;
+  locale: Locale;
 }) {
   const tone = TONES[entry.status];
   return (
@@ -58,15 +61,19 @@ function ScheduleRow({
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${tone.badge}`}
           >
-            {urgencyLabel(entry, today)}
+            {urgencyLabel(locale, entry, today)}
           </span>
         </div>
         <p className="mt-0.5 text-xs text-slate-500">
-          {CLEANING_FREQUENCY_LABELS[entry.frequency]} · échéance le{" "}
-          {formatShortDay(entry.next_due_date)}
+          {cleaningFrequencyLabel(locale, entry.frequency)} ·{" "}
+          {t(locale, "échéance le {date}", {
+            date: formatShortDay(locale, entry.next_due_date),
+          })}
           {entry.last_cleaning_date
-            ? ` · dernier nettoyage le ${formatShortDay(entry.last_cleaning_date)}`
-            : " · jamais nettoyé"}
+            ? ` · ${t(locale, "dernier nettoyage le {date}", {
+                date: formatShortDay(locale, entry.last_cleaning_date),
+              })}`
+            : ` · ${t(locale, "jamais nettoyé")}`}
         </p>
         {entry.products ? (
           <p className="mt-1 text-xs text-slate-500">{entry.products}</p>
@@ -86,9 +93,11 @@ function ScheduleRow({
 export function NextCleaningCard({
   entry,
   today,
+  locale,
 }: {
   entry: CleaningScheduleEntry;
   today: string;
+  locale: Locale;
 }) {
   const late = entry.status === "overdue";
   const soon = entry.status === "due_today";
@@ -104,22 +113,27 @@ export function NextCleaningCard({
       }`}
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-        Prochain nettoyage
+        {t(locale, "Prochain nettoyage")}
       </p>
       <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="text-xl font-semibold tracking-tight text-slate-900">{entry.name}</h2>
           <p className="mt-1 text-sm text-slate-600">
-            {CLEANING_FREQUENCY_LABELS[entry.frequency]} · échéance{" "}
-            <span className="font-medium">{formatRelativeDue(entry.next_due_date, today)}</span> (
-            {formatShortDay(entry.next_due_date)})
+            {cleaningFrequencyLabel(locale, entry.frequency)} · {t(locale, "échéance")}{" "}
+            <span className="font-medium">
+              {formatRelativeDue(locale, entry.next_due_date, today)}
+            </span>{" "}
+            ({formatShortDay(locale, entry.next_due_date)})
             {entry.last_cleaning_date
-              ? ` · dernier nettoyage le ${formatShortDay(entry.last_cleaning_date)}`
-              : " · jamais nettoyé"}
+              ? ` · ${t(locale, "dernier nettoyage le {date}", {
+                  date: formatShortDay(locale, entry.last_cleaning_date),
+                })}`
+              : ` · ${t(locale, "jamais nettoyé")}`}
           </p>
           {entry.products ? (
             <p className="mt-2 text-sm text-slate-600">
-              <span className="font-medium text-slate-700">Produits :</span> {entry.products}
+              <span className="font-medium text-slate-700">{t(locale, "Produits :")}</span>{" "}
+              {entry.products}
             </p>
           ) : null}
         </div>
@@ -133,16 +147,18 @@ export function ScheduleTimeline({
   entries,
   today,
   startRank = 1,
+  locale,
 }: {
   entries: CleaningScheduleEntry[];
   today: string;
   startRank?: number;
+  locale: Locale;
 }) {
   if (entries.length === 0) {
     return (
       <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
         <CheckIcon className="size-5 shrink-0" />
-        Rien de planifié pour les prochains jours.
+        {t(locale, "Rien de planifié pour les prochains jours.")}
       </div>
     );
   }
@@ -155,6 +171,7 @@ export function ScheduleTimeline({
           entry={entry}
           today={today}
           rank={startRank + index}
+          locale={locale}
         />
       ))}
     </ol>
@@ -162,6 +179,7 @@ export function ScheduleTimeline({
 }
 
 export function groupByUrgency(
+  locale: Locale,
   entries: CleaningScheduleEntry[],
 ): { status: CleaningStatus; title: string; entries: CleaningScheduleEntry[] }[] {
   const overdue = entries.filter((entry) => entry.status === "overdue");
@@ -171,8 +189,8 @@ export function groupByUrgency(
     .sort((first, second) => daysBetween(second.next_due_date, first.next_due_date));
 
   return [
-    { status: "overdue" as const, title: "En retard", entries: overdue },
-    { status: "due_today" as const, title: "Aujourd'hui", entries: dueToday },
-    { status: "upcoming" as const, title: "À venir", entries: upcoming },
+    { status: "overdue" as const, title: t(locale, "En retard"), entries: overdue },
+    { status: "due_today" as const, title: t(locale, "Aujourd'hui"), entries: dueToday },
+    { status: "upcoming" as const, title: t(locale, "À venir"), entries: upcoming },
   ].filter((group) => group.entries.length > 0);
 }

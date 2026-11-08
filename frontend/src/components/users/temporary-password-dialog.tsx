@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { AlertIcon, CheckIcon, CloseIcon, CopyIcon, LogOutIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { CANCEL_BUTTON_CLASS, ICON_BUTTON_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
 
 export function TemporaryPasswordDialog({
@@ -16,6 +17,7 @@ export function TemporaryPasswordDialog({
   isSelf: boolean;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export function TemporaryPasswordDialog({
       await navigator.clipboard.writeText(password);
       setCopied(true);
     } catch {
-      setCopyError("La copie automatique a échoué. Sélectionne le mot de passe manuellement.");
+      setCopyError(t("La copie automatique a échoué. Sélectionne le mot de passe manuellement."));
       inputRef.current?.focus();
       inputRef.current?.select();
     }
@@ -62,11 +64,11 @@ export function TemporaryPasswordDialog({
               id="temporary-password-title"
               className="text-lg font-semibold tracking-tight text-slate-900"
             >
-              Mot de passe généré
+              {t("Mot de passe généré")}
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">{email}</p>
           </div>
-          <button type="button" onClick={close} aria-label="Fermer" className={ICON_BUTTON_CLASS}>
+          <button type="button" onClick={close} aria-label={t("Fermer")} className={ICON_BUTTON_CLASS}>
             <CloseIcon className="size-5" />
           </button>
         </header>
@@ -75,14 +77,15 @@ export function TemporaryPasswordDialog({
           <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-800">
             <AlertIcon className="mt-0.5 size-4 shrink-0" />
             <p>
-              Ce mot de passe ne sera plus affiché. Copie-le maintenant dans ton gestionnaire de
-              secrets.
+              {t(
+                "Ce mot de passe ne sera plus affiché. Copie-le maintenant dans ton gestionnaire de secrets.",
+              )}
             </p>
           </div>
 
           <div>
             <label htmlFor="temporary-password-value" className="block text-sm font-medium text-slate-700">
-              Mot de passe
+              {t("Mot de passe")}
             </label>
             <div className="mt-1.5 flex gap-2">
               <input
@@ -96,7 +99,7 @@ export function TemporaryPasswordDialog({
               />
               <button type="button" onClick={copyPassword} className={CANCEL_BUTTON_CLASS}>
                 {copied ? <CheckIcon className="size-4 text-emerald-600" /> : <CopyIcon className="size-4" />}
-                {copied ? "Copié" : "Copier"}
+                {copied ? t("Copié") : t("Copier")}
               </button>
             </div>
             {copyError ? (
@@ -108,15 +111,16 @@ export function TemporaryPasswordDialog({
 
           {isSelf ? (
             <p className="rounded-xl bg-slate-50 px-3.5 py-3 text-sm text-slate-600">
-              Ce changement a révoqué ta session courante. Tu devras te reconnecter avec ce nouveau
-              mot de passe.
+              {t(
+                "Ce changement a révoqué ta session courante. Tu devras te reconnecter avec ce nouveau mot de passe.",
+              )}
             </p>
           ) : null}
 
           <div className="flex justify-end border-t border-slate-100 pt-4">
             <button type="button" onClick={close} className={SUBMIT_BUTTON_CLASS}>
               {isSelf ? <LogOutIcon className="size-4" /> : null}
-              {isSelf ? "Se reconnecter" : "J'ai enregistré le mot de passe"}
+              {isSelf ? t("Se reconnecter") : t("J'ai enregistré le mot de passe")}
             </button>
           </div>
         </div>

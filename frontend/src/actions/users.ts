@@ -3,37 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import type { DeleteUserState, PasswordResetState, UserFormState } from "@/lib/form-state";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CreatedUserAccount, UserAccount, UserRole } from "@/lib/types";
 
 const USERS_PATH = "/api/v1/users";
-
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.code === "user_email_taken") {
-      return "Un compte utilise déjà cet email.";
-    }
-    if (error.code === "user_last_admin") {
-      return "Le dernier administrateur actif ne peut pas être désactivé ou supprimé.";
-    }
-    if (error.code === "user_self_lockout") {
-      return "Tu ne peux pas modifier tes propres droits, désactiver ou supprimer ton compte.";
-    }
-    switch (error.status) {
-      case 404:
-        return "Ce compte n'existe plus.";
-      case 403:
-        return "Cette action est réservée aux administrateurs.";
-      case 422:
-        return "Vérifie l'email, le rôle et l'état du compte.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
 
 function readRole(formData: FormData): UserRole | null {
   const role = String(formData.get("role") ?? "");
@@ -44,13 +20,14 @@ export async function createUserAction(
   _previous: UserFormState,
   formData: FormData,
 ): Promise<UserFormState> {
+  const locale = await getLocale();
   const email = String(formData.get("email") ?? "").trim();
   const role = readRole(formData);
   if (!email) {
-    return { status: "error", message: "L'email est obligatoire." };
+    return { status: "error", message: t(locale, "L'email est obligatoire.") };
   }
   if (role === null) {
-    return { status: "error", message: "Choisis un rôle valide." };
+    return { status: "error", message: t(locale, "Choisis un rôle valide.") };
   }
 
   try {
@@ -67,7 +44,14 @@ export async function createUserAction(
       temporaryPassword: temporary_password,
     };
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce compte n'existe plus.",
+        conflict: "Un compte utilise déjà cet email.",
+        invalid: "Vérifie l'email, le rôle et l'état du compte.",
+      }),
+    };
   }
 }
 
@@ -75,17 +59,18 @@ export async function updateUserAction(
   _previous: UserFormState,
   formData: FormData,
 ): Promise<UserFormState> {
+  const locale = await getLocale();
   const userId = String(formData.get("id") ?? "").trim();
   const role = readRole(formData);
   const activeValue = String(formData.get("is_active") ?? "");
   if (!userId) {
-    return { status: "error", message: "Compte introuvable." };
+    return { status: "error", message: t(locale, "Compte introuvable.") };
   }
   if (role === null) {
-    return { status: "error", message: "Choisis un rôle valide." };
+    return { status: "error", message: t(locale, "Choisis un rôle valide.") };
   }
   if (activeValue !== "true" && activeValue !== "false") {
-    return { status: "error", message: "Choisis un état de compte valide." };
+    return { status: "error", message: t(locale, "Choisis un état de compte valide.") };
   }
 
   try {
@@ -100,11 +85,19 @@ export async function updateUserAction(
     revalidatePath("/users");
     return { status: "success", user };
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce compte n'existe plus.",
+        conflict: "Un compte utilise déjà cet email.",
+        invalid: "Vérifie l'email, le rôle et l'état du compte.",
+      }),
+    };
   }
 }
 
 export async function resetUserPasswordAction(userId: string): Promise<PasswordResetState> {
+  const locale = await getLocale();
   try {
     const result = await apiFetch<{ temporary_password: string }>(
       `${USERS_PATH}/${encodeURIComponent(userId)}/reset-password`,
@@ -115,13 +108,19 @@ export async function resetUserPasswordAction(userId: string): Promise<PasswordR
       temporaryPassword: result.temporary_password,
     };
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce compte n'existe plus.",
+      }),
+    };
   }
 }
 
 export async function deleteUserAction(userId: string): Promise<DeleteUserState> {
+  const locale = await getLocale();
   if (!userId) {
-    return { status: "error", message: "Compte introuvable." };
+    return { status: "error", message: t(locale, "Compte introuvable.") };
   }
 
   try {
@@ -131,6 +130,11 @@ export async function deleteUserAction(userId: string): Promise<DeleteUserState>
     revalidatePath("/users");
     return { status: "success" };
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce compte n'existe plus.",
+      }),
+    };
   }
 }

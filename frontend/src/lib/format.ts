@@ -6,45 +6,72 @@ import type {
   ReadingSlot,
   ReadingSource,
 } from "@/lib/types";
+import { formatLocale, t, type Locale } from "@/lib/i18n";
 
-export const EQUIPMENT_TYPE_LABELS: Record<EquipmentType, string> = {
-  fridge: "Réfrigérateur",
-  freezer: "Congélateur",
-};
+export function equipmentTypeLabel(locale: Locale, type: EquipmentType): string {
+  return t(locale, type === "fridge" ? "Réfrigérateur" : "Congélateur");
+}
 
-export const SLOT_LABELS: Record<ReadingSlot, string> = {
-  morning: "Matin",
-  evening: "Soir",
-};
+export function readingSlotLabel(locale: Locale, slot: ReadingSlot): string {
+  return t(locale, slot === "morning" ? "Matin" : "Soir");
+}
 
-export const SOURCE_LABELS: Record<ReadingSource, string> = {
-  manual: "Manuel",
-  sensor: "Capteur",
-};
+export function readingSourceLabel(locale: Locale, source: ReadingSource): string {
+  return t(locale, source === "manual" ? "Manuel" : "Capteur");
+}
 
-export const CLEANING_FREQUENCY_LABELS: Record<CleaningFrequency, string> = {
-  after_each_use: "Après chaque usage",
-  daily: "Quotidien",
-  weekly: "Hebdomadaire",
-};
+export function cleaningFrequencyLabel(
+  locale: Locale,
+  frequency: CleaningFrequency,
+): string {
+  switch (frequency) {
+    case "after_each_use":
+      return t(locale, "Après chaque usage");
+    case "daily":
+      return t(locale, "Quotidien");
+    case "weekly":
+      return t(locale, "Hebdomadaire");
+  }
+}
 
-export const CLEANING_STATUS_LABELS: Record<CleaningStatus, string> = {
-  overdue: "En retard",
-  due_today: "À faire aujourd'hui",
-  upcoming: "À venir",
-};
+export function cleaningStatusLabel(locale: Locale, status: CleaningStatus): string {
+  switch (status) {
+    case "overdue":
+      return t(locale, "En retard");
+    case "due_today":
+      return t(locale, "À faire aujourd'hui");
+    case "upcoming":
+      return t(locale, "À venir");
+  }
+}
 
-export const PASTEURISATION_PHASE_LABELS: Record<PasteurisationPhase, string> = {
-  preheating: "Préchauffage",
-  holding: "Palier (pasteurisation)",
-  cooling: "Refroidissement",
-};
+export function pasteurisationPhaseLabel(
+  locale: Locale,
+  phase: PasteurisationPhase,
+): string {
+  switch (phase) {
+    case "preheating":
+      return t(locale, "Préchauffage");
+    case "holding":
+      return t(locale, "Palier (pasteurisation)");
+    case "cooling":
+      return t(locale, "Refroidissement");
+  }
+}
 
-export const PASTEURISATION_PHASE_SHORT_LABELS: Record<PasteurisationPhase, string> = {
-  preheating: "Pré",
-  holding: "Pal",
-  cooling: "Ref",
-};
+export function pasteurisationPhaseShortLabel(
+  locale: Locale,
+  phase: PasteurisationPhase,
+): string {
+  switch (phase) {
+    case "preheating":
+      return t(locale, "Pré");
+    case "holding":
+      return t(locale, "Pal");
+    case "cooling":
+      return t(locale, "Ref");
+  }
+}
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -71,22 +98,24 @@ export function daysBetween(fromIso: string, toIso: string): number {
   return Math.round((to - from) / 86_400_000);
 }
 
-export function formatRelativeDue(nextDue: string, today: string): string {
+export function formatRelativeDue(locale: Locale, nextDue: string, today: string): string {
   const days = daysBetween(today, nextDue);
   if (days === 0) {
-    return "aujourd'hui";
+    return t(locale, "aujourd'hui");
   }
   if (days === 1) {
-    return "demain";
+    return t(locale, "demain");
   }
   if (days === -1) {
-    return "hier";
+    return t(locale, "hier");
   }
-  return days < 0 ? `il y a ${-days} jours` : `dans ${days} jours`;
+  return days < 0
+    ? t(locale, "il y a {days} jours", { days: -days })
+    : t(locale, "dans {days} jours", { days });
 }
 
-export function formatDayLabel(isoDate: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+export function formatDayLabel(locale: Locale, isoDate: string): string {
+  return new Intl.DateTimeFormat(formatLocale(locale), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -95,8 +124,8 @@ export function formatDayLabel(isoDate: string): string {
   }).format(new Date(`${isoDate}T12:00:00Z`));
 }
 
-export function formatShortDay(isoDate: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+export function formatShortDay(locale: Locale, isoDate: string): string {
+  return new Intl.DateTimeFormat(formatLocale(locale), {
     weekday: "short",
     day: "2-digit",
     month: "2-digit",
@@ -104,8 +133,8 @@ export function formatShortDay(isoDate: string): string {
   }).format(new Date(`${isoDate}T12:00:00Z`));
 }
 
-export function formatDateTimeUtc(isoDateTime: string): string {
-  const formatted = new Intl.DateTimeFormat("fr-FR", {
+export function formatDateTimeUtc(locale: Locale, isoDateTime: string): string {
+  const formatted = new Intl.DateTimeFormat(formatLocale(locale), {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -130,38 +159,45 @@ export function formatTimeInput(value: string | null): string {
   return value ? value.slice(0, 5) : "";
 }
 
-export function formatDuration(minutes: number | null): string {
+export function formatDuration(locale: Locale, minutes: number | null): string {
   if (minutes === null) {
     return "—";
   }
   if (minutes < 60) {
-    return `${minutes} min`;
+    return t(locale, "{count} min", { count: minutes });
   }
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")}`;
+  return rest === 0
+    ? t(locale, "{hours} h", { hours })
+    : t(locale, "{hours} h {minutes}", { hours, minutes: String(rest).padStart(2, "0") });
 }
 
-/** Cents to a French euro display, e.g. 8228 -> "82,28 €". */
-export function formatEuros(cents: number): string {
-  return new Intl.NumberFormat("fr-FR", {
+/** Cents to the active locale's euro display, e.g. 8228 -> "82,28 €". */
+export function formatEuros(locale: Locale, cents: number): string {
+  return new Intl.NumberFormat(formatLocale(locale), {
     style: "currency",
     currency: "EUR",
   }).format(cents / 100);
 }
 
-export function formatTemperature(value: number): string {
-  const rounded = Math.round(value * 100) / 100;
-  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+export function formatTemperature(locale: Locale, value: number): string {
+  const text = new Intl.NumberFormat(formatLocale(locale), {
+    maximumFractionDigits: 2,
+  }).format(value);
   return `${text.replace("-", "\u2212")} °C`;
 }
 
-export function formatTemperatureRange(min: number, max: number): string {
-  return `${formatTemperature(min)} → ${formatTemperature(max)}`;
+export function formatTemperatureRange(
+  locale: Locale,
+  min: number,
+  max: number,
+): string {
+  return `${formatTemperature(locale, min)} → ${formatTemperature(locale, max)}`;
 }
 
-export function formatDate(isoDate: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+export function formatDate(locale: Locale, isoDate: string): string {
+  return new Intl.DateTimeFormat(formatLocale(locale), {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -169,12 +205,16 @@ export function formatDate(isoDate: string): string {
 }
 
 /** Human-readable file size, using binary units (Kio/Mio). */
-export function formatFileSize(bytes: number): string {
+export function formatFileSize(locale: Locale, bytes: number): string {
+  const number = new Intl.NumberFormat(formatLocale(locale), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   if (bytes < 1024) {
-    return `${bytes} o`;
+    return `${bytes} ${t(locale, "o")}`;
   }
   if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} Kio`;
+    return `${number.format(bytes / 1024)} ${t(locale, "Kio")}`;
   }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} Mio`;
+  return `${number.format(bytes / (1024 * 1024))} ${t(locale, "Mio")}`;
 }

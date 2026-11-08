@@ -5,6 +5,7 @@ import { useActionState, useEffect, useState } from "react";
 import { openCashSessionAction } from "@/actions/cash-sessions";
 import { DenominationFields } from "@/components/cash-sessions/denomination-fields";
 import { AlertIcon, CloseIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { countsDraft, draftTotalCents, type CountsDraft } from "@/lib/cash-session";
 import { INITIAL_CASH_SESSION_FORM_STATE } from "@/lib/form-state";
 import { formatEuros, todayIso } from "@/lib/format";
@@ -19,6 +20,7 @@ import {
 import type { CashRegister } from "@/lib/types";
 
 export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegister[] }) {
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CountsDraft>(() => countsDraft());
   const [registerId, setRegisterId] = useState(cashRegisters[0]?.id ?? "");
@@ -64,7 +66,7 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
         className={`${PRIMARY_TRIGGER_CLASS} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         <PlusIcon className="size-4" />
-        Ouvrir un suivi
+        {t("Ouvrir un suivi")}
       </button>
 
       {open ? (
@@ -86,17 +88,18 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                   id="open-session-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  Ouvrir un suivi de caisse
+                  {t("Ouvrir un suivi de caisse")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Le fond de caisse est repris de la caisse, puis les frais s&apos;ajoutent au fil
-                  de la journée.
+                  {t(
+                    "Le fond de caisse est repris de la caisse, puis les frais s'ajoutent au fil de la journée.",
+                  )}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -107,7 +110,7 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="cash_register_id" className={LABEL_CLASS}>
-                    Caisse
+                    {t("Caisse")}
                   </label>
                   <select
                     id="cash_register_id"
@@ -125,7 +128,7 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="session_date" className={LABEL_CLASS}>
-                    Date du suivi
+                    {t("Date du suivi")}
                   </label>
                   <input
                     id="session_date"
@@ -146,17 +149,17 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                     onChange={(field, value) => setDraft((current) => ({ ...current, [field]: value }))}
                   />
                   <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                    Fond saisi :{" "}
+                    {t("Fond saisi :")}{" "}
                     <span className="text-base font-semibold tabular-nums text-slate-900">
-                      {formatEuros(draftTotalCents(draft))}
+                      {formatEuros(locale, draftTotalCents(draft))}
                     </span>
                   </p>
                 </>
               ) : (
                 <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  Fond repris de la caisse :{" "}
+                  {t("Fond repris de la caisse :")}{" "}
                   <span className="text-base font-semibold tabular-nums text-slate-900">
-                    {formatEuros(selected?.total_cents ?? 0)}
+                    {formatEuros(locale, selected?.total_cents ?? 0)}
                   </span>
                 </p>
               )}
@@ -176,9 +179,9 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                   className="mt-0.5 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500/30"
                 />
                 <span>
-                  Forcer le fond de caisse
+                  {t("Forcer le fond de caisse")}
                   <span className="mt-0.5 block text-xs text-slate-500">
-                    À cocher si le comptage enregistré ne correspond pas au contenu réel.
+                    {t("À cocher si le comptage enregistré ne correspond pas au contenu réel.")}
                   </span>
                 </span>
               </label>
@@ -195,10 +198,10 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Ouverture…" : "Ouvrir le suivi"}
+                  {pending ? t("Ouverture…") : t("Ouvrir le suivi")}
                 </button>
               </div>
             </form>

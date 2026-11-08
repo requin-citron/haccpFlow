@@ -3,14 +3,17 @@ import { CashRegisterFormDialog } from "@/components/cash-registers/cash-registe
 import { DeleteCashRegisterButton } from "@/components/cash-registers/delete-cash-register-button";
 import { DENOMINATIONS, countsOf } from "@/lib/cash-register";
 import { formatDate, formatEuros } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 import type { CashRegister } from "@/lib/types";
 
 export function CashRegisterCard({
   cashRegister,
   isAdmin,
+  locale,
 }: {
   cashRegister: CashRegister;
   isAdmin: boolean;
+  locale: Locale;
 }) {
   const counts = countsOf(cashRegister);
 
@@ -25,17 +28,17 @@ export function CashRegisterCard({
             {cashRegister.name}
           </h3>
           <span className="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            Caisse
+            {t(locale, "Caisse")}
           </span>
         </div>
       </header>
 
       <div className="rounded-xl bg-slate-50 px-4 py-3">
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-          Comptage initial
+          {t(locale, "Comptage initial")}
         </p>
         <p className="mt-0.5 text-lg font-semibold tabular-nums text-slate-900">
-          {formatEuros(cashRegister.total_cents)}
+          {formatEuros(locale, cashRegister.total_cents)}
         </p>
       </div>
 
@@ -57,7 +60,9 @@ export function CashRegisterCard({
       </ul>
 
       <p className="mt-auto text-xs text-slate-400">
-        Enregistrée le {formatDate(cashRegister.created_at)}
+        {t(locale, "Enregistrée le {date}", {
+          date: formatDate(locale, cashRegister.created_at),
+        })}
       </p>
 
       <footer className="flex items-center justify-between gap-2 border-t border-slate-100 pt-4">

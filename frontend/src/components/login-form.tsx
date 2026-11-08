@@ -4,16 +4,18 @@ import { useActionState } from "react";
 
 import { loginAction } from "@/actions/auth";
 import { AlertIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_LOGIN_STATE } from "@/lib/form-state";
 
 export function LoginForm() {
+  const { t } = useI18n();
   const [state, formAction, pending] = useActionState(loginAction, INITIAL_LOGIN_STATE);
 
   return (
     <form action={formAction} className="space-y-5">
       <div className="space-y-1.5">
         <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-          Adresse email
+          {t("Adresse email")}
         </label>
         <input
           id="email"
@@ -29,7 +31,7 @@ export function LoginForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-          Mot de passe
+          {t("Mot de passe")}
         </label>
         <input
           id="password"
@@ -57,7 +59,7 @@ export function LoginForm() {
         disabled={pending}
         className="inline-flex w-full items-center justify-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/30 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? "Connexion…" : "Se connecter"}
+        {pending ? t("Connexion…") : t("Se connecter")}
       </button>
     </form>
   );

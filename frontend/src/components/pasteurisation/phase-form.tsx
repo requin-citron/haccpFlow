@@ -4,18 +4,15 @@ import { useActionState, useEffect, useState } from "react";
 
 import { savePasteurisationPhaseAction } from "@/actions/pasteurisation";
 import { AlertIcon, CheckIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_PASTEURISATION_FORM_STATE } from "@/lib/form-state";
-import {
-  PASTEURISATION_PHASE_LABELS,
-  formatDuration,
-  formatTimeInput,
-} from "@/lib/format";
+import { formatDuration, formatTimeInput, pasteurisationPhaseLabel } from "@/lib/format";
 import {
   PHASE_STATE_ACCENTS,
   PHASE_STATE_BADGES,
-  PHASE_STATE_LABELS,
   phaseState,
 } from "@/lib/pasteurisation";
+import { statusLabel } from "@/lib/status";
 import { FIELD_CLASS, LABEL_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
 import type { PasteurisationPhaseSlot } from "@/lib/types";
 
@@ -28,6 +25,7 @@ export function PasteurisationPhaseForm({
   slot: PasteurisationPhaseSlot;
   rank: number;
 }) {
+  const { locale, t } = useI18n();
   const [state, formAction, pending] = useActionState(
     savePasteurisationPhaseAction,
     INITIAL_PASTEURISATION_FORM_STATE,
@@ -57,19 +55,19 @@ export function PasteurisationPhaseForm({
           <span className="grid size-7 place-items-center rounded-full bg-slate-100 text-xs font-semibold tabular-nums text-slate-600">
             {rank}
           </span>
-          {PASTEURISATION_PHASE_LABELS[slot.phase]}
+          {pasteurisationPhaseLabel(locale, slot.phase)}
         </h3>
         <span
           className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${PHASE_STATE_BADGES[current]}`}
         >
-          {PHASE_STATE_LABELS[current]}
+          {statusLabel(locale, current)}
         </span>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
           <label htmlFor={`started_at_${slot.phase}`} className={LABEL_CLASS}>
-            Heure de début
+            {t("Heure de début")}
           </label>
           <input
             id={`started_at_${slot.phase}`}
@@ -81,7 +79,7 @@ export function PasteurisationPhaseForm({
         </div>
         <div className="space-y-1.5">
           <label htmlFor={`ended_at_${slot.phase}`} className={LABEL_CLASS}>
-            Heure de fin
+            {t("Heure de fin")}
           </label>
           <input
             id={`ended_at_${slot.phase}`}
@@ -93,7 +91,7 @@ export function PasteurisationPhaseForm({
         </div>
         <div className="space-y-1.5">
           <label htmlFor={`target_${slot.phase}`} className={LABEL_CLASS}>
-            Température cible (°C)
+            {t("Température cible (°C)")}
           </label>
           <input
             id={`target_${slot.phase}`}
@@ -109,15 +107,15 @@ export function PasteurisationPhaseForm({
       </div>
 
       <p className="text-xs text-slate-500">
-        Durée calculée :{" "}
+        {t("Durée calculée :")}{" "}
         <span className="font-medium text-slate-700">
-          {formatDuration(slot.duration_minutes)}
+          {formatDuration(locale, slot.duration_minutes)}
         </span>
       </p>
 
       <div className="space-y-1.5">
         <label htmlFor={`observation_${slot.phase}`} className={LABEL_CLASS}>
-          Observation <span className="font-normal text-slate-400">(optionnel)</span>
+          {t("Observation {optional}", { optional: t("(optionnel)") })}
         </label>
         <textarea
           id={`observation_${slot.phase}`}
@@ -125,7 +123,7 @@ export function PasteurisationPhaseForm({
           rows={2}
           maxLength={2000}
           defaultValue={slot.observation ?? ""}
-          placeholder="Remarque sur la phase…"
+          placeholder={t("Remarque sur la phase…")}
           className={`${FIELD_CLASS} resize-none`}
         />
       </div>
@@ -144,11 +142,11 @@ export function PasteurisationPhaseForm({
         {saved ? (
           <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
             <CheckIcon className="size-4" />
-            Enregistré
+            {t("Enregistré")}
           </span>
         ) : null}
         <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-          {pending ? "Enregistrement…" : "Enregistrer la phase"}
+          {pending ? t("Enregistrement…") : t("Enregistrer la phase")}
         </button>
       </div>
 

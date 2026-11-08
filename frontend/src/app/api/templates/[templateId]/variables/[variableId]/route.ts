@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { TemplateVariable } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -8,12 +10,13 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ templateId: string; variableId: string }> };
 
 export async function PUT(request: NextRequest, { params }: Context) {
+  const locale = await getLocale();
   const { templateId, variableId } = await params;
   let payload: unknown;
   try {
     payload = await request.json();
   } catch {
-    return NextResponse.json({ detail: "Requête invalide." }, { status: 400 });
+    return NextResponse.json({ detail: t(locale, "Requête invalide.") }, { status: 400 });
   }
 
   try {

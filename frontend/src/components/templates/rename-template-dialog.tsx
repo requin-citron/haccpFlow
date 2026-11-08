@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { AlertIcon, CloseIcon, PencilIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
+import { t, type Locale } from "@/lib/i18n";
 import {
   CANCEL_BUTTON_CLASS,
   FIELD_CLASS,
@@ -16,14 +18,14 @@ type ErrorPayload = {
   detail?: string;
 };
 
-function describeError(payload: ErrorPayload | null): string {
+function describeError(payload: ErrorPayload | null, locale: Locale): string {
   switch (payload?.code) {
     case "template_name_taken":
-      return "Un modèle porte déjà ce nom. Choisis-en un autre.";
+      return t(locale, "Un modèle porte déjà ce nom. Choisis-en un autre.");
     case "template_name_invalid":
-      return payload.detail ?? "Le nom du modèle est invalide.";
+      return payload.detail ?? t(locale, "Le nom du modèle est invalide.");
     default:
-      return payload?.detail ?? "Le renommage a échoué. Réessaie dans un instant.";
+      return payload?.detail ?? t(locale, "Le renommage a échoué. Réessaie dans un instant.");
   }
 }
 
@@ -34,6 +36,7 @@ export function RenameTemplateDialog({
   templateId: string;
   currentName: string;
 }) {
+  const { locale, t } = useI18n();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(currentName);
@@ -62,13 +65,13 @@ export function RenameTemplateDialog({
       }
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as ErrorPayload | null;
-        setError(describeError(payload));
+        setError(describeError(payload, locale));
         return;
       }
       setOpen(false);
       router.refresh();
     } catch {
-      setError("Impossible de joindre le serveur. Réessaie dans un instant.");
+      setError(t("Impossible de joindre le serveur. Réessaie dans un instant."));
     } finally {
       setPending(false);
     }
@@ -82,7 +85,7 @@ export function RenameTemplateDialog({
         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
       >
         <PencilIcon className="size-4" />
-        Renommer
+        {t("Renommer")}
       </button>
 
       {open ? (
@@ -104,17 +107,17 @@ export function RenameTemplateDialog({
                   id="rename-template-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  Renommer le modèle
+                  {t("Renommer le modèle")}
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Le source, les variables et l&apos;historique restent inchangés.
+                  {t("Le source, les variables et l'historique restent inchangés.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
               >
                 <CloseIcon className="size-5" />
               </button>
@@ -123,7 +126,7 @@ export function RenameTemplateDialog({
             <form onSubmit={submit} className="space-y-4 px-6 py-5">
               <div>
                 <label htmlFor="template-new-name" className={LABEL_CLASS}>
-                  Nom du modèle
+                  {t("Nom du modèle")}
                 </label>
                 <input
                   id="template-new-name"
@@ -152,10 +155,10 @@ export function RenameTemplateDialog({
                   onClick={() => setOpen(false)}
                   className={CANCEL_BUTTON_CLASS}
                 >
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Renommage…" : "Renommer"}
+                  {pending ? t("Renommage…") : t("Renommer")}
                 </button>
               </div>
             </form>

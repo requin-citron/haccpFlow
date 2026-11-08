@@ -10,6 +10,8 @@ import { ExpenseRow } from "@/components/cash-sessions/expense-row";
 import { BanknoteIcon, CheckIcon, DownloadIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDateTimeUtc, formatDayLabel, formatEuros } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { getEnabledModules } from "@/lib/module-settings";
 import type { CashSession, CurrentUser } from "@/lib/types";
 
@@ -29,6 +31,7 @@ export default async function CashSessionPage({
 }: {
   params: Promise<{ sessionId: string }>;
 }) {
+  const locale = await getLocale();
   const { sessionId } = await params;
 
   let session: CashSession;
@@ -52,7 +55,7 @@ export default async function CashSessionPage({
           href="/cash-sessions"
           className="text-sm font-medium text-slate-500 transition hover:text-slate-800"
         >
-          ← Retour aux suivis de caisse
+          ← {t(locale, "Retour aux suivis de caisse")}
         </Link>
       </div>
 
@@ -70,7 +73,7 @@ export default async function CashSessionPage({
               {session.cash_register_name}
             </h1>
             <p className="mt-1 text-sm capitalize text-slate-500">
-              {formatDayLabel(session.session_date)}
+              {formatDayLabel(locale, session.session_date)}
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-2">
               <span
@@ -80,11 +83,11 @@ export default async function CashSessionPage({
                     : "bg-slate-100 text-slate-600 ring-slate-200"
                 }`}
               >
-                {isOpen ? "En cours" : "Clôturé"}
+                {isOpen ? t(locale, "En cours") : t(locale, "Clôturé")}
               </span>
               {session.opened_by_email ? (
                 <span className="text-xs text-slate-500">
-                  Ouvert par {session.opened_by_email}
+                  {t(locale, "Ouvert par {email}", { email: session.opened_by_email })}
                 </span>
               ) : null}
             </p>
@@ -96,7 +99,7 @@ export default async function CashSessionPage({
             className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <DownloadIcon className="size-4" />
-            Télécharger le CSV
+            {t(locale, "Télécharger le CSV")}
           </a>
           {isOpen ? <EditSessionDialog session={session} /> : null}
           {user.role === "admin" ? (
@@ -106,32 +109,33 @@ export default async function CashSessionPage({
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MoneyCard label="Fond de caisse" value={formatEuros(session.opening_total_cents)} />
+        <MoneyCard label={t(locale, "Fond de caisse")} value={formatEuros(locale, session.opening_total_cents)} />
         <MoneyCard
-          label="Frais pro"
-          value={formatEuros(session.expenses_professional_total_cents)}
+          label={t(locale, "Frais pro")}
+          value={formatEuros(locale, session.expenses_professional_total_cents)}
         />
         <MoneyCard
-          label="Frais perso"
-          value={formatEuros(session.expenses_personal_total_cents)}
+          label={t(locale, "Frais perso")}
+          value={formatEuros(locale, session.expenses_personal_total_cents)}
         />
         <MoneyCard
-          label="Total des frais"
-          value={formatEuros(session.expenses_total_cents)}
+          label={t(locale, "Total des frais")}
+          value={formatEuros(locale, session.expenses_total_cents)}
         />
       </section>
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Fond d&apos;ouverture</h2>
+          <h2 className="text-base font-semibold text-slate-900">{t(locale, "Fond d'ouverture")}</h2>
           <p className="text-xs text-slate-500">
-            Le comptage repris de la caisse à l&apos;ouverture du suivi.
+            {t(locale, "Le comptage repris de la caisse à l'ouverture du suivi.")}
           </p>
         </div>
         <CountsSummary
           counts={session.opening_counts}
           totalCents={session.opening_total_cents}
-          label="Comptage d'ouverture"
+          label={t(locale, "Comptage d'ouverture")}
+          locale={locale}
         />
       </section>
 
@@ -139,13 +143,13 @@ export default async function CashSessionPage({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">
-              Frais{" "}
+              {t(locale, "Frais")}{" "}
               <span className="text-sm font-normal text-slate-500">({session.expenses.length})</span>
             </h2>
             <p className="text-xs text-slate-500">
               {isOpen
-                ? "Argent sorti de la caisse aujourd'hui : ajoute, corrige ou supprime une ligne à tout moment."
-                : "Suivi clôturé : les frais sont figés et restent consultables."}
+                ? t(locale, "Argent sorti de la caisse aujourd'hui : ajoute, corrige ou supprime une ligne à tout moment.")
+                : t(locale, "Suivi clôturé : les frais sont figés et restent consultables.")}
             </p>
           </div>
           {isOpen ? <ExpenseFormDialog sessionId={session.id} /> : null}
@@ -153,7 +157,7 @@ export default async function CashSessionPage({
 
         {session.expenses.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-5 py-6 text-sm text-slate-500">
-            Aucun frais enregistré sur ce suivi.
+            {t(locale, "Aucun frais enregistré sur ce suivi.")}
           </div>
         ) : (
           <ul className="space-y-2">
@@ -163,6 +167,7 @@ export default async function CashSessionPage({
                 sessionId={session.id}
                 expense={expense}
                 isOpen={isOpen}
+                locale={locale}
               />
             ))}
           </ul>
@@ -171,11 +176,11 @@ export default async function CashSessionPage({
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Clôture</h2>
+          <h2 className="text-base font-semibold text-slate-900">{t(locale, "Clôture")}</h2>
           <p className="text-xs text-slate-500">
             {isOpen
-              ? "Recompte la caisse en fin de journée : le comptage saisi devient l'état enregistré de la caisse."
-              : "Le comptage de clôture a été enregistré comme nouvel état de la caisse."}
+              ? t(locale, "Recompte la caisse en fin de journée : le comptage saisi devient l'état enregistré de la caisse.")
+              : t(locale, "Le comptage de clôture a été enregistré comme nouvel état de la caisse.")}
           </p>
         </div>
 
@@ -187,19 +192,20 @@ export default async function CashSessionPage({
               <CountsSummary
                 counts={session.closing_counts}
                 totalCents={session.closing_total_cents ?? 0}
-                label="Comptage de clôture"
+                label={t(locale, "Comptage de clôture")}
+                locale={locale}
               />
             ) : null}
             <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
               <CheckIcon className="size-4 text-emerald-600" />
               {session.closed_by_email ? (
-                <span>Clôturé par {session.closed_by_email}</span>
+                <span>{t(locale, "Clôturé par {email}", { email: session.closed_by_email })}</span>
               ) : (
-                <span>Clôturé</span>
+                <span>{t(locale, "Clôturé")}</span>
               )}
               {session.closed_at ? (
                 <span className="text-xs text-slate-500">
-                  le {formatDateTimeUtc(session.closed_at)}
+                  {t(locale, "le {date}", { date: formatDateTimeUtc(locale, session.closed_at) })}
                 </span>
               ) : null}
             </p>
@@ -208,7 +214,7 @@ export default async function CashSessionPage({
                 href="/equipment"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
-                Voir la caisse dans le matériel
+                {t(locale, "Voir la caisse dans le matériel")}
               </Link>
             ) : null}
           </div>

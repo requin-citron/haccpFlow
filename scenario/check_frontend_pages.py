@@ -21,6 +21,20 @@ PAGES: list[tuple[str, str]] = [
     ("/users", "Utilisateurs"),
 ]
 
+ENGLISH_PAGES: list[tuple[str, str]] = [
+    ("/equipment", "Equipment"),
+    ("/readings", "Temperature readings"),
+    ("/cleaning", "Cleaning"),
+    ("/pasteurisation", "Pasteurisation"),
+    ("/transport", "Transport"),
+    ("/cash-sessions", "Cash tracking"),
+    ("/export", "Export"),
+    ("/templates", "LaTeX templates"),
+    ("/documents", "Generated documents"),
+    ("/history", "History"),
+    ("/users", "Users"),
+]
+
 NAV_MODULES: list[tuple[str, str]] = [
     ("MODULE_EQUIPMENT", "Matériel"),
     ("MODULE_READINGS", "Relevés"),
@@ -34,6 +48,21 @@ NAV_MODULES: list[tuple[str, str]] = [
     ("MODULE_DOCUMENTS", "Documents générés"),
     ("MODULE_HISTORY", "Historique"),
     ("MODULE_USERS", "Utilisateurs"),
+]
+
+ENGLISH_NAV_MODULES: list[tuple[str, str]] = [
+    ("MODULE_EQUIPMENT", "Equipment"),
+    ("MODULE_READINGS", "Readings"),
+    ("MODULE_CLEANING", "Cleaning"),
+    ("MODULE_CLEANING", "Cleaning plan"),
+    ("MODULE_PASTEURISATION", "Pasteurisation"),
+    ("MODULE_TRANSPORT", "Transport"),
+    ("MODULE_CASH_SESSIONS", "Cash tracking"),
+    ("MODULE_EXPORT", "Export"),
+    ("MODULE_DOCUMENTS", "LaTeX templates"),
+    ("MODULE_DOCUMENTS", "Generated documents"),
+    ("MODULE_HISTORY", "History"),
+    ("MODULE_USERS", "Users"),
 ]
 
 EXPORT_DATASETS: list[tuple[str, str]] = [
@@ -80,10 +109,57 @@ def main() -> None:
     token, cookie = login(env["ADMIN_EMAIL"], env["ADMIN_PASSWORD"])
     report = Report("Frontend — pages et protection")
 
+    status, html = fetch_page("/login")
+    report.status("/login en français par défaut", status)
+    report.check("langue HTML française par défaut", '<html lang="fr"' in html)
+    report.check("connexion française rendue", "Connexion" in html)
+    report.check("sélecteur de langue sur la connexion", "FR / EN" in html)
+
+    status, html = fetch_page("/login", cookie="haccp_locale=en")
+    report.status("/login en anglais", status)
+    report.check("langue HTML anglaise", '<html lang="en"' in html)
+    report.check("connexion anglaise rendue", "Sign in" in html)
+
+    status, html = fetch_page("/login", cookie="haccp_locale=de")
+    report.status("/login avec cookie invalide", status)
+    report.check("repli sur le français", '<html lang="fr"' in html and "Connexion" in html)
+
     for path, marker in PAGES:
         status, html = fetch_page(path, cookie=cookie)
         report.status(f"{path} avec session", status)
         report.check(f"{path} rend son contenu", marker in html)
+
+    english_cookie = f"{cookie}; haccp_locale=en"
+    for path, marker in ENGLISH_PAGES:
+        status, html = fetch_page(path, cookie=english_cookie)
+        report.status(f"{path} avec session en anglais", status)
+        report.check(f"{path} rend son contenu anglais", marker in html)
+        report.check(f"{path} déclare lang=en", '<html lang="en"' in html)
+
+    status, html = fetch_page("/cleaning", cookie=english_cookie)
+    report.check("sélecteur de langue dans le shell", "FR / EN" in html)
+    english_navigation = re.search(
+        r'<nav aria-label="Main navigation".*?</nav>',
+        html,
+        re.DOTALL,
+    )
+    report.check("navigation principale anglaise présente", english_navigation is not None)
+    english_navigation_html = english_navigation.group(0) if english_navigation else ""
+    for env_key, label in ENGLISH_NAV_MODULES:
+        visible = f">{label}<" in english_navigation_html
+        expected = module_enabled(module_env, env_key)
+        report.check(
+            f"onglet anglais « {label} » {'présent' if expected else 'masqué'}",
+            visible == expected,
+        )
+
+    invalid_cookie = f"{cookie}; haccp_locale=es"
+    status, html = fetch_page("/equipment", cookie=invalid_cookie)
+    report.status("/equipment avec cookie langue invalide", status)
+    report.check(
+        "cookie langue invalide : repli français",
+        '<html lang="fr"' in html and "Parc matériel" in html,
+    )
 
     for path, marker in PAGES:
         status, html = fetch_page(path)

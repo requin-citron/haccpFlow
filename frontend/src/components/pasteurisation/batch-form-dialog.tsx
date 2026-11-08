@@ -7,6 +7,7 @@ import {
   updatePasteurisationAction,
 } from "@/actions/pasteurisation";
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_PASTEURISATION_FORM_STATE } from "@/lib/form-state";
 import {
   CANCEL_BUTTON_CLASS,
@@ -26,6 +27,7 @@ export function PasteurisationBatchDialog({
   batch?: PasteurisationBatch;
   defaultDate: string;
 }) {
+  const { t } = useI18n();
   const isEdit = batch !== undefined;
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -58,16 +60,16 @@ export function PasteurisationBatchDialog({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`Modifier le lot ${batch.lot_number}`}
+          aria-label={t("Modifier le lot {lot}", { lot: batch.lot_number })}
           className={SECONDARY_TRIGGER_CLASS}
         >
           <PencilIcon className="size-4" />
-          Modifier
+          {t("Modifier")}
         </button>
       ) : (
         <button type="button" onClick={() => setOpen(true)} className={PRIMARY_TRIGGER_CLASS}>
           <PlusIcon className="size-4" />
-          Nouveau lot
+          {t("Nouveau lot")}
         </button>
       )}
 
@@ -90,16 +92,16 @@ export function PasteurisationBatchDialog({
                   id="pasteurisation-form-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  {isEdit ? "Modifier le lot" : "Nouveau lot de pasteurisation"}
+                  {isEdit ? t("Modifier le lot") : t("Nouveau lot de pasteurisation")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Les trois phases se remplissent ensuite, au fil de la production.
+                  {t("Les trois phases se remplissent ensuite, au fil de la production.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -112,7 +114,7 @@ export function PasteurisationBatchDialog({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label htmlFor="batch_date" className={LABEL_CLASS}>
-                    Date
+                    {t("Date")}
                   </label>
                   <input
                     id="batch_date"
@@ -125,7 +127,7 @@ export function PasteurisationBatchDialog({
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="quantity" className={LABEL_CLASS}>
-                    Nombre d&apos;entités
+                    {t("Nombre d'entités")}
                   </label>
                   <input
                     id="quantity"
@@ -143,7 +145,7 @@ export function PasteurisationBatchDialog({
 
               <div className="space-y-1.5">
                 <label htmlFor="product_name" className={LABEL_CLASS}>
-                  Nom du produit
+                  {t("Nom du produit")}
                 </label>
                 <input
                   id="product_name"
@@ -152,14 +154,14 @@ export function PasteurisationBatchDialog({
                   maxLength={160}
                   autoFocus
                   defaultValue={batch?.product_name ?? ""}
-                  placeholder="Crème anglaise"
+                  placeholder={t("Crème anglaise")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="lot_number" className={LABEL_CLASS}>
-                  Numéro de lot
+                  {t("Numéro de lot")}
                 </label>
                 <input
                   id="lot_number"
@@ -184,10 +186,14 @@ export function PasteurisationBatchDialog({
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer le lot"}
+                  {pending
+                    ? t("Enregistrement…")
+                    : isEdit
+                      ? t("Enregistrer")
+                      : t("Créer le lot")}
                 </button>
               </div>
             </form>

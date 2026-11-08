@@ -21,6 +21,7 @@ fidèlement, pas anticiper des fonctionnalités non implémentées.
 | Nouveau module frontend activable | [06-frontend.md](./06-frontend.md), [08-exploitation.md](./08-exploitation.md), [03-domaines-metier.md](./03-domaines-metier.md), `.env.example`, `README.md`, `scenario/README.md` |
 | Changement Docker / ports / volumes | [02-installation.md](./02-installation.md), [08-exploitation.md](./08-exploitation.md) |
 | Nouvelle page ou nouveau flux frontend | [06-frontend.md](./06-frontend.md), [03-domaines-metier.md](./03-domaines-metier.md) |
+| Nouvelle langue ou nouveau catalogue de messages | [06-frontend.md](./06-frontend.md), [README](./README.md), `scenario/README.md` |
 | Changement du sous-système LaTeX | [07-modeles-latex.md](./07-modeles-latex.md), [03-domaines-metier.md](./03-domaines-metier.md), [08-exploitation.md](./08-exploitation.md) |
 | Nouvel export CSV | [03-domaines-metier.md](./03-domaines-metier.md), [04-api.md](./04-api.md), `scenario/README.md` |
 | Changement de rôle / sécurité | [03-domaines-metier.md](./03-domaines-metier.md), [04-api.md](./04-api.md), [08-exploitation.md](./08-exploitation.md) |

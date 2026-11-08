@@ -103,7 +103,36 @@ page `/history` filtre ses sources et ses entrées de la même façon.
   - aucun refresh pendant le rendu : un composant serveur ne peut pas persister
     les cookies ;
   - `ApiError` expose `status`, `code`, `message` et `context`.
-- Les erreurs backend sont traduites en messages français dans les composants.
+- Les erreurs backend sont traduites en messages localisés dans les composants
+  et les Server Actions, par code métier puis par statut HTTP.
+
+## Langues et formats
+
+- Langues disponibles : `fr` (défaut) et `en`.
+- Le choix est propre au navigateur. Il est conservé dans
+  `localStorage["haccpflow.locale"]` et dans le cookie miroir
+  `haccp_locale`, valable un an et `SameSite=Lax`.
+- Le cookie permet aux composants serveur, aux Server Actions et aux route
+  handlers de rendre la langue active dès la requête. Une valeur absente ou
+  invalide retombe sur `fr`.
+- Le bouton `FR / EN` du shell et de la connexion met à jour le contexte
+  client, `localStorage`, le cookie et `document.documentElement.lang`, puis
+  rafraîchit les composants serveur.
+- Au chargement, une valeur `localStorage` différente du cookie est
+  resynchronisée dans le cookie et déclenche un rafraîchissement.
+- Le layout racine utilise la langue du cookie pour `<html lang>` et les
+  métadonnées. Les chemins restent identiques et aucune URL localisée n'est
+  créée.
+- Les dates, heures, nombres, montants, durées, tailles de fichiers et
+  expressions relatives utilisent `fr-FR` ou `en-GB`. L'euro, `°C` et UTC
+  restent inchangés.
+- Les identifiants, noms de matériel, lots, commentaires, données saisies et
+  contenus LaTeX ne sont jamais traduits.
+- Les libellés partagés (rôles, statuts, types, fréquences, phases, sources et
+  entrées d'historique) proviennent du catalogue typé `src/lib/i18n.ts`.
+- Le scénario frontend vérifie le français par défaut, l'anglais avec
+  `haccp_locale=en`, le repli sur `fr` avec un cookie invalide et la présence
+  des libellés anglais sur toutes les pages.
 
 ## Mutations
 
@@ -169,12 +198,12 @@ Ces handlers gardent le jeton côté serveur et propagent les erreurs
 
 ## Conventions UI
 
-- Libellés en français, code et identifiants en anglais.
+- Catalogue de messages typé FR/EN, code et identifiants en anglais.
 - Classes partagées dans `src/lib/ui.ts`.
 - Dialogues accessibles (`role="dialog"`, `aria-modal`, fermeture Échap quand
   prévu).
-- Dates affichées en français, données stockées en UTC.
-- Formulaires avec messages d'erreur en français et état `pending`.
+- Dates et nombres affichés dans la langue active, données stockées en UTC.
+- Formulaires avec messages d'erreur dans la langue active et état `pending`.
 - Les téléchargements passent par des liens vers les proxies Next.
 
 ## Ajouter une page ou une fonctionnalité

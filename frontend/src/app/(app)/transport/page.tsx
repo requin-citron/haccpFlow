@@ -5,6 +5,8 @@ import { TransportCard } from "@/components/transport/transport-card";
 import { TransportFormDialog } from "@/components/transport/transport-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { todayIso } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CurrentUser, Transport, Vehicle } from "@/lib/types";
 
 function StatCard({
@@ -34,6 +36,7 @@ export default async function TransportPage({
 }: {
   searchParams: Promise<{ lot?: string; from?: string; to?: string }>;
 }) {
+  const locale = await getLocale();
   const params = await searchParams;
   const lot = params.lot?.trim() ?? "";
   const from = params.from?.trim() ?? "";
@@ -65,13 +68,15 @@ export default async function TransportPage({
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-teal-700">Chaîne du froid</p>
+          <p className="text-sm font-medium text-teal-700">{t(locale, "Chaîne du froid")}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
-            Transport
+            {t(locale, "Transport")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-500">
-            Chaque déplacement est enregistré au départ, puis complété à l&apos;arrivée avec les
-            deux températures de la chaîne du froid.
+            {t(
+              locale,
+              "Chaque déplacement est enregistré au départ, puis complété à l'arrivée avec les deux températures de la chaîne du froid.",
+            )}
           </p>
         </div>
         <TransportFormDialog vehicles={vehicles} defaultDate={todayIso()} />
@@ -80,20 +85,20 @@ export default async function TransportPage({
       <form action="/transport" method="get" className="flex flex-wrap items-end gap-3">
         <div className="relative min-w-[14rem] flex-1">
           <label htmlFor="lot" className="sr-only">
-            Numéro de lot
+            {t(locale, "Numéro de lot")}
           </label>
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <input
             id="lot"
             name="lot"
             defaultValue={lot}
-            placeholder="Rechercher un numéro de lot…"
+            placeholder={t(locale, "Rechercher un numéro de lot…")}
             className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15"
           />
         </div>
         <div className="space-y-1.5">
           <label htmlFor="from" className="block text-xs font-medium text-slate-600">
-            Du
+            {t(locale, "Du")}
           </label>
           <input
             id="from"
@@ -105,7 +110,7 @@ export default async function TransportPage({
         </div>
         <div className="space-y-1.5">
           <label htmlFor="to" className="block text-xs font-medium text-slate-600">
-            Au
+            {t(locale, "Au")}
           </label>
           <input
             id="to"
@@ -119,33 +124,33 @@ export default async function TransportPage({
           type="submit"
           className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
-          Filtrer
+          {t(locale, "Filtrer")}
         </button>
         {filtered ? (
           <Link
             href="/transport"
             className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-sm font-medium text-teal-700 transition hover:bg-teal-100"
           >
-            Réinitialiser
+            {t(locale, "Réinitialiser")}
           </Link>
         ) : null}
       </form>
 
       <section className="grid gap-4 sm:grid-cols-3">
         <StatCard
-          label={filtered ? "Transports trouvés" : "Transports enregistrés"}
+          label={filtered ? t(locale, "Transports trouvés") : t(locale, "Transports enregistrés")}
           value={transports.length}
           tone="bg-slate-100 text-slate-600"
           icon={<TruckIcon className="size-5" />}
         />
         <StatCard
-          label="En cours"
+          label={t(locale, "En cours")}
           value={ongoing}
           tone="bg-amber-50 text-amber-600"
           icon={<TruckIcon className="size-5" />}
         />
         <StatCard
-          label="Terminés"
+          label={t(locale, "Terminés")}
           value={done}
           tone="bg-emerald-50 text-emerald-600"
           icon={<TruckIcon className="size-5" />}
@@ -158,18 +163,25 @@ export default async function TransportPage({
             <TruckIcon className="size-6" />
           </span>
           <h2 className="mt-4 text-base font-semibold text-slate-900">
-            {filtered ? "Aucun transport ne correspond" : "Aucun transport enregistré"}
+            {filtered
+              ? t(locale, "Aucun transport ne correspond")
+              : t(locale, "Aucun transport enregistré")}
           </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
             {filtered
-              ? "Essaie un autre numéro de lot ou une autre plage de dates."
-              : "Déclare un premier déplacement pour suivre la chaîne du froid."}
+              ? t(locale, "Essaie un autre numéro de lot ou une autre plage de dates.")
+              : t(locale, "Déclare un premier déplacement pour suivre la chaîne du froid.")}
           </p>
         </section>
       ) : (
         <section className="grid gap-4 lg:grid-cols-2">
           {transports.map((transport) => (
-            <TransportCard key={transport.id} transport={transport} isAdmin={isAdmin} />
+            <TransportCard
+              key={transport.id}
+              transport={transport}
+              isAdmin={isAdmin}
+              locale={locale}
+            />
           ))}
         </section>
       )}

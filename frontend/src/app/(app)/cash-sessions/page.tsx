@@ -5,6 +5,8 @@ import { SessionCard } from "@/components/cash-sessions/session-card";
 import { BanknoteIcon, CheckIcon, GridIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import { formatEuros } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { getEnabledModules } from "@/lib/module-settings";
 import type { CashRegister, CashSession } from "@/lib/types";
 
@@ -31,6 +33,7 @@ function StatCard({
 }
 
 export default async function CashSessionsPage() {
+  const locale = await getLocale();
   const enabledModules = getEnabledModules();
   const [cashRegisters, sessions] = await Promise.all([
     apiFetch<CashRegister[]>("/api/v1/cash-registers"),
@@ -55,13 +58,15 @@ export default async function CashSessionsPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-teal-700">Caisse</p>
+          <p className="text-sm font-medium text-teal-700">{t(locale, "Caisse")}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
-            Suivi de caisse
+            {t(locale, "Suivi de caisse")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-500">
-            Ouvre un suivi, enregistre les frais pro et perso de la journée, puis clôture en
-            recomptant la caisse : ce comptage devient l&apos;état enregistré.
+            {t(
+              locale,
+              "Ouvre un suivi, enregistre les frais pro et perso de la journée, puis clôture en recomptant la caisse : ce comptage devient l'état enregistré.",
+            )}
           </p>
         </div>
         {cashRegisters.length > 0 ? (
@@ -69,7 +74,10 @@ export default async function CashSessionsPage() {
             <OpenSessionDialog cashRegisters={freeRegisters} />
             {freeRegisters.length === 0 ? (
               <p className="max-w-xs text-right text-xs text-slate-500">
-                Chaque caisse a déjà un suivi ouvert : clôture-en un pour en ouvrir un autre.
+                {t(
+                  locale,
+                  "Chaque caisse a déjà un suivi ouvert : clôture-en un pour en ouvrir un autre.",
+                )}
               </p>
             ) : null}
           </div>
@@ -81,18 +89,20 @@ export default async function CashSessionsPage() {
           <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-500">
             <BanknoteIcon className="size-6" />
           </span>
-          <h2 className="mt-4 text-base font-semibold text-slate-900">Aucune caisse enrôlée</h2>
+          <h2 className="mt-4 text-base font-semibold text-slate-900">
+            {t(locale, "Aucune caisse enrôlée")}
+          </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
             {enabledModules.equipment
-              ? "Enrôle d'abord une caisse et son comptage initial dans l'onglet Matériel."
-              : "Aucune caisse disponible. Le module Matériel est désactivé."}
+              ? t(locale, "Enrôle d'abord une caisse et son comptage initial dans l'onglet Matériel.")
+              : t(locale, "Aucune caisse disponible. Le module Matériel est désactivé.")}
           </p>
           {enabledModules.equipment ? (
             <Link
               href="/equipment"
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
             >
-              Aller au matériel
+              {t(locale, "Aller au matériel")}
             </Link>
           ) : null}
         </section>
@@ -100,20 +110,20 @@ export default async function CashSessionsPage() {
         <>
           <section className="grid gap-4 sm:grid-cols-3">
             <StatCard
-              label="Suivis en cours"
+              label={t(locale, "Suivis en cours")}
               value={openSessions.length}
               tone="bg-amber-50 text-amber-600"
               icon={<BanknoteIcon className="size-5" />}
             />
             <StatCard
-              label="Caisses enrôlées"
+              label={t(locale, "Caisses enrôlées")}
               value={cashRegisters.length}
               tone="bg-slate-100 text-slate-600"
               icon={<GridIcon className="size-5" />}
             />
             <StatCard
-              label="Frais des suivis en cours"
-              value={formatEuros(openExpensesCents)}
+              label={t(locale, "Frais des suivis en cours")}
+              value={formatEuros(locale, openExpensesCents)}
               tone="bg-emerald-50 text-emerald-600"
               icon={<CheckIcon className="size-5" />}
             />
@@ -121,21 +131,25 @@ export default async function CashSessionsPage() {
 
           <section className="space-y-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Suivis en cours</h2>
+              <h2 className="text-base font-semibold text-slate-900">
+                {t(locale, "Suivis en cours")}
+              </h2>
               <p className="text-xs text-slate-500">
-                Une seule ouverture à la fois par caisse : clôture le suivi avant d&apos;en ouvrir
-                un autre sur la même caisse.
+                {t(
+                  locale,
+                  "Une seule ouverture à la fois par caisse : clôture le suivi avant d'en ouvrir un autre sur la même caisse.",
+                )}
               </p>
             </div>
 
             {openSessions.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-5 py-6 text-sm text-slate-500">
-                Aucun suivi ouvert : commence la journée en ouvrant un suivi sur une caisse.
+                {t(locale, "Aucun suivi ouvert : commence la journée en ouvrant un suivi sur une caisse.")}
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {openSessions.map((session) => (
-                  <SessionCard key={session.id} session={session} />
+                  <SessionCard key={session.id} session={session} locale={locale} />
                 ))}
               </div>
             )}
@@ -143,20 +157,22 @@ export default async function CashSessionsPage() {
 
           <section className="space-y-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Suivis clôturés</h2>
+              <h2 className="text-base font-semibold text-slate-900">
+                {t(locale, "Suivis clôturés")}
+              </h2>
               <p className="text-xs text-slate-500">
-                Chaque clôture a enregistré le comptage de fin de journée dans la caisse.
+                {t(locale, "Chaque clôture a enregistré le comptage de fin de journée dans la caisse.")}
               </p>
             </div>
 
             {closedSessions.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-5 py-6 text-sm text-slate-500">
-                Aucun suivi clôturé pour l&apos;instant.
+                {t(locale, "Aucun suivi clôturé pour l'instant.")}
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {closedSessions.map((session) => (
-                  <SessionCard key={session.id} session={session} />
+                  <SessionCard key={session.id} session={session} locale={locale} />
                 ))}
               </div>
             )}

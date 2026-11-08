@@ -4,9 +4,10 @@ import { useActionState, useEffect, useState } from "react";
 
 import { saveTransportReadingsAction } from "@/actions/transport";
 import { AlertIcon, CheckIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_TRANSPORT_FORM_STATE } from "@/lib/form-state";
 import { formatTimeInput } from "@/lib/format";
-import { STATUS_ACCENTS, STATUS_BADGES, STATUS_LABELS } from "@/lib/status";
+import { STATUS_ACCENTS, STATUS_BADGES, statusLabel } from "@/lib/status";
 import { checkpointState } from "@/lib/transport";
 import { FIELD_CLASS, LABEL_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
 
@@ -26,6 +27,7 @@ export function TransportCheckpointForm({
   time: string | null;
   temperature: number | null;
 }) {
+  const { locale, t } = useI18n();
   const [state, formAction, pending] = useActionState(
     saveTransportReadingsAction,
     INITIAL_TRANSPORT_FORM_STATE,
@@ -59,14 +61,14 @@ export function TransportCheckpointForm({
         <span
           className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_BADGES[current]}`}
         >
-          {STATUS_LABELS[current]}
+          {statusLabel(locale, current)}
         </span>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label htmlFor={`${kind}_time`} className={LABEL_CLASS}>
-            Heure
+            {t("Heure")}
           </label>
           <input
             id={`${kind}_time`}
@@ -78,7 +80,7 @@ export function TransportCheckpointForm({
         </div>
         <div className="space-y-1.5">
           <label htmlFor={`${kind}_temperature_celsius`} className={LABEL_CLASS}>
-            Température (°C)
+            {t("Température (°C)")}
           </label>
           <input
             id={`${kind}_temperature_celsius`}
@@ -107,11 +109,11 @@ export function TransportCheckpointForm({
         {saved ? (
           <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
             <CheckIcon className="size-4" />
-            Enregistré
+            {t("Enregistré")}
           </span>
         ) : null}
         <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-          {pending ? "Enregistrement…" : "Enregistrer"}
+          {pending ? t("Enregistrement…") : t("Enregistrer")}
         </button>
       </div>
     </form>

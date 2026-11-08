@@ -1,7 +1,11 @@
 import { SnowflakeIcon } from "@/components/icons";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { LoginForm } from "@/components/login-form";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const locale = await getLocale();
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
       <section className="relative hidden flex-col justify-between overflow-hidden bg-slate-900 p-12 text-slate-100 lg:flex">
@@ -23,21 +27,26 @@ export default function LoginPage() {
 
         <div className="relative max-w-md space-y-4">
           <h1 className="text-3xl font-semibold leading-tight tracking-tight">
-            La conformité HACCP, sous contrôle.
+            {t(locale, "La conformité HACCP, sous contrôle.")}
           </h1>
           <p className="text-slate-400">
-            Active les modules utiles à ton activité et pilote tes obligations HACCP depuis un
-            seul endroit.
+            {t(
+              locale,
+              "Active les modules utiles à ton activité et pilote tes obligations HACCP depuis un seul endroit.",
+            )}
           </p>
         </div>
 
         <p className="relative text-xs text-slate-500">
-          Traçabilité HACCP · Données horodatées en UTC
+          {t(locale, "Traçabilité HACCP · Données horodatées en UTC")}
         </p>
       </section>
 
       <section className="flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-sm animate-fade-in">
+          <div className="mb-6 flex justify-end">
+            <LocaleSwitcher />
+          </div>
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <span className="grid size-10 place-items-center rounded-xl bg-teal-600/10 text-teal-700">
               <SnowflakeIcon className="size-5" />
@@ -45,9 +54,11 @@ export default function LoginPage() {
             <span className="text-base font-semibold tracking-tight">haccpFlow</span>
           </div>
 
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Connexion</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+            {t(locale, "Connexion")}
+          </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Accède à tes modules de gestion HACCP.
+            {t(locale, "Accède à tes modules de gestion HACCP.")}
           </p>
 
           <div className="mt-8">

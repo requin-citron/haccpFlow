@@ -7,6 +7,8 @@ import { RenameTemplateDialog } from "@/components/templates/rename-template-dia
 import { VariableEditor } from "@/components/templates/variable-editor";
 import { apiFetch } from "@/lib/api";
 import { formatDateTimeUtc, formatFileSize } from "@/lib/format";
+import { plural, t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CurrentUser, LatexTemplate, TemplateVariable } from "@/lib/types";
 
 export default async function TemplatePage({
@@ -14,6 +16,7 @@ export default async function TemplatePage({
 }: {
   params: Promise<{ templateId: string }>;
 }) {
+  const locale = await getLocale();
   const { templateId } = await params;
   const user = await apiFetch<CurrentUser>("/api/v1/auth/me");
   const isAdmin = user.role === "admin";
@@ -38,7 +41,7 @@ export default async function TemplatePage({
           href="/templates"
           className="text-sm font-medium text-teal-700 hover:text-teal-800"
         >
-          ← Modèles LaTeX
+          ← {t(locale, "Modèles LaTeX")}
         </Link>
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -48,9 +51,9 @@ export default async function TemplatePage({
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
               <span className="font-mono text-xs">{template.original_filename}</span>
               <span>·</span>
-              <span>{formatFileSize(template.size_bytes)}</span>
+              <span>{formatFileSize(locale, template.size_bytes)}</span>
               <span>·</span>
-              <span>{formatDateTimeUtc(template.created_at)}</span>
+              <span>{formatDateTimeUtc(locale, template.created_at)}</span>
               {template.uploaded_by_email ? (
                 <>
                   <span>·</span>
@@ -71,14 +74,20 @@ export default async function TemplatePage({
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <DownloadIcon className="size-4" />
-                  Télécharger le source
+                  {t(locale, "Télécharger le source")}
                 </a>
               </>
             ) : null}
             <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3.5 py-2 text-sm font-medium text-slate-600">
               <FileTextIcon className="size-4" />
-              {localVariableCount} variable{localVariableCount === 1 ? "" : "s"} locale
-              {localVariableCount === 1 ? "" : "s"}
+              {plural(
+                locale,
+                {
+                  one: "{count} variable locale",
+                  other: "{count} variables locales",
+                },
+                localVariableCount,
+              )}
             </span>
           </div>
         </div>

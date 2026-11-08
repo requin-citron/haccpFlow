@@ -16,6 +16,8 @@ import {
   validateProductRows,
   type ProductRowDraft,
 } from "@/components/templates/product-rows-editor";
+import { useI18n } from "@/components/locale-provider";
+import { t, type Locale } from "@/lib/i18n";
 import { FIELD_CLASS, LABEL_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
 import type { GeneratedDocument, ProductRow, TemplateVariable } from "@/lib/types";
 
@@ -30,39 +32,45 @@ type ErrorDetails = {
   log?: string;
 };
 
-function describeError(payload: ErrorPayload | null): ErrorDetails {
+function describeError(payload: ErrorPayload | null, locale: Locale): ErrorDetails {
   const missing = Array.isArray(payload?.context?.missing)
     ? payload.context.missing.map(String)
     : [];
   switch (payload?.code) {
     case "template_values_missing":
       return {
-        message: `Renseigne les valeurs obligatoires : ${missing.join(", ") || "champs manquants"}.`,
+        message: t(locale, "Renseigne les valeurs obligatoires : {fields}.", {
+          fields: missing.join(", ") || t(locale, "champs manquants"),
+        }),
       };
     case "template_values_unknown":
-      return { message: "Une valeur ne correspond à aucune variable du modèle." };
+      return { message: t(locale, "Une valeur ne correspond à aucune variable du modèle.") };
     case "template_values_static":
-      return { message: "Une variable statique a été fournie par erreur." };
+      return { message: t(locale, "Une variable statique a été fournie par erreur.") };
     case "template_value_invalid":
-      return { message: payload.detail ?? "Une valeur est invalide." };
+      return { message: payload.detail ?? t(locale, "Une valeur est invalide.") };
     case "template_render_failed":
       return {
-        message: payload.detail ?? "Le modèle n'a pas pu être rendu avec ces valeurs.",
+        message: payload.detail ?? t(locale, "Le modèle n'a pas pu être rendu avec ces valeurs."),
       };
     case "template_compilation_failed":
       return {
-        message: "La compilation LaTeX du document a échoué.",
+        message: t(locale, "La compilation LaTeX du document a échoué."),
         log: typeof payload.context?.log === "string" ? payload.context.log : undefined,
       };
     case "template_compilation_timeout":
-      return { message: "La compilation LaTeX a dépassé le délai autorisé." };
+      return { message: t(locale, "La compilation LaTeX a dépassé le délai autorisé.") };
     case "template_image_missing":
       return {
-        message:
+        message: t(
+          locale,
           "Une image attendue par le modèle est absente. Un administrateur doit la téléverser.",
+        ),
       };
     default:
-      return { message: payload?.detail ?? "La génération a échoué. Réessaie dans un instant." };
+      return {
+        message: payload?.detail ?? t(locale, "La génération a échoué. Réessaie dans un instant."),
+      };
   }
 }
 
@@ -97,6 +105,7 @@ function productDraftRows(values: FormValues, name: string): ProductRowDraft[] {
 function buildValues(
   variables: TemplateVariable[],
   values: FormValues,
+  locale: Locale,
 ): { values: Record<string, string | ProductRow[]>; error?: string } {
   const payload: Record<string, string | ProductRow[]> = {};
   for (const variable of variables) {
@@ -105,7 +114,7 @@ function buildValues(
     }
     if (variable.value_type === "products") {
       const drafts = productDraftRows(values, variable.name);
-      const rowsError = validateProductRows(drafts);
+      const rowsError = validateProductRows(locale, drafts);
       if (rowsError) {
         return { values: {}, error: `${variable.label} : ${rowsError}` };
       }
@@ -131,6 +140,7 @@ export function GenerateTemplateForm({
   variables: TemplateVariable[];
   isAdmin: boolean;
 }) {
+  const { locale, t } = useI18n();
   const localVariables = useMemo(
     () => variables.filter((variable) => variable.kind === "local"),
     [variables],
@@ -154,7 +164,7 @@ export function GenerateTemplateForm({
     event.preventDefault();
     setError(null);
     setGeneratedDocument(null);
-    const built = buildValues(localVariables, values);
+    const built = buildValues(localVariables, values, locale);
     if (built.error) {
       setError({ message: built.error });
       return;
@@ -174,7 +184,7 @@ export function GenerateTemplateForm({
         | (GeneratedDocument & ErrorPayload)
         | null;
       if (!response.ok) {
-        setError(describeError(payload));
+        setError(describeError(payload, locale));
         return;
       }
       if (payload) {
@@ -186,7 +196,7 @@ export function GenerateTemplateForm({
         link.remove();
       }
     } catch {
-      setError({ message: "Impossible de joindre le serveur. Réessaie dans un instant." });
+      setError({ message: t("Impossible de joindre le serveur. Réessaie dans un instant.") });
     } finally {
       setPending(false);
     }
@@ -194,7 +204,7 @@ export function GenerateTemplateForm({
 
   async function openPreview() {
     setError(null);
-    const built = buildValues(localVariables, values);
+    const built = buildValues(localVariables, values, locale);
     if (built.error) {
       setError({ message: built.error });
       return;
@@ -212,12 +222,12 @@ export function GenerateTemplateForm({
       }
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as ErrorPayload | null;
-        setError(describeError(payload));
+        setError(describeError(payload, locale));
         return;
       }
       setPreview(await response.text());
     } catch {
-      setError({ message: "Impossible de joindre le serveur. Réessaie dans un instant." });
+      setError({ message: t("Impossible de joindre le serveur. Réessaie dans un instant.") });
     } finally {
       setPreviewPending(false);
     }
@@ -234,17 +244,18 @@ export function GenerateTemplateForm({
             <FileTextIcon className="size-5" />
           </span>
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Générer le document</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t("Générer le document")}</h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              Renseigne les valeurs locales ; les variables statiques sont intégrées
-              automatiquement.
+              {t(
+                "Renseigne les valeurs locales ; les variables statiques sont intégrées automatiquement.",
+              )}
             </p>
           </div>
         </div>
 
         {localVariables.length === 0 ? (
           <p className="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Ce modèle ne demande aucune variable locale.
+            {t("Ce modèle ne demande aucune variable locale.")}
           </p>
         ) : (
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -253,7 +264,7 @@ export function GenerateTemplateForm({
                 <label htmlFor={`value-${variable.name}`} className={LABEL_CLASS}>
                   {variable.label}
                   <span className="ml-1 font-normal text-slate-400">
-                    {variable.value === null ? "(obligatoire)" : "(facultatif)"}
+                    {variable.value === null ? t("(obligatoire)") : t("(facultatif)")}
                   </span>
                 </label>
                 <input
@@ -310,7 +321,9 @@ export function GenerateTemplateForm({
             </p>
             {error.log ? (
               <details className="mt-2">
-                <summary className="cursor-pointer text-xs font-medium">Voir le journal LaTeX</summary>
+                <summary className="cursor-pointer text-xs font-medium">
+                  {t("Voir le journal LaTeX")}
+                </summary>
                 <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-white/70 p-2 text-[11px] leading-relaxed">
                   {error.log}
                 </pre>
@@ -326,14 +339,14 @@ export function GenerateTemplateForm({
           >
             <span className="flex items-start gap-2">
               <CheckIcon className="mt-0.5 size-4 shrink-0" />
-              PDF généré : {generatedDocument.filename}
+              {t("PDF généré : {filename}", { filename: generatedDocument.filename })}
             </span>
             <a
               href={`/api/documents/${generatedDocument.id}/download`}
               className="inline-flex items-center gap-1.5 font-semibold underline-offset-2 hover:underline"
             >
               <DownloadIcon className="size-4" />
-              Télécharger
+              {t("Télécharger")}
             </a>
           </div>
         ) : null}
@@ -346,11 +359,11 @@ export function GenerateTemplateForm({
               disabled={previewPending || pending}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {previewPending ? "Aperçu…" : "Aperçu du source"}
+              {previewPending ? t("Aperçu…") : t("Aperçu du source")}
             </button>
           ) : null}
           <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-            {pending ? "Génération en cours…" : "Générer le PDF"}
+            {pending ? t("Génération en cours…") : t("Générer le PDF")}
           </button>
         </div>
       </form>
@@ -371,7 +384,7 @@ export function GenerateTemplateForm({
             <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div>
                 <h2 id="preview-title" className="text-sm font-semibold text-slate-900">
-                  Aperçu du source rendu
+                  {t("Aperçu du source rendu")}
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">{templateName}</p>
               </div>
@@ -379,7 +392,7 @@ export function GenerateTemplateForm({
                 type="button"
                 onClick={() => setPreview(null)}
                 className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
               >
                 <CloseIcon className="size-5" />
               </button>

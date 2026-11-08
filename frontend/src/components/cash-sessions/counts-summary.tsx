@@ -1,5 +1,6 @@
 import { DENOMINATIONS } from "@/lib/cash-register";
 import { formatEuros } from "@/lib/format";
+import type { Locale } from "@/lib/i18n";
 import type { CashRegisterCounts } from "@/lib/types";
 
 /** A read-only count: the twelve denominations plus their total. */
@@ -7,17 +8,19 @@ export function CountsSummary({
   counts,
   totalCents,
   label,
+  locale,
 }: {
   counts: CashRegisterCounts;
   totalCents: number;
   label: string;
+  locale: Locale;
 }) {
   return (
     <div className="rounded-xl bg-slate-50 px-4 py-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
         <p className="text-lg font-semibold tabular-nums text-slate-900">
-          {formatEuros(totalCents)}
+          {formatEuros(locale, totalCents)}
         </p>
       </div>
       <ul className="mt-2 grid grid-cols-4 gap-1.5">

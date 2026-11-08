@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { declareCleaningAction } from "@/actions/cleaning";
 import { AlertIcon, CheckIcon, CloseIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_CLEANING_RECORD_FORM_STATE } from "@/lib/form-state";
 import {
   CANCEL_BUTTON_CLASS,
@@ -22,6 +23,7 @@ export function DeclareCleaningDialog({
   defaultDate: string;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     declareCleaningAction,
@@ -59,7 +61,7 @@ export function DeclareCleaningDialog({
         }
       >
         <CheckIcon className="size-4" />
-        {compact ? "Déclarer" : "Déclarer un nettoyage"}
+        {compact ? t("Déclarer") : t("Déclarer un nettoyage")}
       </button>
 
       {open ? (
@@ -84,13 +86,13 @@ export function DeclareCleaningDialog({
                   {plan.name}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Déclare un nettoyage réalisé.
+                  {t("Déclare un nettoyage réalisé.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -102,7 +104,7 @@ export function DeclareCleaningDialog({
 
               <div className="space-y-1.5">
                 <label htmlFor="cleaning_date" className={LABEL_CLASS}>
-                  Date du nettoyage
+                  {t("Date du nettoyage")}
                 </label>
                 <input
                   id="cleaning_date"
@@ -114,20 +116,20 @@ export function DeclareCleaningDialog({
                   className={FIELD_CLASS}
                 />
                 <p className="text-xs text-slate-500">
-                  Tu peux antidater pour rattraper une journée oubliée.
+                  {t("Tu peux antidater pour rattraper une journée oubliée.")}
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="comment" className={LABEL_CLASS}>
-                  Commentaire <span className="font-normal text-slate-400">(optionnel)</span>
+                  {t("Commentaire {optional}", { optional: t("(optionnel)") })}
                 </label>
                 <textarea
                   id="comment"
                   name="comment"
                   rows={3}
                   maxLength={2000}
-                  placeholder="Produit réellement utilisé, remarque…"
+                  placeholder={t("Produit réellement utilisé, remarque…")}
                   className={`${FIELD_CLASS} resize-none`}
                 />
               </div>
@@ -144,10 +146,10 @@ export function DeclareCleaningDialog({
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setOpen(false)} className={CANCEL_BUTTON_CLASS}>
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : "Déclarer"}
+                  {pending ? t("Enregistrement…") : t("Déclarer")}
                 </button>
               </div>
             </form>

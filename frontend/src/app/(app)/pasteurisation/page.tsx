@@ -5,16 +5,18 @@ import { DeleteBatchButton } from "@/components/pasteurisation/delete-batch-butt
 import { CheckIcon, FlameIcon, SearchIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import {
-  PASTEURISATION_PHASE_LABELS,
-  PASTEURISATION_PHASE_SHORT_LABELS,
   formatShortDay,
+  pasteurisationPhaseLabel,
+  pasteurisationPhaseShortLabel,
   todayIso,
 } from "@/lib/format";
 import {
   PHASE_STATE_DOTS,
-  PHASE_STATE_LABELS,
   phaseState,
 } from "@/lib/pasteurisation";
+import { statusLabel } from "@/lib/status";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CurrentUser, PasteurisationBatch } from "@/lib/types";
 
 function StatCard({
@@ -44,6 +46,7 @@ export default async function PasteurisationPage({
 }: {
   searchParams: Promise<{ lot?: string }>;
 }) {
+  const locale = await getLocale();
   const params = await searchParams;
   const lot = params.lot?.trim() ?? "";
   const query = lot ? `?lot=${encodeURIComponent(lot)}` : "";
@@ -63,13 +66,15 @@ export default async function PasteurisationPage({
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-teal-700">Point critique</p>
+          <p className="text-sm font-medium text-teal-700">{t(locale, "Point critique")}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
-            Pasteurisation
+            {t(locale, "Pasteurisation")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-500">
-            Chaque lot est enregistré ici, puis ses trois phases se remplissent au fil de la
-            production : préchauffage, palier, refroidissement.
+            {t(
+              locale,
+              "Chaque lot est enregistré ici, puis ses trois phases se remplissent au fil de la production : préchauffage, palier, refroidissement.",
+            )}
           </p>
         </div>
         <PasteurisationBatchDialog defaultDate={todayIso()} />
@@ -81,7 +86,7 @@ export default async function PasteurisationPage({
           <input
             name="lot"
             defaultValue={lot}
-            placeholder="Rechercher un numéro de lot…"
+            placeholder={t(locale, "Rechercher un numéro de lot…")}
             className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15"
           />
         </div>
@@ -89,33 +94,33 @@ export default async function PasteurisationPage({
           type="submit"
           className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
-          Rechercher
+          {t(locale, "Rechercher")}
         </button>
         {lot ? (
           <Link
             href="/pasteurisation"
             className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-sm font-medium text-teal-700 transition hover:bg-teal-100"
           >
-            Tout afficher
+            {t(locale, "Tout afficher")}
           </Link>
         ) : null}
       </form>
 
       <section className="grid gap-4 sm:grid-cols-3">
         <StatCard
-          label={lot ? "Lots trouvés" : "Lots enregistrés"}
+          label={lot ? t(locale, "Lots trouvés") : t(locale, "Lots enregistrés")}
           value={batches.length}
           tone="bg-slate-100 text-slate-600"
           icon={<FlameIcon className="size-5" />}
         />
         <StatCard
-          label="Lots incomplets"
+          label={t(locale, "Lots incomplets")}
           value={incomplete}
           tone="bg-amber-50 text-amber-600"
           icon={<FlameIcon className="size-5" />}
         />
         <StatCard
-          label="Phases restantes"
+          label={t(locale, "Phases restantes")}
           value={remaining}
           tone="bg-rose-50 text-rose-600"
           icon={<FlameIcon className="size-5" />}
@@ -128,12 +133,12 @@ export default async function PasteurisationPage({
             <FlameIcon className="size-6" />
           </span>
           <h2 className="mt-4 text-base font-semibold text-slate-900">
-            {lot ? "Aucun lot ne correspond" : "Aucun lot enregistré"}
+            {lot ? t(locale, "Aucun lot ne correspond") : t(locale, "Aucun lot enregistré")}
           </h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
             {lot
-              ? "Essaie un autre numéro de lot, ou affiche tous les lots."
-              : "Enregistre un premier lot de pasteurisation pour commencer le suivi."}
+              ? t(locale, "Essaie un autre numéro de lot, ou affiche tous les lots.")
+              : t(locale, "Enregistre un premier lot de pasteurisation pour commencer le suivi.")}
           </p>
         </section>
       ) : (
@@ -142,20 +147,20 @@ export default async function PasteurisationPage({
             <table className="w-full min-w-[52rem] text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 font-medium">Date</th>
-                  <th className="px-5 py-3 font-medium">Produit</th>
-                  <th className="px-5 py-3 font-medium">N° de lot</th>
-                  <th className="px-5 py-3 font-medium">Entités</th>
-                  <th className="px-5 py-3 font-medium">Phases</th>
-                  <th className="px-5 py-3 font-medium">Statut</th>
-                  <th className="px-5 py-3 text-right font-medium">Actions</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Date")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Produit")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "N° de lot")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Entités")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Phases")}</th>
+                  <th className="px-5 py-3 font-medium">{t(locale, "Statut")}</th>
+                  <th className="px-5 py-3 text-right font-medium">{t(locale, "Actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {batches.map((batch) => (
                   <tr key={batch.id} className="align-middle">
                     <td className="whitespace-nowrap px-5 py-3 text-slate-600">
-                      {formatShortDay(batch.batch_date)}
+                      {formatShortDay(locale, batch.batch_date)}
                     </td>
                     <td className="px-5 py-3 font-medium text-slate-900">{batch.product_name}</td>
                     <td className="px-5 py-3 font-mono text-xs text-slate-600">
@@ -169,12 +174,12 @@ export default async function PasteurisationPage({
                           return (
                             <span
                               key={slot.phase}
-                              title={`${PASTEURISATION_PHASE_LABELS[slot.phase]} — ${PHASE_STATE_LABELS[state]}`}
+                              title={`${pasteurisationPhaseLabel(locale, slot.phase)} — ${statusLabel(locale, state)}`}
                               className="flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-inset ring-slate-200"
                             >
                               <span className={`size-1.5 rounded-full ${PHASE_STATE_DOTS[state]}`} />
                               <span className="text-[11px] text-slate-600">
-                                {PASTEURISATION_PHASE_SHORT_LABELS[slot.phase]}
+                                {pasteurisationPhaseShortLabel(locale, slot.phase)}
                               </span>
                             </span>
                           );
@@ -189,7 +194,9 @@ export default async function PasteurisationPage({
                             : "bg-amber-50 text-amber-700 ring-amber-200"
                         }`}
                       >
-                        {batch.is_complete ? "Complet" : `${batch.filled_phases}/${batch.phases.length}`}
+                        {batch.is_complete
+                          ? t(locale, "Complet")
+                          : `${batch.filled_phases}/${batch.phases.length}`}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -198,7 +205,7 @@ export default async function PasteurisationPage({
                           href={`/pasteurisation/${batch.id}`}
                           className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
                         >
-                          Ouvrir
+                          {t(locale, "Ouvrir")}
                         </Link>
                         {isAdmin ? (
                           <DeleteBatchButton id={batch.id} lot={batch.lot_number} />
@@ -216,7 +223,7 @@ export default async function PasteurisationPage({
       {batches.length > 0 && incomplete === 0 ? (
         <p className="flex items-center gap-2 text-sm text-emerald-700">
           <CheckIcon className="size-4" />
-          Tous les lots affichés ont leurs trois phases complètes.
+          {t(locale, "Tous les lots affichés ont leurs trois phases complètes.")}
         </p>
       ) : null}
     </div>

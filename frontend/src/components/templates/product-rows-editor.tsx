@@ -1,6 +1,8 @@
 "use client";
 
 import { PlusIcon, TrashIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
+import { formatLocale, plural, t, type Locale } from "@/lib/i18n";
 import type { ProductRow } from "@/lib/types";
 
 export type ProductRowDraft = {
@@ -23,17 +25,23 @@ export function productRowsFromValue(value: ProductRow[] | string | null): Produ
   }));
 }
 
-export function validateProductRows(rows: ProductRowDraft[]): string | null {
+export function validateProductRows(locale: Locale, rows: ProductRowDraft[]): string | null {
   for (const [index, row] of rows.entries()) {
     if (!row.designation.trim()) {
-      return `Ligne ${index + 1} : la désignation est obligatoire.`;
+      return t(locale, "Ligne {line} : la désignation est obligatoire.", {
+        line: index + 1,
+      });
     }
     if (!/^\d+$/.test(row.pots.trim()) || Number(row.pots) > 1_000_000) {
-      return `Ligne ${index + 1} : le nombre de pots doit être un entier positif.`;
+      return t(locale, "Ligne {line} : le nombre de pots doit être un entier positif.", {
+        line: index + 1,
+      });
     }
     const price = Number(row.prix.trim().replace(",", "."));
     if (!Number.isFinite(price) || price < 0) {
-      return `Ligne ${index + 1} : le prix doit être un nombre positif.`;
+      return t(locale, "Ligne {line} : le prix doit être un nombre positif.", {
+        line: index + 1,
+      });
     }
   }
   return null;
@@ -52,22 +60,26 @@ function priceValue(row: ProductRowDraft): number {
   return Number.isFinite(price) ? price : 0;
 }
 
-function amount(row: ProductRowDraft): string {
+function amount(locale: Locale, row: ProductRowDraft): string {
   const value = Number.parseInt(row.pots, 10) * priceValue(row);
-  return `€${(Number.isFinite(value) ? value : 0).toFixed(2).replace(".", ",")}`;
+  return new Intl.NumberFormat(formatLocale(locale), {
+    style: "currency",
+    currency: "EUR",
+  }).format(Number.isFinite(value) ? value : 0);
 }
 
 export function ProductRowsEditor({
   rows,
   onChange,
   disabled = false,
-  label = "Lignes de produits",
+  label,
 }: {
   rows: ProductRowDraft[];
   onChange: (rows: ProductRowDraft[]) => void;
   disabled?: boolean;
   label?: string;
 }) {
+  const { locale, t: translate } = useI18n();
   function update(index: number, key: keyof ProductRowDraft, value: string): void {
     onChange(
       rows.map((row, rowIndex) =>
@@ -88,9 +100,15 @@ export function ProductRowsEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
+        <p className="text-sm font-medium text-slate-700">
+          {label ?? translate("Lignes de produits")}
+        </p>
         <span className="text-xs text-slate-500">
-          {rows.length} ligne{rows.length === 1 ? "" : "s"}
+          {plural(
+            locale,
+            { one: "{count} ligne", other: "{count} lignes" },
+            rows.length,
+          )}
         </span>
       </div>
 
@@ -98,10 +116,10 @@ export function ProductRowsEditor({
         <table className="w-full min-w-[620px] text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2 font-semibold">Désignation</th>
-              <th className="w-24 px-3 py-2 font-semibold">Pots</th>
-              <th className="w-32 px-3 py-2 font-semibold">Prix unitaire</th>
-              <th className="w-28 px-3 py-2 text-right font-semibold">Montant</th>
+              <th className="px-3 py-2 font-semibold">{translate("Désignation")}</th>
+              <th className="w-24 px-3 py-2 font-semibold">{translate("Pots")}</th>
+              <th className="w-32 px-3 py-2 font-semibold">{translate("Prix unitaire")}</th>
+              <th className="w-28 px-3 py-2 text-right font-semibold">{translate("Montant")}</th>
               <th className="w-10 px-2 py-2" />
             </tr>
           </thead>
@@ -113,8 +131,8 @@ export function ProductRowsEditor({
                     value={row.designation}
                     onChange={(event) => update(index, "designation", event.target.value)}
                     disabled={disabled}
-                    aria-label={`Désignation ligne ${index + 1}`}
-                    placeholder="BOCAL - ..."
+                    aria-label={translate("Désignation ligne {line}", { line: index + 1 })}
+                    placeholder={translate("BOCAL - ...")}
                     className={CELL_INPUT}
                   />
                 </td>
@@ -124,7 +142,7 @@ export function ProductRowsEditor({
                     onChange={(event) => update(index, "pots", event.target.value)}
                     disabled={disabled}
                     inputMode="numeric"
-                    aria-label={`Nombre de pots ligne ${index + 1}`}
+                    aria-label={translate("Nombre de pots ligne {line}", { line: index + 1 })}
                     className={CELL_INPUT}
                   />
                 </td>
@@ -134,20 +152,20 @@ export function ProductRowsEditor({
                     onChange={(event) => update(index, "prix", event.target.value)}
                     disabled={disabled}
                     inputMode="decimal"
-                    aria-label={`Prix unitaire ligne ${index + 1}`}
-                    placeholder="3,95"
+                    aria-label={translate("Prix unitaire ligne {line}", { line: index + 1 })}
+                    placeholder={locale === "en" ? "3.95" : "3,95"}
                     className={CELL_INPUT}
                   />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-medium text-slate-700">
-                  {amount(row)}
+                  {amount(locale, row)}
                 </td>
                 <td className="px-2 py-2">
                   <button
                     type="button"
                     onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}
                     disabled={disabled}
-                    aria-label={`Supprimer la ligne ${index + 1}`}
+                    aria-label={translate("Supprimer la ligne {line}", { line: index + 1 })}
                     className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
                   >
                     <TrashIcon className="size-4" />
@@ -160,12 +178,15 @@ export function ProductRowsEditor({
             <tfoot className="bg-slate-50/70 text-sm">
               <tr>
                 <td className="px-3 py-2 text-right font-medium text-slate-600" colSpan={1}>
-                  Totaux
+                  {translate("Totaux")}
                 </td>
                 <td className="px-3 py-2 font-semibold text-slate-900">{totalPots}</td>
                 <td />
                 <td className="px-3 py-2 text-right font-semibold text-slate-900">
-                  €{totalAmount.toFixed(2).replace(".", ",")}
+                  {new Intl.NumberFormat(formatLocale(locale), {
+                    style: "currency",
+                    currency: "EUR",
+                  }).format(totalAmount)}
                 </td>
                 <td />
               </tr>
@@ -176,20 +197,23 @@ export function ProductRowsEditor({
 
       {rows.length === 0 ? (
         <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-500">
-          Aucune ligne pour le moment.
+          {translate("Aucune ligne pour le moment.")}
         </p>
       ) : null}
 
       <button
         type="button"
         onClick={() =>
-          onChange([...rows, { designation: "", pots: "0", prix: "0,00" }])
+          onChange([
+            ...rows,
+            { designation: "", pots: "0", prix: locale === "en" ? "0.00" : "0,00" },
+          ])
         }
         disabled={disabled || rows.length >= 100}
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <PlusIcon className="size-4" />
-        Ajouter une ligne
+        {translate("Ajouter une ligne")}
       </button>
     </div>
   );

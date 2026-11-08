@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { translateApiError } from "@/lib/api-errors";
 import type { TransportFormState } from "@/lib/form-state";
+import { t, type Locale } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { Transport } from "@/lib/types";
 
 const TRANSPORTS_PATH = "/api/v1/transports";
@@ -33,33 +36,11 @@ function readOptionalNumber(formData: FormData, field: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function describeError(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.status) {
-      case 404:
-        return error.code === "vehicle_not_found"
-          ? "Ce véhicule n'existe plus."
-          : "Ce transport n'existe plus.";
-      case 403:
-        return "Cette action est réservée aux administrateurs.";
-      case 422:
-        return error.code === "transport_date_out_of_range"
-          ? "Impossible d'enregistrer un transport à plus d'un jour dans le futur."
-          : "Vérifie les valeurs saisies, puis réessaie.";
-      case 401:
-        return "Ta session a expiré, reconnecte-toi.";
-      default:
-        return error.message;
-    }
-  }
-  return "Une erreur inattendue est survenue.";
-}
-
 type PayloadResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
 
-function buildHeaderPayload(formData: FormData): PayloadResult {
+function buildHeaderPayload(formData: FormData, locale: Locale): PayloadResult {
   const transportDate = String(formData.get("transport_date") ?? "").trim();
   const place = String(formData.get("place") ?? "").trim();
   const productName = String(formData.get("product_name") ?? "").trim();
@@ -67,20 +48,20 @@ function buildHeaderPayload(formData: FormData): PayloadResult {
   const externalLabel = readOptionalText(formData, "vehicle_label");
 
   if (!transportDate) {
-    return { ok: false, error: "La date du transport est obligatoire." };
+    return { ok: false, error: t(locale, "La date du transport est obligatoire.") };
   }
   if (!place) {
-    return { ok: false, error: "Le lieu est obligatoire." };
+    return { ok: false, error: t(locale, "Le lieu est obligatoire.") };
   }
   if (!productName) {
-    return { ok: false, error: "Le nom du produit est obligatoire." };
+    return { ok: false, error: t(locale, "Le nom du produit est obligatoire.") };
   }
   if (!choice) {
-    return { ok: false, error: "Choisis un véhicule." };
+    return { ok: false, error: t(locale, "Choisis un véhicule.") };
   }
   if (choice === "external") {
     if (!externalLabel) {
-      return { ok: false, error: "Précise le véhicule externe." };
+      return { ok: false, error: t(locale, "Précise le véhicule externe.") };
     }
     return {
       ok: true,
@@ -112,7 +93,8 @@ export async function createTransportAction(
   _previous: TransportFormState,
   formData: FormData,
 ): Promise<TransportFormState> {
-  const result = buildHeaderPayload(formData);
+  const locale = await getLocale();
+  const result = buildHeaderPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -125,7 +107,12 @@ export async function createTransportAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce transport n'existe plus.",
+      }),
+    };
   }
 
   revalidatePath("/transport");
@@ -137,12 +124,13 @@ export async function updateTransportAction(
   _previous: TransportFormState,
   formData: FormData,
 ): Promise<TransportFormState> {
+  const locale = await getLocale();
   const transportId = String(formData.get("id") ?? "").trim();
   if (!transportId) {
-    return { status: "error", message: "Transport introuvable." };
+    return { status: "error", message: t(locale, "Transport introuvable.") };
   }
 
-  const result = buildHeaderPayload(formData);
+  const result = buildHeaderPayload(formData, locale);
   if (!result.ok) {
     return { status: "error", message: result.error };
   }
@@ -154,7 +142,12 @@ export async function updateTransportAction(
       body: JSON.stringify(result.payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce transport n'existe plus.",
+      }),
+    };
   }
 
   revalidatePath("/transport");
@@ -166,9 +159,10 @@ export async function saveTransportReadingsAction(
   _previous: TransportFormState,
   formData: FormData,
 ): Promise<TransportFormState> {
+  const locale = await getLocale();
   const transportId = String(formData.get("transport_id") ?? "").trim();
   if (!transportId) {
-    return { status: "error", message: "Transport introuvable." };
+    return { status: "error", message: t(locale, "Transport introuvable.") };
   }
 
   // Only the fields rendered by the form are sent: the API keeps the others.
@@ -182,7 +176,7 @@ export async function saveTransportReadingsAction(
       : readOptionalText(formData, field);
   }
   if (Object.keys(payload).length === 0) {
-    return { status: "error", message: "Rien à enregistrer." };
+    return { status: "error", message: t(locale, "Rien à enregistrer.") };
   }
 
   try {
@@ -192,7 +186,12 @@ export async function saveTransportReadingsAction(
       body: JSON.stringify(payload),
     });
   } catch (error) {
-    return { status: "error", message: describeError(error) };
+    return {
+      status: "error",
+      message: translateApiError(error, locale, {
+        notFound: "Ce transport n'existe plus.",
+      }),
+    };
   }
 
   revalidatePath("/transport");

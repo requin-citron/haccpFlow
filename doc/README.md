@@ -34,7 +34,8 @@ exploitation et procédure de mise à jour de la documentation.
   compte supprimé sont conservées et anonymisées.
 - Les relevés, nettoyages, pasteurisations et transports ont un journal de
   corrections ; les documents générés conservent un snapshot des variables.
-- Les horodatages sont stockés en UTC et affichés en français côté interface.
+- Les horodatages sont stockés en UTC. L'interface est disponible en français
+  et en anglais, avec le français par défaut.
 - Le schéma n'a pas encore de colonne `tenant_id` : le cloisonnement actuel
   repose sur une instance par client. Les évolutions doivent rester
   compatibles avec l'ajout d'un tenant.

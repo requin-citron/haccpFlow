@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { updateUserAction } from "@/actions/users";
 import { AlertIcon, CloseIcon, PencilIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { INITIAL_USER_FORM_STATE } from "@/lib/form-state";
 import {
   CANCEL_BUTTON_CLASS,
@@ -14,9 +15,10 @@ import {
   SUBMIT_BUTTON_CLASS,
 } from "@/lib/ui";
 import type { UserAccount } from "@/lib/types";
-import { USER_ROLE_LABELS } from "@/lib/users";
+import { userRoleLabel } from "@/lib/users";
 
 export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: boolean }) {
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     updateUserAction,
@@ -47,11 +49,11 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
       <button
         type="button"
         disabled
-        title="Tu ne peux pas modifier tes propres droits."
+        title={t("Tu ne peux pas modifier tes propres droits.")}
         className={`${SECONDARY_TRIGGER_CLASS} cursor-not-allowed opacity-45`}
       >
         <PencilIcon className="size-4" />
-        Modifier
+        {t("Modifier")}
       </button>
     );
   }
@@ -61,11 +63,11 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`Modifier ${user.email}`}
+        aria-label={t("Modifier {name}", { name: user.email })}
         className={SECONDARY_TRIGGER_CLASS}
       >
         <PencilIcon className="size-4" />
-        Modifier
+        {t("Modifier")}
       </button>
 
       {open ? (
@@ -87,14 +89,14 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
                   id="edit-user-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  Modifier l&apos;utilisateur
+                  {t("Modifier l'utilisateur")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">{user.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -106,7 +108,7 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
 
               <div className="space-y-1.5">
                 <label htmlFor={`user-email-${user.id}`} className={LABEL_CLASS}>
-                  Email
+                  {t("Email")}
                 </label>
                 <input
                   id={`user-email-${user.id}`}
@@ -118,7 +120,7 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
 
               <div className="space-y-1.5">
                 <label htmlFor={`user-role-${user.id}`} className={LABEL_CLASS}>
-                  Rôle
+                  {t("Rôle")}
                 </label>
                 <select
                   id={`user-role-${user.id}`}
@@ -126,9 +128,9 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
                   defaultValue={user.role}
                   className={FIELD_CLASS}
                 >
-                  {Object.entries(USER_ROLE_LABELS).map(([role, label]) => (
+                  {(["admin", "operator"] as const).map((role) => (
                     <option key={role} value={role}>
-                      {label}
+                      {userRoleLabel(locale, role)}
                     </option>
                   ))}
                 </select>
@@ -136,7 +138,7 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
 
               <div className="space-y-1.5">
                 <label htmlFor={`user-active-${user.id}`} className={LABEL_CLASS}>
-                  État du compte
+                  {t("État du compte")}
                 </label>
                 <select
                   id={`user-active-${user.id}`}
@@ -144,11 +146,11 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
                   defaultValue={user.is_active ? "true" : "false"}
                   className={FIELD_CLASS}
                 >
-                  <option value="true">Actif</option>
-                  <option value="false">Inactif — connexions bloquées</option>
+                  <option value="true">{t("Actif")}</option>
+                  <option value="false">{t("Inactif — connexions bloquées")}</option>
                 </select>
                 <p className="text-xs text-slate-500">
-                  La désactivation révoque immédiatement les sessions du compte.
+                  {t("La désactivation révoque immédiatement les sessions du compte.")}
                 </p>
               </div>
 
@@ -168,10 +170,10 @@ export function EditUserDialog({ user, isSelf }: { user: UserAccount; isSelf: bo
                   onClick={() => setOpen(false)}
                   className={CANCEL_BUTTON_CLASS}
                 >
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Enregistrement…" : "Enregistrer"}
+                  {pending ? t("Enregistrement…") : t("Enregistrer")}
                 </button>
               </div>
             </form>

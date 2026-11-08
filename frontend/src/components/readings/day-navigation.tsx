@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 import { addDays, formatDayLabel, todayIso } from "@/lib/format";
+import { useI18n } from "@/components/locale-provider";
 
 const BUTTON_CLASS =
   "grid size-10 place-items-center rounded-xl border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:opacity-50";
 
 export function DayNavigation({ date }: { date: string }) {
+  const { locale, t } = useI18n();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -25,7 +27,7 @@ export function DayNavigation({ date }: { date: string }) {
           type="button"
           onClick={() => goTo(addDays(date, -1))}
           disabled={pending}
-          aria-label="Jour précédent"
+          aria-label={t("Jour précédent")}
           className={BUTTON_CLASS}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="size-5">
@@ -34,14 +36,14 @@ export function DayNavigation({ date }: { date: string }) {
         </button>
 
         <div className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900">
-          <span className="capitalize">{formatDayLabel(date)}</span>
+          <span className="capitalize">{formatDayLabel(locale, date)}</span>
         </div>
 
         <button
           type="button"
           onClick={() => goTo(addDays(date, 1))}
           disabled={pending}
-          aria-label="Jour suivant"
+          aria-label={t("Jour suivant")}
           className={BUTTON_CLASS}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="size-5">
@@ -51,7 +53,7 @@ export function DayNavigation({ date }: { date: string }) {
       </div>
 
       <label className="sr-only" htmlFor="reading-date">
-        Choisir une date
+        {t("Choisir une date")}
       </label>
       <input
         id="reading-date"
@@ -72,7 +74,7 @@ export function DayNavigation({ date }: { date: string }) {
           disabled={pending}
           className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700 transition hover:bg-teal-100 disabled:opacity-50"
         >
-          Revenir à aujourd&apos;hui
+          {t("Revenir à aujourd'hui")}
         </button>
       ) : null}
     </div>

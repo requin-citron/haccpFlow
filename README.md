@@ -32,6 +32,9 @@ sanitaire :
 - **Variables et PDF** — variables statiques ou locales par modèle, rendu
   Jinja sandboxé avec échappement LaTeX, génération PDF par `pdflatex` et
   historique des documents produits avec les valeurs utilisées.
+- **Interface FR/EN** — français par défaut, anglais disponible sans changer
+  d'URL. Le choix est conservé dans le navigateur et appliqué côté serveur dès
+  le rendu.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 
@@ -72,6 +75,17 @@ docker compose up -d --build
 `docker compose up -d` démarre toute la pile. Pour démarrer uniquement
 l'infrastructure locale, préciser les services : `docker compose up -d db mosquitto`. `docker compose down` arrête et retire tous les conteneurs sans
 supprimer les volumes.
+
+## Langues de l'interface
+
+Le français est la langue par défaut. Le bouton `FR / EN` du shell authentifié
+ou de la connexion change immédiatement toute l'interface sans modifier les
+URL. Le choix reste propre au navigateur : il est stocké dans
+`localStorage["haccpflow.locale"]` et dans le cookie `haccp_locale`, afin que
+les pages et Server Actions rendues côté serveur utilisent la même langue.
+
+Les dates et nombres suivent la langue active. Les noms, commentaires, lots et
+contenus LaTeX saisis par les utilisateurs ne sont jamais traduits.
 
 ## Services et ports
 

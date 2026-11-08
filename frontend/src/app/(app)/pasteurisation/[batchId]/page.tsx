@@ -7,6 +7,8 @@ import { PasteurisationPhaseForm } from "@/components/pasteurisation/phase-form"
 import { FlameIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDayLabel, todayIso } from "@/lib/format";
+import { plural, t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { CurrentUser, PasteurisationBatch } from "@/lib/types";
 
 export default async function PasteurisationBatchPage({
@@ -14,6 +16,7 @@ export default async function PasteurisationBatchPage({
 }: {
   params: Promise<{ batchId: string }>;
 }) {
+  const locale = await getLocale();
   const { batchId } = await params;
 
   let batch: PasteurisationBatch;
@@ -35,7 +38,7 @@ export default async function PasteurisationBatchPage({
           href="/pasteurisation"
           className="text-sm font-medium text-slate-500 transition hover:text-slate-800"
         >
-          ← Retour aux lots de pasteurisation
+          ← {t(locale, "Retour aux lots de pasteurisation")}
         </Link>
       </div>
 
@@ -49,9 +52,10 @@ export default async function PasteurisationBatchPage({
               {batch.product_name}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Lot <span className="font-mono text-slate-700">{batch.lot_number}</span> ·{" "}
-              {batch.quantity} entité{batch.quantity > 1 ? "s" : ""} ·{" "}
-              <span className="capitalize">{formatDayLabel(batch.batch_date)}</span>
+              {t(locale, "Lot")}{" "}
+              <span className="font-mono text-slate-700">{batch.lot_number}</span> ·{" "}
+              {plural(locale, { one: "{count} entité", other: "{count} entités" }, batch.quantity)} ·{" "}
+              <span className="capitalize">{formatDayLabel(locale, batch.batch_date)}</span>
             </p>
             <p className="mt-2">
               <span
@@ -62,8 +66,16 @@ export default async function PasteurisationBatchPage({
                 }`}
               >
                 {batch.is_complete
-                  ? "Trois phases complètes"
-                  : `${batch.filled_phases} phase${batch.filled_phases > 1 ? "s" : ""} sur ${batch.phases.length}`}
+                  ? t(locale, "Trois phases complètes")
+                  : plural(
+                      locale,
+                      {
+                        one: "{filled} phase sur {total}",
+                        other: "{filled} phases sur {total}",
+                      },
+                      batch.filled_phases,
+                      { total: batch.phases.length },
+                    )}
               </span>
             </p>
           </div>
@@ -78,10 +90,12 @@ export default async function PasteurisationBatchPage({
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Phases</h2>
+          <h2 className="text-base font-semibold text-slate-900">{t(locale, "Phases")}</h2>
           <p className="text-xs text-slate-500">
-            Remplis chaque phase quand elle se termine : la durée se calcule à partir des deux
-            heures, et chaque correction est journalisée.
+            {t(
+              locale,
+              "Remplis chaque phase quand elle se termine : la durée se calcule à partir des deux heures, et chaque correction est journalisée.",
+            )}
           </p>
         </div>
 

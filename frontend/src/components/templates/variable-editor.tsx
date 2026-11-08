@@ -17,6 +17,8 @@ import {
   validateProductRows,
   type ProductRowDraft,
 } from "@/components/templates/product-rows-editor";
+import { useI18n } from "@/components/locale-provider";
+import { plural, t, type Locale } from "@/lib/i18n";
 import { FIELD_CLASS, LABEL_CLASS } from "@/lib/ui";
 import type {
   TemplateVariable,
@@ -52,35 +54,43 @@ const EMPTY_DRAFT: Draft = {
   imageFile: null,
 };
 
-const KIND_LABELS: Record<TemplateVariableKind, string> = {
-  static: "Statique",
-  local: "Locale",
-};
+function kindLabel(locale: Locale, kind: TemplateVariableKind): string {
+  return t(locale, kind === "static" ? "Statique" : "Locale");
+}
 
-const TYPE_LABELS: Record<TemplateVariableValueType, string> = {
-  text: "Texte",
-  number: "Nombre",
-  date: "Date",
-  products: "Lignes produits",
-  image: "Image",
-};
+function typeLabel(locale: Locale, type: TemplateVariableValueType): string {
+  switch (type) {
+    case "text":
+      return t(locale, "Texte");
+    case "number":
+      return t(locale, "Nombre");
+    case "date":
+      return t(locale, "Date");
+    case "products":
+      return t(locale, "Lignes produits");
+    case "image":
+      return t(locale, "Image");
+  }
+}
 
-function describeError(payload: ErrorPayload | null): string {
+function describeError(payload: ErrorPayload | null, locale: Locale): string {
   switch (payload?.code) {
     case "template_variable_name_taken":
-      return "Ce nom de variable est déjà utilisé sur ce modèle.";
+      return t(locale, "Ce nom de variable est déjà utilisé sur ce modèle.");
     case "template_variable_invalid":
-      return payload.detail ?? "La variable est invalide.";
+      return payload.detail ?? t(locale, "La variable est invalide.");
     case "template_value_invalid":
-      return payload.detail ?? "La valeur est invalide.";
+      return payload.detail ?? t(locale, "La valeur est invalide.");
     case "template_image_type_not_allowed":
-      return "Formats acceptés : JPEG ou PNG.";
+      return t(locale, "Formats acceptés : JPEG ou PNG.");
     case "template_image_too_large":
-      return "L'image dépasse la taille maximale autorisée (5 Mio).";
+      return t(locale, "L'image dépasse la taille maximale autorisée (5 Mio).");
     case "template_image_not_found":
-      return "Aucune image n'est associée à cette variable.";
+      return t(locale, "Aucune image n'est associée à cette variable.");
     default:
-      return payload?.detail ?? "L'enregistrement a échoué. Réessaie dans un instant.";
+      return (
+        payload?.detail ?? t(locale, "L'enregistrement a échoué. Réessaie dans un instant.")
+      );
   }
 }
 
@@ -104,6 +114,7 @@ export function VariableEditor({
   templateId: string;
   variables: TemplateVariable[];
 }) {
+  const { locale, t } = useI18n();
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -132,25 +143,25 @@ export function VariableEditor({
     setSuccess(null);
 
     if (!draft.name.trim() || !draft.label.trim()) {
-      setError("Le nom Jinja et le libellé sont obligatoires.");
+      setError(t("Le nom Jinja et le libellé sont obligatoires."));
       return;
     }
     const isProducts = draft.valueType === "products";
     const isImage = draft.valueType === "image";
     if (draft.kind === "static" && !isProducts && !isImage && !draft.value.trim()) {
-      setError("Une variable statique doit avoir une valeur.");
+      setError(t("Une variable statique doit avoir une valeur."));
       return;
     }
     if (isImage && draft.kind !== "static") {
-      setError("Une variable image doit être statique.");
+      setError(t("Une variable image doit être statique."));
       return;
     }
     if (isImage && !draft.imageFile && !editingVariable?.image) {
-      setError("Choisis une image JPEG ou PNG.");
+      setError(t("Choisis une image JPEG ou PNG."));
       return;
     }
     if (isProducts) {
-      const rowsError = validateProductRows(draft.rows);
+      const rowsError = validateProductRows(locale, draft.rows);
       if (rowsError) {
         setError(rowsError);
         return;
@@ -188,13 +199,13 @@ export function VariableEditor({
       }
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as ErrorPayload | null;
-        setError(describeError(body));
+        setError(describeError(body, locale));
         return;
       }
       const saved = (await response.json().catch(() => null)) as { id?: string } | null;
       if (isImage && draft.imageFile) {
         if (!saved?.id) {
-          setError("La variable a été enregistrée, mais son identifiant est introuvable.");
+          setError(t("La variable a été enregistrée, mais son identifiant est introuvable."));
           router.refresh();
           return;
         }
@@ -210,23 +221,27 @@ export function VariableEditor({
         }
         if (!upload.ok) {
           const body = (await upload.json().catch(() => null)) as ErrorPayload | null;
-          setError(`Variable enregistrée, mais l'image n'a pas pu être téléversée : ${describeError(body)}`);
+          setError(
+            t("Variable enregistrée, mais l'image n'a pas pu être téléversée : {error}", {
+              error: describeError(body, locale),
+            }),
+          );
           router.refresh();
           return;
         }
       }
-      setSuccess(editingId ? "Variable mise à jour." : "Variable créée.");
+      setSuccess(editingId ? t("Variable mise à jour.") : t("Variable créée."));
       reset();
       router.refresh();
     } catch {
-      setError("Impossible de joindre le serveur. Réessaie dans un instant.");
+      setError(t("Impossible de joindre le serveur. Réessaie dans un instant."));
     } finally {
       setPending(false);
     }
   }
 
   async function removeImage(): Promise<void> {
-    if (!editingId || !window.confirm("Supprimer l'image de cette variable ?")) {
+    if (!editingId || !window.confirm(t("Supprimer l'image de cette variable ?"))) {
       return;
     }
     setError(null);
@@ -243,13 +258,13 @@ export function VariableEditor({
       }
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as ErrorPayload | null;
-        setError(describeError(body));
+        setError(describeError(body, locale));
         return;
       }
-      setSuccess("Image supprimée.");
+      setSuccess(t("Image supprimée."));
       router.refresh();
     } catch {
-      setError("Impossible de joindre le serveur. Réessaie dans un instant.");
+      setError(t("Impossible de joindre le serveur. Réessaie dans un instant."));
     } finally {
       setPending(false);
     }
@@ -257,8 +272,11 @@ export function VariableEditor({
 
   async function remove(variable: TemplateVariable): Promise<void> {
     const warning = variable.used_in_template
-      ? `La variable « ${variable.name} » est utilisée dans le template. La supprimer cassera les prochaines générations. Continuer ?`
-      : `Supprimer la variable « ${variable.name} » ?`;
+      ? t(
+          "La variable « {name} » est utilisée dans le template. La supprimer cassera les prochaines générations. Continuer ?",
+          { name: variable.name },
+        )
+      : t("Supprimer la variable « {name} » ?", { name: variable.name });
     if (!window.confirm(warning)) {
       return;
     }
@@ -276,16 +294,16 @@ export function VariableEditor({
       }
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as ErrorPayload | null;
-        setError(describeError(body));
+        setError(describeError(body, locale));
         return;
       }
       if (editingId === variable.id) {
         reset();
       }
-      setSuccess("Variable supprimée.");
+      setSuccess(t("Variable supprimée."));
       router.refresh();
     } catch {
-      setError("Impossible de joindre le serveur. Réessaie dans un instant.");
+      setError(t("Impossible de joindre le serveur. Réessaie dans un instant."));
     } finally {
       setPending(false);
     }
@@ -295,10 +313,11 @@ export function VariableEditor({
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">Variables du modèle</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t("Variables du modèle")}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Les variables statiques sont intégrées à la génération ; les locales sont
-            demandées à l&apos;opérateur.
+            {t(
+              "Les variables statiques sont intégrées à la génération ; les locales sont demandées à l'opérateur.",
+            )}
           </p>
           <p className="mt-1 text-xs text-slate-500">
             Syntaxe Jinja : <code className="font-mono">&lt;&lt; nom &gt;&gt;</code> pour
@@ -312,7 +331,7 @@ export function VariableEditor({
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
         >
           <PlusIcon className="size-4" />
-          Nouvelle variable
+          {t("Nouvelle variable")}
         </button>
       </header>
 
@@ -320,34 +339,34 @@ export function VariableEditor({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label htmlFor="variable-name" className={LABEL_CLASS}>
-              Nom Jinja
+              {t("Nom Jinja")}
             </label>
             <input
               id="variable-name"
               value={draft.name}
               onChange={(event) => update("name", event.target.value)}
               maxLength={64}
-              placeholder="client_nom"
+              placeholder={t("client_nom")}
               className={`mt-1.5 font-mono ${FIELD_CLASS}`}
             />
           </div>
           <div>
             <label htmlFor="variable-label" className={LABEL_CLASS}>
-              Libellé affiché
+              {t("Libellé affiché")}
             </label>
             <input
               id="variable-label"
               value={draft.label}
               onChange={(event) => update("label", event.target.value)}
               maxLength={120}
-              placeholder="Nom du client"
+              placeholder={t("Nom du client")}
               className={`mt-1.5 ${FIELD_CLASS}`}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="variable-kind" className={LABEL_CLASS}>
-                Nature
+                {t("Nature")}
               </label>
               <select
                 id="variable-kind"
@@ -358,13 +377,13 @@ export function VariableEditor({
                 }
                 className={`mt-1.5 ${FIELD_CLASS} disabled:bg-slate-100 disabled:text-slate-500`}
               >
-                <option value="local">Locale</option>
-                <option value="static">Statique</option>
+                <option value="local">{t("Locale")}</option>
+                <option value="static">{t("Statique")}</option>
               </select>
             </div>
             <div>
               <label htmlFor="variable-type" className={LABEL_CLASS}>
-                Type
+                {t("Type")}
               </label>
               <select
                 id="variable-type"
@@ -378,18 +397,18 @@ export function VariableEditor({
                 }}
                 className={`mt-1.5 ${FIELD_CLASS}`}
               >
-                <option value="text">Texte</option>
-                <option value="number">Nombre</option>
-                <option value="date">Date</option>
-                <option value="products">Lignes produits</option>
-                <option value="image">Image</option>
+                <option value="text">{t("Texte")}</option>
+                <option value="number">{t("Nombre")}</option>
+                <option value="date">{t("Date")}</option>
+                <option value="products">{t("Lignes produits")}</option>
+                <option value="image">{t("Image")}</option>
               </select>
             </div>
           </div>
           {draft.valueType !== "products" && draft.valueType !== "image" ? (
             <div>
               <label htmlFor="variable-value" className={LABEL_CLASS}>
-                {draft.kind === "static" ? "Valeur" : "Valeur par défaut"}
+                {draft.kind === "static" ? t("Valeur") : t("Valeur par défaut")}
               </label>
               <input
                 id="variable-value"
@@ -397,7 +416,7 @@ export function VariableEditor({
                 inputMode={draft.valueType === "number" ? "decimal" : undefined}
                 value={draft.value}
                 onChange={(event) => update("value", event.target.value)}
-                placeholder={draft.kind === "static" ? "Obligatoire" : "Facultative"}
+                placeholder={draft.kind === "static" ? t("Obligatoire") : t("Facultative")}
                 className={`mt-1.5 ${FIELD_CLASS}`}
               />
             </div>
@@ -407,14 +426,14 @@ export function VariableEditor({
               <ProductRowsEditor
                 rows={draft.rows}
                 onChange={(rows) => update("rows", rows)}
-                label={draft.kind === "static" ? "Lignes fixes" : "Lignes par défaut"}
+                label={draft.kind === "static" ? t("Lignes fixes") : t("Lignes par défaut")}
               />
             </div>
           ) : null}
           {draft.valueType === "image" ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4 sm:col-span-2 lg:col-span-3">
               <p className="text-sm font-medium text-slate-700">
-                Image <span className="font-normal text-slate-400">(JPEG ou PNG, 5 Mio max)</span>
+                {t("Image (JPEG ou PNG, 5 Mio max)")}
               </p>
               {editingVariable?.image ? (
                 <div className="mt-3 flex items-center gap-4">
@@ -436,12 +455,12 @@ export function VariableEditor({
                       disabled={pending}
                       className="mt-1 text-xs font-medium text-rose-600 hover:underline disabled:opacity-50"
                     >
-                      Supprimer l&apos;image
+                      {t("Supprimer l'image")}
                     </button>
                   </div>
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-slate-500">Aucune image pour le moment.</p>
+                <p className="mt-2 text-sm text-slate-500">{t("Aucune image pour le moment.")}</p>
               )}
               <input
                 key={imageInputKey}
@@ -453,14 +472,14 @@ export function VariableEditor({
               />
               <p className="mt-1 text-xs text-slate-500">
                 {editingVariable?.image
-                  ? "Sélectionne un fichier pour remplacer l'image."
-                  : "Sélectionne l'image à associer à la variable."}
+                  ? t("Sélectionne un fichier pour remplacer l'image.")
+                  : t("Sélectionne l'image à associer à la variable.")}
               </p>
             </div>
           ) : null}
           <div className="sm:col-span-2">
             <label htmlFor="variable-description" className={LABEL_CLASS}>
-              Description <span className="font-normal text-slate-400">(facultative)</span>
+              {t("Description {optional}", { optional: t("(facultative)") })}
             </label>
             <input
               id="variable-description"
@@ -498,7 +517,7 @@ export function VariableEditor({
               onClick={reset}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
-              Annuler
+              {t("Annuler")}
             </button>
           ) : null}
           <button
@@ -507,30 +526,30 @@ export function VariableEditor({
             className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {pending
-              ? "Enregistrement…"
+              ? t("Enregistrement…")
               : editingId
-                ? "Enregistrer la variable"
-                : "Créer la variable"}
+                ? t("Enregistrer la variable")
+                : t("Créer la variable")}
           </button>
         </div>
       </form>
 
       {variables.length === 0 ? (
         <p className="px-5 py-8 text-center text-sm text-slate-500">
-          Aucune variable déclarée pour ce modèle.
+          {t("Aucune variable déclarée pour ce modèle.")}
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="bg-white text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-5 py-3 font-semibold">Nom</th>
-                <th className="px-5 py-3 font-semibold">Libellé</th>
-                <th className="px-5 py-3 font-semibold">Nature</th>
-                <th className="px-5 py-3 font-semibold">Type</th>
-                <th className="px-5 py-3 font-semibold">Valeur / défaut</th>
-                <th className="px-5 py-3 font-semibold">Usage</th>
-                <th className="px-5 py-3 text-right font-semibold">Actions</th>
+                <th className="px-5 py-3 font-semibold">{t("Nom")}</th>
+                <th className="px-5 py-3 font-semibold">{t("Libellé")}</th>
+                <th className="px-5 py-3 font-semibold">{t("Nature")}</th>
+                <th className="px-5 py-3 font-semibold">{t("Type")}</th>
+                <th className="px-5 py-3 font-semibold">{t("Valeur / défaut")}</th>
+                <th className="px-5 py-3 font-semibold">{t("Usage")}</th>
+                <th className="px-5 py-3 text-right font-semibold">{t("Actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -548,17 +567,21 @@ export function VariableEditor({
                           : "bg-sky-50 text-sky-700"
                       }`}
                     >
-                      {KIND_LABELS[variable.kind]}
+                      {kindLabel(locale, variable.kind)}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-slate-600">
-                    {TYPE_LABELS[variable.value_type]}
+                    {typeLabel(locale, variable.value_type)}
                   </td>
                   <td className="px-5 py-3 text-slate-600">
                     {variable.value_type === "products" ? (
-                      `${Array.isArray(variable.value) ? variable.value.length : 0} ligne(s)`
+                      plural(
+                        locale,
+                        { one: "{count} ligne", other: "{count} lignes" },
+                        Array.isArray(variable.value) ? variable.value.length : 0,
+                      )
                     ) : variable.value_type === "image" ? (
-                      variable.image?.filename ?? "Aucune image"
+                      variable.image?.filename ?? t("Aucune image")
                     ) : typeof variable.value === "string" && variable.value ? (
                       variable.value
                     ) : (
@@ -573,7 +596,7 @@ export function VariableEditor({
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
-                      {variable.used_in_template ? "Utilisée" : "Non utilisée"}
+                      {variable.used_in_template ? t("Utilisée") : t("Non utilisée")}
                     </span>
                   </td>
                   <td className="px-5 py-3">
@@ -590,7 +613,7 @@ export function VariableEditor({
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                       >
                         <PencilIcon className="size-3.5" />
-                        Modifier
+                        {t("Modifier")}
                       </button>
                       <button
                         type="button"
@@ -599,7 +622,7 @@ export function VariableEditor({
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
                       >
                         <TrashIcon className="size-3.5" />
-                        Supprimer
+                        {t("Supprimer")}
                       </button>
                     </div>
                   </td>

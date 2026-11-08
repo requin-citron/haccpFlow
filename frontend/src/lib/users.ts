@@ -1,9 +1,9 @@
 import type { UserRole } from "@/lib/types";
+import { t, type Locale } from "@/lib/i18n";
 
-export const USER_ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Administrateur",
-  operator: "Opérateur",
-};
+export function userRoleLabel(locale: Locale, role: UserRole): string {
+  return t(locale, role === "admin" ? "Administrateur" : "Opérateur");
+}
 
 export const USER_ROLE_BADGES: Record<UserRole, string> = {
   admin: "bg-indigo-50 text-indigo-700 ring-indigo-200",

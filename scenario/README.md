@@ -48,7 +48,8 @@ relancer sans créer de doublon.
 | `check_export_api.py` | Télécharge les six extractions CSV et vérifie le BOM UTF-8, le séparateur point-virgule et la ligne d'en-tête de chacune, puis l'extract d'un suivi de caisse (blocs comptage d'ouverture, frais, clôture). L'export des documents générés ajoute une colonne par variable et les lignes produits en JSON. |
 | `check_cash_register_api.py` | Enrôlement d'une caisse avec son comptage initial : total calculé en centimes, coupures absentes à zéro, nom déjà pris, compteur négatif, coupure inconnue, correction, désactivation et nom libéré. |
 | `check_cash_sessions_api.py` | Suivi d'une caisse : fond repris de la caisse ou forcé, refus d'un second suivi ouvert, frais pro/perso ajoutés, corrigés et totalisés, comptage de clôture incomplet refusé, clôture qui met à jour la caisse, suivi figé ensuite, et nouvelle ouverture qui reprend le comptage de clôture. |
-| `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation, Transport, Suivi de caisse, Export, Modèles LaTeX, Documents générés, Historique et Utilisateurs rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. Vérifie aussi le détail d'un suivi de caisse (frais, clôture, état figé), la page admin des comptes avec son action de suppression, et qu'un export CSV se télécharge bien à travers le frontend, BOM compris. |
+| `check_frontend_pages.py` | Les pages Matériel, Relevés, Nettoyage, Pasteurisation, Transport, Suivi de caisse, Export, Modèles LaTeX, Documents générés, Historique et Utilisateurs rendent les données du serveur avec une session, et renvoient vers la connexion sans session, sans fuite de données. Vérifie le français par défaut, l'anglais avec `haccp_locale=en`, le repli sur `fr` pour un cookie invalide, `<html lang>` et le sélecteur `FR / EN`. Vérifie aussi le détail d'un suivi de caisse (frais, clôture, état figé), la page admin des comptes avec son action de suppression, et qu'un export CSV se télécharge bien à travers le frontend, BOM compris. |
+| `check_i18n_browser.mjs` | Parcours Chromium headless : clic sur `FR / EN`, changement immédiat, mise à jour de `<html lang>`, du cookie et de `localStorage`, persistance après rechargement et resynchronisation du cookie depuis `localStorage`. |
 | `check_cleaning_tabs.py` | La séparation entre l'onglet opérationnel (déclarer) et l'onglet de gestion (créer, modifier), ainsi que le contenu de l'agenda. |
 
 Les vérifications suppriment les données qu'elles ont créées avant de se
@@ -63,6 +64,18 @@ python3 scenario/check_cleaning_api.py
 
 Chaque script affiche un rapport lisible et sort en code 1 si une vérification
 échoue : utilisable tel quel dans un enchaînement `&&`.
+
+Le parcours navigateur FR/EN utilise Chromium en mode headless, sans dépendance
+Node supplémentaire :
+
+```sh
+ADMIN_EMAIL=... ADMIN_PASSWORD=... \
+  node scenario/check_i18n_browser.mjs
+```
+
+Il vérifie le clic sur `FR / EN`, la mise à jour immédiate de `<html lang>`, du
+cookie et de `localStorage`, la persistance après rechargement et la
+resynchronisation du cookie depuis `localStorage`.
 
 ## Tests d'intégration du backend
 

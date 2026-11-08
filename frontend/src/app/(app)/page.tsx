@@ -3,9 +3,12 @@ import { redirect } from "next/navigation";
 import { AlertIcon } from "@/components/icons";
 import { requireCurrentUser } from "@/lib/current-user";
 import { getEnabledModules } from "@/lib/module-settings";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import { firstEnabledModuleHref } from "@/lib/modules";
 
 export default async function HomePage() {
+  const locale = await getLocale();
   const user = await requireCurrentUser();
   const destination = firstEnabledModuleHref(
     getEnabledModules(),
@@ -20,10 +23,12 @@ export default async function HomePage() {
       <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-amber-100 text-amber-700">
         <AlertIcon className="size-6" />
       </span>
-      <h1 className="mt-4 text-lg font-semibold text-slate-900">Aucun module actif</h1>
+      <h1 className="mt-4 text-lg font-semibold text-slate-900">{t(locale, "Aucun module actif")}</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Active au moins un module dans le fichier <code>.env</code>, puis recrée le service
-        frontend avec <code>docker compose up -d</code>.
+        {t(
+          locale,
+          "Active au moins un module dans le fichier .env, puis recrée le service frontend avec docker compose up -d.",
+        )}
       </p>
     </div>
   );

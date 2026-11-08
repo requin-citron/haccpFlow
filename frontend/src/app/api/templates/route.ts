@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ApiError, apiFetch } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { getLocale } from "@/lib/locale";
 import type { LatexTemplate } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -10,12 +12,13 @@ export const dynamic = "force-dynamic";
  * configurable file size limit is not capped by the 1 MiB action body limit.
  */
 export async function POST(request: NextRequest) {
+  const locale = await getLocale();
   let formData: FormData;
   try {
     formData = await request.formData();
   } catch {
     return NextResponse.json(
-      { code: "invalid_form", detail: "Formulaire d'import invalide." },
+      { code: "invalid_form", detail: t(locale, "Formulaire d'import invalide.") },
       { status: 400 },
     );
   }

@@ -4,6 +4,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { AlertIcon, CheckIcon, FileTextIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
+import { t, type Locale } from "@/lib/i18n";
 import { FIELD_CLASS, LABEL_CLASS, SUBMIT_BUTTON_CLASS } from "@/lib/ui";
 
 type ApiPayload = {
@@ -12,27 +14,28 @@ type ApiPayload = {
   name?: string;
 };
 
-function describeError(payload: ApiPayload | null): string {
+function describeError(payload: ApiPayload | null, locale: Locale): string {
   switch (payload?.code) {
     case "template_name_taken":
-      return "Un modèle porte déjà ce nom. Choisis-en un autre.";
+      return t(locale, "Un modèle porte déjà ce nom. Choisis-en un autre.");
     case "template_too_large":
-      return "Le fichier dépasse la taille maximale autorisée.";
+      return t(locale, "Le fichier dépasse la taille maximale autorisée.");
     case "template_type_not_allowed":
-      return "Seuls les fichiers .tex sont acceptés.";
+      return t(locale, "Seuls les fichiers .tex sont acceptés.");
     case "template_empty":
-      return "Le fichier est vide.";
+      return t(locale, "Le fichier est vide.");
     case "template_invalid_encoding":
     case "template_invalid_content":
-      return "Le fichier doit être un texte LaTeX UTF-8 valide, sans caractères binaires.";
+      return t(locale, "Le fichier doit être un texte LaTeX UTF-8 valide, sans caractères binaires.");
     case "template_name_invalid":
-      return "Le nom du modèle est invalide (120 caractères maximum).";
+      return t(locale, "Le nom du modèle est invalide (120 caractères maximum).");
     default:
-      return payload?.detail ?? "L'import a échoué. Réessaie dans un instant.";
+      return payload?.detail ?? t(locale, "L'import a échoué. Réessaie dans un instant.");
   }
 }
 
 export function UploadTemplateForm() {
+  const { locale, t } = useI18n();
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, setPending] = useState(false);
@@ -46,12 +49,12 @@ export function UploadTemplateForm() {
     const file = formData.get("file");
 
     if (!(file instanceof File) || file.size === 0) {
-      setError("Choisis un fichier .tex à importer.");
+      setError(t("Choisis un fichier .tex à importer."));
       setSuccess(null);
       return;
     }
     if (!file.name.toLowerCase().endsWith(".tex")) {
-      setError("Seuls les fichiers .tex sont acceptés.");
+      setError(t("Seuls les fichiers .tex sont acceptés."));
       setSuccess(null);
       return;
     }
@@ -67,14 +70,18 @@ export function UploadTemplateForm() {
       }
       const payload = (await response.json().catch(() => null)) as ApiPayload | null;
       if (!response.ok) {
-        setError(describeError(payload));
+        setError(describeError(payload, locale));
         return;
       }
       form.reset();
-      setSuccess(`« ${payload?.name ?? "Modèle"} » a été importé.`);
+      setSuccess(
+        t("« {name} » a été importé.", {
+          name: payload?.name ?? t("Modèle"),
+        }),
+      );
       router.refresh();
     } catch {
-      setError("Impossible de joindre le serveur. Réessaie dans un instant.");
+      setError(t("Impossible de joindre le serveur. Réessaie dans un instant."));
     } finally {
       setPending(false);
     }
@@ -91,9 +98,9 @@ export function UploadTemplateForm() {
           <FileTextIcon className="size-5" />
         </span>
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">Importer un modèle</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t("Importer un modèle")}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Le fichier source est conservé tel quel, sans compilation.
+            {t("Le fichier source est conservé tel quel, sans compilation.")}
           </p>
         </div>
       </div>
@@ -101,7 +108,7 @@ export function UploadTemplateForm() {
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="template-file" className={LABEL_CLASS}>
-            Fichier LaTeX
+            {t("Fichier LaTeX")}
           </label>
           <input
             id="template-file"
@@ -111,22 +118,22 @@ export function UploadTemplateForm() {
             required
             className="mt-1.5 block w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-teal-700 hover:file:bg-teal-100 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15"
           />
-          <p className="mt-1 text-xs text-slate-500">Extension .tex, encodage UTF-8.</p>
+          <p className="mt-1 text-xs text-slate-500">{t("Extension .tex, encodage UTF-8.")}</p>
         </div>
         <div>
           <label htmlFor="template-name" className={LABEL_CLASS}>
-            Nom <span className="font-normal text-slate-400">(facultatif)</span>
+            {t("Nom {optional}", { optional: t("(facultatif)") })}
           </label>
           <input
             id="template-name"
             name="name"
             type="text"
             maxLength={120}
-            placeholder="Bon de livraison"
+            placeholder={t("Bon de livraison")}
             className={`mt-1.5 ${FIELD_CLASS}`}
           />
           <p className="mt-1 text-xs text-slate-500">
-            À défaut, le nom du fichier sans extension est utilisé.
+            {t("À défaut, le nom du fichier sans extension est utilisé.")}
           </p>
         </div>
       </div>
@@ -153,7 +160,7 @@ export function UploadTemplateForm() {
 
       <div className="mt-5 flex justify-end">
         <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-          {pending ? "Import en cours…" : "Importer le modèle"}
+          {pending ? t("Import en cours…") : t("Importer le modèle")}
         </button>
       </div>
     </form>

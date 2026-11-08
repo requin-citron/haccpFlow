@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import { resetUserPasswordAction } from "@/actions/users";
 import { CloseIcon, KeyIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { TemporaryPasswordDialog } from "@/components/users/temporary-password-dialog";
 import type { PasswordResetState } from "@/lib/form-state";
 import type { UserAccount } from "@/lib/types";
@@ -14,6 +15,7 @@ type Secret = {
 };
 
 export function ResetPasswordButton({ user, isSelf }: { user: UserAccount; isSelf: boolean }) {
+  const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<PasswordResetState>({ status: "idle" });
@@ -41,12 +43,12 @@ export function ResetPasswordButton({ user, isSelf }: { user: UserAccount; isSel
             onClick={resetPassword}
             className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
           >
-            {pending ? "Réinitialisation…" : "Réinitialiser"}
+            {pending ? t("Réinitialisation…") : t("Réinitialiser")}
           </button>
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            aria-label="Annuler la réinitialisation"
+            aria-label={t("Annuler la réinitialisation")}
             className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <CloseIcon className="size-4" />
@@ -59,8 +61,8 @@ export function ResetPasswordButton({ user, isSelf }: { user: UserAccount; isSel
             setResult({ status: "idle" });
             setConfirming(true);
           }}
-          aria-label={`Réinitialiser le mot de passe de ${user.email}`}
-          title="Réinitialiser le mot de passe et révoquer les sessions"
+          aria-label={t("Réinitialiser le mot de passe de {email}", { email: user.email })}
+          title={t("Réinitialiser le mot de passe et révoquer les sessions")}
           className="rounded-lg p-1.5 text-slate-400 transition hover:bg-amber-50 hover:text-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
         >
           <KeyIcon className="size-4" />

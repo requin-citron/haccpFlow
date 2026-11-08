@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import { createUserAction } from "@/actions/users";
 import { AlertIcon, CloseIcon, PlusIcon } from "@/components/icons";
+import { useI18n } from "@/components/locale-provider";
 import { TemporaryPasswordDialog } from "@/components/users/temporary-password-dialog";
 import { INITIAL_USER_FORM_STATE } from "@/lib/form-state";
 import {
@@ -14,7 +15,7 @@ import {
   PRIMARY_TRIGGER_CLASS,
   SUBMIT_BUTTON_CLASS,
 } from "@/lib/ui";
-import { USER_ROLE_LABELS } from "@/lib/users";
+import { userRoleLabel } from "@/lib/users";
 
 type Secret = {
   email: string;
@@ -22,6 +23,7 @@ type Secret = {
 };
 
 export function CreateUserDialog() {
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [secret, setSecret] = useState<Secret | null>(null);
   const [state, formAction, pending] = useActionState(
@@ -58,7 +60,7 @@ export function CreateUserDialog() {
     <>
       <button type="button" onClick={() => setOpen(true)} className={PRIMARY_TRIGGER_CLASS}>
         <PlusIcon className="size-4" />
-        Nouvel utilisateur
+        {t("Nouvel utilisateur")}
       </button>
 
       {open ? (
@@ -80,16 +82,16 @@ export function CreateUserDialog() {
                   id="create-user-title"
                   className="text-lg font-semibold tracking-tight text-slate-900"
                 >
-                  Nouvel utilisateur
+                  {t("Nouvel utilisateur")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  Un mot de passe fort sera généré et affiché une seule fois.
+                  {t("Un mot de passe fort sera généré et affiché une seule fois.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t("Fermer")}
                 className={ICON_BUTTON_CLASS}
               >
                 <CloseIcon className="size-5" />
@@ -99,7 +101,7 @@ export function CreateUserDialog() {
             <form ref={formRef} action={formAction} className="space-y-5 px-6 py-5">
               <div className="space-y-1.5">
                 <label htmlFor="user-email" className={LABEL_CLASS}>
-                  Email
+                  {t("Email")}
                 </label>
                 <input
                   id="user-email"
@@ -108,24 +110,24 @@ export function CreateUserDialog() {
                   required
                   autoFocus
                   maxLength={320}
-                  placeholder="operateur@exemple.fr"
+                  placeholder={t("operateur@exemple.fr")}
                   className={FIELD_CLASS}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label htmlFor="user-role" className={LABEL_CLASS}>
-                  Rôle
+                  {t("Rôle")}
                 </label>
                 <select id="user-role" name="role" defaultValue="operator" className={FIELD_CLASS}>
-                  {Object.entries(USER_ROLE_LABELS).map(([role, label]) => (
+                  {(["admin", "operator"] as const).map((role) => (
                     <option key={role} value={role}>
-                      {label}
+                      {userRoleLabel(locale, role)}
                     </option>
                   ))}
                 </select>
                 <p className="text-xs text-slate-500">
-                  Les administrateurs peuvent gérer les comptes et les référentiels.
+                  {t("Les administrateurs peuvent gérer les comptes et les référentiels.")}
                 </p>
               </div>
 
@@ -145,10 +147,10 @@ export function CreateUserDialog() {
                   onClick={() => setOpen(false)}
                   className={CANCEL_BUTTON_CLASS}
                 >
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button type="submit" disabled={pending} className={SUBMIT_BUTTON_CLASS}>
-                  {pending ? "Création…" : "Créer le compte"}
+                  {pending ? t("Création…") : t("Créer le compte")}
                 </button>
               </div>
             </form>
