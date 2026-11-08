@@ -58,8 +58,6 @@ services:
 # Zigbee2MQTT runs on-premise next to the sensors, outside this stack. It
 # connects to `mosquitto` over the network and publishes under MQTT_TOPIC_PREFIX.
   backend:
-    # Enable with: docker compose --profile app up
-    profiles: ["app"]
     build:
       context: ./backend
     init: true
@@ -119,8 +117,6 @@ services:
       - haccp
 
   frontend:
-    # Enable with: docker compose --profile app up
-    profiles: ["app"]
     build:
       context: ./frontend
       target: development

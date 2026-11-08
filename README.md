@@ -61,7 +61,7 @@ Il doit être mis à jour dans le même changement que le code. La matrice
 
 ```sh
 cp .env.example .env        # puis renseigner les secrets (voir plus bas)
-docker compose --profile app up -d backend frontend
+docker compose up -d --build
 ```
 
 - Application : http://localhost:3000
@@ -69,9 +69,10 @@ docker compose --profile app up -d backend frontend
 - Le premier démarrage applique les migrations puis crée l'administrateur à
   partir de `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
-`backend` et `frontend` sont derrière le profil `app` : un simple
-`docker compose up -d` ne démarre que la base et le broker, tandis que le
-profil `app` lance toute la pile.
+`docker compose up -d` démarre toute la pile. Pour démarrer uniquement
+l'infrastructure locale, préciser les services : `docker compose up -d db
+mosquitto`. `docker compose down` arrête et retire tous les conteneurs sans
+supprimer les volumes.
 
 ## Services et ports
 

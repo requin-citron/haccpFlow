@@ -52,4 +52,4 @@ Tout changement d'API, de modèle de données, de configuration, de déploiement
 ou de règle métier doit mettre à jour la page correspondante et, si nécessaire,
 le tableau de maintenance de [09-maintenance.md](./09-maintenance.md).
 
-Dernière revue : **2026-10-28**.
+Dernière revue : **2026-11-08**.

@@ -9,7 +9,7 @@ par l'interface.
 L'infra et le backend tournent :
 
 ```sh
-docker compose --profile app up -d backend     # db + mosquitto + backend
+docker compose up -d backend     # db + mosquitto + backend
 ```
 
 Les scripts lisent `ADMIN_EMAIL` et `ADMIN_PASSWORD` dans le `.env` de la racine
@@ -17,7 +17,7 @@ et parlent à l'API sur `http://127.0.0.1:8000`. Ceux qui vérifient le frontend
 supposent en plus le service `frontend` sur `http://127.0.0.1:3000` :
 
 ```sh
-docker compose --profile app up -d frontend
+docker compose up -d frontend
 ```
 
 ## Jeu de démonstration

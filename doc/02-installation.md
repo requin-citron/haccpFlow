@@ -27,7 +27,7 @@ Renseigner au minimum dans `.env` :
 Puis :
 
 ```sh
-docker compose --profile app up -d --build
+docker compose up -d --build
 docker compose ps
 ```
 
@@ -41,16 +41,16 @@ docker compose ps
 Au premier démarrage, le backend attend PostgreSQL et Mosquitto, applique les
 migrations Alembic, puis crée l'administrateur si la table `users` est vide.
 
-### Profils Compose
+### Démarrage et arrêt
 
 | Commande | Services démarrés |
 | --- | --- |
-| `docker compose up -d` | `db`, `mosquitto` |
-| `docker compose --profile app up -d` | toute la pile |
-| `docker compose --profile app up -d backend frontend` | backend + frontend + dépendances |
+| `docker compose up -d` | toute la pile : `db`, `mosquitto`, `backend`, `frontend` |
+| `docker compose up -d db mosquitto` | infrastructure seule |
+| `docker compose up -d backend` | backend et ses dépendances |
 
-Le profil `app` est volontaire : un `docker compose up -d` seul ne lance pas
-l'application.
+`docker compose down` arrête et retire tous les conteneurs et le réseau Compose.
+Sans l'option `-v`, les volumes PostgreSQL et MQTT sont conservés.
 
 ## Premier administrateur
 
@@ -96,17 +96,17 @@ FastAPI. En Docker elle vaut `http://backend:8000`.
 
 | Changement | Action |
 | --- | --- |
-| Code backend | `docker compose --profile app restart backend` (le code est monté) |
+| Code backend | `docker compose restart backend` (le code est monté) |
 | Code frontend | rechargement à chaud du serveur Next.js |
 | Dépendances backend | rebuild de l'image backend |
-| `Dockerfile` ou dépendances frontend | `docker compose --profile app build backend frontend` puis `up -d` |
+| `Dockerfile` ou dépendances frontend | `docker compose build backend frontend` puis `docker compose up -d` |
 | Nouvelle migration | redémarrer le backend : Alembic applique `head` au démarrage |
-| `.env` | `docker compose --profile app up -d` pour recréer les conteneurs |
+| `.env` | `docker compose up -d` pour recréer les conteneurs |
 
 ## Réinitialiser une instance de développement
 
 ```sh
-docker compose --profile app down -v
+docker compose down -v
 ```
 
 **Attention** : `-v` supprime la base PostgreSQL et les volumes MQTT. Les
