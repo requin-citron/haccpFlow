@@ -30,6 +30,9 @@ role.
   `localStorage["haccpflow.sidebar.collapsed"]`.
 - Sous `1024 px`, le rail permanent disparaît au profit d'une barre supérieure
   sticky et d'un drawer accessible avec le bouton burger.
+- La barre supérieure se masque après `24 px` de descente et revient après
+  `8 px` de remontée. Elle est toujours visible près du sommet, après
+  navigation et lorsque le drawer est ouvert.
 - Les mêmes règles de modules activés et de rôle admin s'appliquent à la
   sidebar et au drawer.
 - L'entrée active suit le préfixe le plus long : `/cleaning/plans` prévaut sur

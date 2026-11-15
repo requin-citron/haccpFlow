@@ -41,10 +41,13 @@ export function AppShell({
   const pathname = usePathname();
   const { t } = useI18n();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileHeaderVisible, setMobileHeaderVisible] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const drawerWasOpenRef = useRef(false);
+  const lastScrollYRef = useRef(0);
+  const scrollTickingRef = useRef(false);
 
   const items = useMemo(
     () => visibleModuleNavItems(enabledModules, user.role === "admin"),
@@ -63,7 +66,58 @@ export function AppShell({
 
   useEffect(() => {
     setDrawerOpen(false);
+    setMobileHeaderVisible(true);
   }, [pathname]);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    lastScrollYRef.current = Math.max(0, window.scrollY);
+
+    if (!desktopQuery.matches) {
+      setMobileHeaderVisible(lastScrollYRef.current < 24);
+    }
+
+    const updateVisibility = () => {
+      scrollTickingRef.current = false;
+      if (desktopQuery.matches) {
+        setMobileHeaderVisible(true);
+        return;
+      }
+
+      const currentY = Math.max(0, window.scrollY);
+      const delta = currentY - lastScrollYRef.current;
+
+      if (currentY <= 16) {
+        setMobileHeaderVisible(true);
+      } else if (delta > 0 && currentY > 24) {
+        setMobileHeaderVisible(false);
+      } else if (delta < -8) {
+        setMobileHeaderVisible(true);
+      }
+
+      lastScrollYRef.current = currentY;
+    };
+
+    const onScroll = () => {
+      if (scrollTickingRef.current) {
+        return;
+      }
+      scrollTickingRef.current = true;
+      window.requestAnimationFrame(updateVisibility);
+    };
+
+    const onDesktopChange = () => {
+      lastScrollYRef.current = Math.max(0, window.scrollY);
+      setMobileHeaderVisible(true);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    desktopQuery.addEventListener("change", onDesktopChange);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      desktopQuery.removeEventListener("change", onDesktopChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!drawerOpen) {
@@ -132,6 +186,10 @@ export function AppShell({
   };
 
   const closeDrawer = () => setDrawerOpen(false);
+  const openDrawer = () => {
+    setMobileHeaderVisible(true);
+    setDrawerOpen(true);
+  };
 
   return (
     <div className="flex min-h-dvh">
@@ -218,12 +276,19 @@ export function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/95 px-3 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] text-slate-100 backdrop-blur lg:hidden">
+        <header
+          data-mobile-header
+          aria-hidden={!mobileHeaderVisible}
+          inert={!mobileHeaderVisible ? true : undefined}
+          className={`sticky top-0 z-30 border-b border-slate-800 bg-slate-900/95 px-3 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] text-slate-100 backdrop-blur transition-transform duration-200 ease-out motion-reduce:transition-none lg:hidden ${
+            mobileHeaderVisible ? "translate-y-0" : "-translate-y-full"
+          }`}
+        >
           <div className="flex min-h-12 items-center gap-2">
             <button
               ref={menuButtonRef}
               type="button"
-              onClick={() => setDrawerOpen(true)}
+              onClick={openDrawer}
               aria-label={t("Ouvrir le menu")}
               aria-expanded={drawerOpen}
               aria-controls="mobile-navigation-drawer"

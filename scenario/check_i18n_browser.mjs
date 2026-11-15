@@ -257,6 +257,40 @@ async function main() {
   report("rail permanent masqué sur mobile", mobileState.desktopSidebarHidden);
   report("bottom navigation absente", mobileState.bottomNavigationAbsent);
 
+  await evaluate("window.scrollTo(0, 500)");
+  report(
+    "header masqué en descendant",
+    await waitFor(
+      'document.querySelector("[data-mobile-header]")?.getAttribute("aria-hidden") === "true"',
+    ),
+  );
+  report(
+    "header retiré du focus en position masquée",
+    (await evaluate(
+      'document.querySelector("[data-mobile-header]")?.hasAttribute("inert")',
+    )) === true,
+  );
+
+  await evaluate("window.scrollTo(0, 420)");
+  report(
+    "header réaffiché en remontant",
+    await waitFor(
+      'document.querySelector("[data-mobile-header]")?.getAttribute("aria-hidden") === "false"',
+    ),
+  );
+
+  await evaluate("window.scrollTo(0, 500)");
+  await waitFor(
+    'document.querySelector("[data-mobile-header]")?.getAttribute("aria-hidden") === "true"',
+  );
+  await evaluate("window.scrollTo(0, 0)");
+  report(
+    "header visible au sommet",
+    await waitFor(
+      'document.querySelector("[data-mobile-header]")?.getAttribute("aria-hidden") === "false"',
+    ),
+  );
+
   const drawerOpened = await clickUntil(
     'button[aria-label="Ouvrir le menu"]',
     'document.querySelector("#mobile-navigation-drawer") !== null',
