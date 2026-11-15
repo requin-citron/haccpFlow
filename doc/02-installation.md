@@ -4,7 +4,7 @@
 
 - Docker Engine et Docker Compose v2.
 - Ports libres : `3000` (frontend), `8000` (API), `5432` et `1883` en local
-  uniquement.
+  uniquement. Traefik, s'il est déjà installé, écoute séparément sur `80`/`443`.
 - Pour le développement hors Docker : Python 3.13, `uv`, Node.js compatible avec
   Next.js 16, `yarn` 1.22.
 - Pour recompiler les PDF localement : TeX Live avec `pdflatex` et les paquets
@@ -51,6 +51,87 @@ migrations Alembic, puis crée l'administrateur si la table `users` est vide.
 
 `docker compose down` arrête et retire tous les conteneurs et le réseau Compose.
 Sans l'option `-v`, les volumes PostgreSQL et MQTT sont conservés.
+
+## Déploiement release
+
+Le compose racine est prévu pour le développement : il utilise la cible Next.js
+`development`, monte les sources et publie les ports sur toutes les interfaces.
+La release ajoute uniquement `docker-compose.release.yml` :
+
+| Fichier | Rôle |
+| --- | --- |
+| `docker-compose.yml` | Définition commune des services |
+| `docker-compose.release.yml` | Images de production, cookies sécurisés, ports locaux |
+
+Le fichier release ne crée ni réseau Traefik, ni routeur, ni certificat, ni port
+hôte. Il prépare des labels vides que l'administrateur renseigne directement
+dans le compose selon son installation Traefik existante.
+
+### Configuration
+
+```sh
+cp .env.example .env
+```
+
+Renseigner les secrets habituels. Aucune variable Traefik n'est demandée dans
+`.env` : les labels sont à compléter directement dans
+`docker-compose.release.yml`.
+
+Le service frontend écoute sur `3000` uniquement dans le réseau Compose. Aucun
+port hôte n'est publié pour le frontend ni pour le backend. Ton instance
+Traefik doit être raccordée au réseau Docker Compose pour router directement
+vers ces services.
+
+### Démarrage
+
+```sh
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.release.yml \
+  up -d --build
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.release.yml \
+  ps
+```
+
+La publication du domaine, le routage et les certificats restent gérés par
+Traefik déjà présent sur le serveur.
+
+Le fichier `docker-compose.release.yml` :
+
+- construit le frontend avec la cible `runner` et `NODE_ENV=production` ;
+- force `SESSION_COOKIE_SECURE=true` et `ENVIRONMENT=production` ;
+- désactive `/docs`, `/redoc` et `/openapi.json` ;
+- remplace le montage des sources backend par le seul volume durable
+  `./backend/data:/app/data` ;
+- ne publie aucun port hôte pour frontend/backend.
+
+### Mise à jour
+
+```sh
+git pull --ff-only
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.release.yml \
+  up -d --build
+```
+
+Les migrations Alembic sont appliquées au redémarrage du backend. Les volumes
+PostgreSQL, Mosquitto et `backend/data` sont conservés.
+
+### Arrêt
+
+Utiliser la même liste de fichiers pour cibler la bonne composition :
+
+```sh
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.release.yml \
+  down
+```
+
+Sans `-v`, aucune donnée persistante n'est supprimée.
 
 ## Premier administrateur
 

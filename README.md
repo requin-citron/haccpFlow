@@ -76,6 +76,30 @@ docker compose up -d --build
 l'infrastructure locale, préciser les services : `docker compose up -d db mosquitto`. `docker compose down` arrête et retire tous les conteneurs sans
 supprimer les volumes.
 
+### Déploiement release
+
+Le compose principal est orienté développement (hot reload, sources montées).
+Pour un serveur, ajouter uniquement l'override release :
+
+```sh
+cp .env.example .env
+# Renseigner les secrets puis, si nécessaire, les labels Traefik.
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.release.yml \
+  up -d --build
+```
+
+Cette combinaison construit le frontend avec sa cible `runner`, désactive les
+montages de code, force les cookies de session en mode `Secure`, désactive
+OpenAPI et ne publie aucun port hôte pour le frontend ou le backend.
+
+Le fichier release ne démarre pas Traefik et ne contient aucune variable
+Traefik dans `.env`. Les labels sont laissés vides directement dans
+`docker-compose.release.yml` : les renseigner selon le réseau, le routeur,
+l'entrypoint, le TLS et le certificate resolver déjà configurés sur le serveur.
+L'instance Traefik doit pouvoir joindre le réseau Docker Compose du frontend.
+
 ## Langues de l'interface
 
 Le français est la langue par défaut. Le bouton `FR / EN` du shell authentifié

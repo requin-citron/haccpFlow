@@ -1,0 +1,38 @@
+# Production defaults layered on top of docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.release.yml up -d --build
+#
+services:
+  backend:
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      DOCS_ENABLED: "false"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports: !reset []
+    # Keep durable LaTeX/PDF data, but never mount the source tree over the
+    # production image.
+    volumes: !override
+      - ./backend/data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      target: runner
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      SESSION_COOKIE_SECURE: "true"
+      WATCHPACK_POLLING: "false"
+    ports: !reset []
+    volumes: !reset []
+    # Values are intentionally empty. Fill them directly here according to the
+    # Traefik instance and Docker network already configured on the server.
+    labels:
+      traefik.enable: ""
+      traefik.docker.network: ""
+      traefik.http.routers.haccpflow.rule: ""
+      traefik.http.routers.haccpflow.entrypoints: ""
+      traefik.http.routers.haccpflow.tls: ""
+      traefik.http.routers.haccpflow.tls.certresolver: ""
+      traefik.http.services.haccpflow.loadbalancer.server.port: ""
