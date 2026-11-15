@@ -1,40 +1,9 @@
 import { EquipmentGroups } from "@/components/equipment/equipment-groups";
-import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import { getEnabledModules } from "@/lib/module-settings";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import type { CashRegister, CurrentUser, Equipment, Vehicle } from "@/lib/types";
-
-const STAT_TONES = {
-  slate: "bg-slate-100 text-slate-600",
-  sky: "bg-sky-50 text-sky-600",
-  indigo: "bg-indigo-50 text-indigo-600",
-} as const;
-
-function StatCard({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string;
-  value: number;
-  tone: keyof typeof STAT_TONES;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-      <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${STAT_TONES[tone]}`}>
-        {icon}
-      </span>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-        <p className="text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
-      </div>
-    </div>
-  );
-}
 
 export default async function EquipmentPage() {
   const locale = await getLocale();
@@ -50,8 +19,6 @@ export default async function EquipmentPage() {
       : Promise.resolve([] as CashRegister[]),
   ]);
   const isAdmin = user.role === "admin";
-  const fridgeCount = equipment.filter((item) => item.type === "fridge").length;
-  const freezerCount = equipment.length - fridgeCount;
 
   return (
     <div className="space-y-8">
@@ -69,27 +36,6 @@ export default async function EquipmentPage() {
           </p>
         </div>
       </header>
-
-      <section data-equipment-stats className="hidden gap-4 sm:grid sm:grid-cols-3">
-        <StatCard
-          label={t(locale, "Équipements actifs")}
-          value={equipment.length}
-          tone="slate"
-          icon={<GridIcon className="size-5" />}
-        />
-        <StatCard
-          label={t(locale, "Réfrigérateurs")}
-          value={fridgeCount}
-          tone="sky"
-          icon={<FridgeIcon className="size-5" />}
-        />
-        <StatCard
-          label={t(locale, "Congélateurs")}
-          value={freezerCount}
-          tone="indigo"
-          icon={<SnowflakeIcon className="size-5" />}
-        />
-      </section>
 
       <EquipmentGroups
         equipment={equipment}

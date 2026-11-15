@@ -197,6 +197,12 @@ Suppression définitive :
 | `PUT` | `/api/v1/transports/{transport_id}/readings` | admin, opérateur |
 | `DELETE` | `/api/v1/transports/{transport_id}` | admin |
 
+Les checkpoints transport utilisent les champs
+`initial_time`, `initial_temperature_celsius`, `in_progress_time` et
+`in_progress_temperature_celsius`. L'endpoint `/readings` accepte une mise à
+jour partielle : un champ absent conserve sa valeur, un champ `null` l'efface.
+Les anciens noms `departure_*` et `arrival_*` ne sont plus acceptés.
+
 ## Caisses et suivis
 
 | Méthode | Route | Accès |

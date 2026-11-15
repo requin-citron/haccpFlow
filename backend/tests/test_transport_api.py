@@ -69,8 +69,8 @@ def test_a_transport_can_use_a_registered_vehicle(
         admin_headers,
         vehicle_label=None,
         vehicle_id=vehicle["id"],
-        departure_time="08:00",
-        departure_temperature_celsius=3.5,
+        initial_time="08:00",
+        initial_temperature_celsius=3.5,
     )
 
     assert transport["vehicle"] == {
@@ -78,9 +78,9 @@ def test_a_transport_can_use_a_registered_vehicle(
         "name": "Camion frigo 1",
         "plate": "AB-123-CD",
     }
-    assert transport["departure_time"] == "08:00:00"
-    assert transport["departure_temperature_celsius"] == 3.5
-    assert transport["arrival_time"] is None
+    assert transport["initial_time"] == "08:00:00"
+    assert transport["initial_temperature_celsius"] == 3.5
+    assert transport["in_progress_time"] is None
     assert transport["is_complete"] is False
 
 
@@ -124,28 +124,28 @@ def test_an_unknown_vehicle_is_rejected(
     assert response.json()["code"] == "vehicle_not_found"
 
 
-def test_the_arrival_completes_the_transport(
+def test_the_in_progress_reading_completes_the_transport(
     api_client: TestClient, admin_headers: dict[str, str]
 ) -> None:
     transport = _create(
         api_client,
         admin_headers,
-        departure_time="08:00",
-        departure_temperature_celsius=3.5,
+        initial_time="08:00",
+        initial_temperature_celsius=3.5,
     )
 
     response = api_client.put(
         _readings_url(transport["id"]),
-        json={"arrival_time": "10:15", "arrival_temperature_celsius": 4},
+        json={"in_progress_time": "10:15", "in_progress_temperature_celsius": 4},
         headers=admin_headers,
     )
 
     assert response.status_code == 200
     body = response.json()
     assert body["is_complete"] is True
-    assert body["departure_time"] == "08:00:00"
-    assert body["departure_temperature_celsius"] == 3.5
-    assert body["arrival_temperature_celsius"] == 4
+    assert body["initial_time"] == "08:00:00"
+    assert body["initial_temperature_celsius"] == 3.5
+    assert body["in_progress_temperature_celsius"] == 4
 
 
 def test_a_night_delivery_is_accepted(
@@ -154,10 +154,10 @@ def test_a_night_delivery_is_accepted(
     transport = _create(
         api_client,
         admin_headers,
-        departure_time="23:30",
-        departure_temperature_celsius=3,
-        arrival_time="01:15",
-        arrival_temperature_celsius=4,
+        initial_time="23:30",
+        initial_temperature_celsius=3,
+        in_progress_time="01:15",
+        in_progress_temperature_celsius=4,
     )
 
     assert transport["is_complete"] is True
@@ -169,20 +169,20 @@ def test_a_readings_edit_does_not_touch_the_other_checkpoint(
     transport = _create(
         api_client,
         admin_headers,
-        departure_time="08:00",
-        departure_temperature_celsius=3.5,
-        arrival_time="10:15",
+        initial_time="08:00",
+        initial_temperature_celsius=3.5,
+        in_progress_time="10:15",
     )
 
     response = api_client.put(
         _readings_url(transport["id"]),
-        json={"arrival_temperature_celsius": 5},
+        json={"in_progress_temperature_celsius": 5},
         headers=admin_headers,
     )
 
     assert response.status_code == 200
-    assert response.json()["departure_temperature_celsius"] == 3.5
-    assert response.json()["arrival_temperature_celsius"] == 5
+    assert response.json()["initial_temperature_celsius"] == 3.5
+    assert response.json()["in_progress_temperature_celsius"] == 5
 
 
 def test_an_empty_readings_body_is_rejected(
@@ -196,17 +196,38 @@ def test_an_empty_readings_body_is_rejected(
     assert response.json()["code"] == "validation_error"
 
 
+@pytest.mark.parametrize(
+    "legacy_fields",
+    [
+        {"departure_time": "08:00"},
+        {"arrival_temperature_celsius": 4},
+    ],
+)
+def test_legacy_checkpoint_field_names_are_rejected(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+    legacy_fields: dict[str, Any],
+) -> None:
+    response = api_client.post(
+        TRANSPORTS,
+        json=_payload(**legacy_fields),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+
+
 def test_a_correction_is_audited(api_client: TestClient, admin_headers: dict[str, str]) -> None:
     transport = _create(
         api_client,
         admin_headers,
-        departure_time="08:00",
-        departure_temperature_celsius=3.5,
+        initial_time="08:00",
+        initial_temperature_celsius=3.5,
     )
 
     api_client.put(
         _readings_url(transport["id"]),
-        json={"departure_temperature_celsius": 8},
+        json={"initial_temperature_celsius": 8},
         headers=admin_headers,
     )
 
@@ -216,8 +237,8 @@ def test_a_correction_is_audited(api_client: TestClient, admin_headers: dict[str
     assert correction["target_id"] == transport["id"]
     assert correction["changes"] == [
         {
-            "field": "departure_temperature_celsius",
-            "label": "Température de départ",
+            "field": "initial_temperature_celsius",
+            "label": "Température initiale",
             "previous": "3.50",
             "new": "8.00",
         }
@@ -230,14 +251,14 @@ def test_a_no_op_readings_edit_adds_no_audit_line(
     transport = _create(
         api_client,
         admin_headers,
-        departure_time="08:00",
-        departure_temperature_celsius=3.5,
+        initial_time="08:00",
+        initial_temperature_celsius=3.5,
     )
     before = len(api_client.get(f"{HISTORY}?entity=transport", headers=admin_headers).json())
 
     response = api_client.put(
         _readings_url(transport["id"]),
-        json={"departure_time": "08:00"},
+        json={"initial_time": "08:00"},
         headers=admin_headers,
     )
 
@@ -252,8 +273,8 @@ def test_the_header_can_be_corrected_without_touching_the_readings(
     transport = _create(
         api_client,
         admin_headers,
-        departure_time="08:00",
-        departure_temperature_celsius=3.5,
+        initial_time="08:00",
+        initial_temperature_celsius=3.5,
     )
 
     response = api_client.put(
@@ -264,7 +285,7 @@ def test_the_header_can_be_corrected_without_touching_the_readings(
 
     assert response.status_code == 200
     assert response.json()["place"] == "Épicerie Dubois"
-    assert response.json()["departure_temperature_celsius"] == 3.5
+    assert response.json()["initial_temperature_celsius"] == 3.5
 
 
 def test_the_list_filters_by_lot_and_date(
@@ -302,7 +323,7 @@ def test_a_transport_stays_readable_after_its_vehicle_is_deactivated(
         admin_headers,
         vehicle_label=None,
         vehicle_id=vehicle["id"],
-        departure_time="08:00",
+        initial_time="08:00",
     )
     api_client.delete(f"{VEHICLES}/{vehicle['id']}", headers=admin_headers)
 
@@ -312,7 +333,7 @@ def test_a_transport_stays_readable_after_its_vehicle_is_deactivated(
 
     edited = api_client.put(
         _readings_url(transport["id"]),
-        json={"arrival_temperature_celsius": 4},
+        json={"in_progress_temperature_celsius": 4},
         headers=admin_headers,
     )
     assert edited.status_code == 200
@@ -334,7 +355,7 @@ def test_a_temperature_out_of_bounds_is_rejected(
 ) -> None:
     response = api_client.post(
         TRANSPORTS,
-        json=_payload(departure_temperature_celsius=-300),
+        json=_payload(initial_temperature_celsius=-300),
         headers=admin_headers,
     )
 
@@ -373,14 +394,14 @@ def test_an_operator_can_record_a_transport(
         api_client,
         operator_headers,
         vehicle_label="Camion opérateur",
-        departure_time="08:00",
+        initial_time="08:00",
     )
 
-    assert transport["departure_time"] == "08:00:00"
+    assert transport["initial_time"] == "08:00:00"
     assert (
         api_client.put(
             _readings_url(transport["id"]),
-            json={"arrival_time": "09:00"},
+            json={"in_progress_time": "09:00"},
             headers=operator_headers,
         ).status_code
         == 200
@@ -396,7 +417,7 @@ def test_unknown_transport_returns_404(
     assert api_client.get(f"{TRANSPORTS}/{missing}", headers=admin_headers).status_code == 404
     assert (
         api_client.put(
-            _readings_url(missing), json={"arrival_time": "09:00"}, headers=admin_headers
+            _readings_url(missing), json={"in_progress_time": "09:00"}, headers=admin_headers
         ).status_code
         == 404
     )

@@ -318,10 +318,10 @@ async def _transports(db: AsyncSession, start: date | None, end: date | None) ->
         "Véhicule",
         "Plaque",
         "Véhicule référencé",
-        "Départ — heure",
-        "Départ — température (°C)",
-        "Arrivée — heure",
-        "Arrivée — température (°C)",
+        "Initial — heure",
+        "Initial — température (°C)",
+        "En cours — heure",
+        "En cours — température (°C)",
         "Observation",
         "Chaîne du froid",
     ]
@@ -346,18 +346,18 @@ async def _transports(db: AsyncSession, start: date | None, end: date | None) ->
                 vehicle.name if vehicle is not None else _text(transport.vehicle_label),
                 _text(vehicle.plate) if vehicle is not None else "",
                 _boolean(vehicle is not None),
-                _time(transport.departure_time),
-                _decimal(transport.departure_temperature_celsius),
-                _time(transport.arrival_time),
-                _decimal(transport.arrival_temperature_celsius),
+                _time(transport.initial_time),
+                _decimal(transport.initial_temperature_celsius),
+                _time(transport.in_progress_time),
+                _decimal(transport.in_progress_temperature_celsius),
                 _text(transport.observation),
                 (
                     "Complet"
                     if transport_is_complete(
-                        departure_time=transport.departure_time,
-                        departure_temperature_celsius=transport.departure_temperature_celsius,
-                        arrival_time=transport.arrival_time,
-                        arrival_temperature_celsius=transport.arrival_temperature_celsius,
+                        initial_time=transport.initial_time,
+                        initial_temperature_celsius=transport.initial_temperature_celsius,
+                        in_progress_time=transport.in_progress_time,
+                        in_progress_temperature_celsius=transport.in_progress_temperature_celsius,
                     )
                     else "En cours"
                 ),

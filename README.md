@@ -14,8 +14,8 @@ sanitaire :
   refroidissement, chacune avec ses heures, sa température cible et ses
   observations.
 - **Transport** — référentiel des véhicules (nom et plaque) et registre des
-  déplacements : lieu, produit, lot, puis les relevés de chaîne du froid au
-  départ et à l'arrivée.
+  déplacements : lieu, produit, lot, puis les relevés de chaîne du froid
+  initial et en cours.
 - **Export CSV** — six extractions prêtes pour Excel (relevés, nettoyages,
   pasteurisation, transport, états successifs des caisses, documents générés)
   filtrables par période, désactivés compris, pour répondre à un contrôle ou

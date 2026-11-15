@@ -21,7 +21,7 @@ export function TransportCheckpointForm({
 }: {
   transportId: string;
   /** Drives the field names sent to the API. */
-  kind: "departure" | "arrival";
+  kind: "initial" | "in_progress";
   title: string;
   rank: number;
   time: string | null;

@@ -59,16 +59,16 @@ def _transport_read(transport: Transport, vehicle: Vehicle | None) -> TransportR
         product_name=transport.product_name,
         lot_number=transport.lot_number,
         vehicle=vehicle_read,
-        departure_time=transport.departure_time,
-        departure_temperature_celsius=transport.departure_temperature_celsius,
-        arrival_time=transport.arrival_time,
-        arrival_temperature_celsius=transport.arrival_temperature_celsius,
+        initial_time=transport.initial_time,
+        initial_temperature_celsius=transport.initial_temperature_celsius,
+        in_progress_time=transport.in_progress_time,
+        in_progress_temperature_celsius=transport.in_progress_temperature_celsius,
         observation=transport.observation,
         is_complete=transport_is_complete(
-            departure_time=transport.departure_time,
-            departure_temperature_celsius=transport.departure_temperature_celsius,
-            arrival_time=transport.arrival_time,
-            arrival_temperature_celsius=transport.arrival_temperature_celsius,
+            initial_time=transport.initial_time,
+            initial_temperature_celsius=transport.initial_temperature_celsius,
+            in_progress_time=transport.in_progress_time,
+            in_progress_temperature_celsius=transport.in_progress_temperature_celsius,
         ),
         created_at=transport.created_at,
         updated_at=transport.updated_at,
@@ -129,16 +129,16 @@ async def create_transport(
         lot_number=payload.lot_number,
         vehicle_id=vehicle.id if vehicle is not None else None,
         vehicle_label=payload.vehicle_label,
-        departure_time=payload.departure_time,
-        departure_temperature_celsius=(
-            as_celsius(payload.departure_temperature_celsius)
-            if payload.departure_temperature_celsius is not None
+        initial_time=payload.initial_time,
+        initial_temperature_celsius=(
+            as_celsius(payload.initial_temperature_celsius)
+            if payload.initial_temperature_celsius is not None
             else None
         ),
-        arrival_time=payload.arrival_time,
-        arrival_temperature_celsius=(
-            as_celsius(payload.arrival_temperature_celsius)
-            if payload.arrival_temperature_celsius is not None
+        in_progress_time=payload.in_progress_time,
+        in_progress_temperature_celsius=(
+            as_celsius(payload.in_progress_temperature_celsius)
+            if payload.in_progress_temperature_celsius is not None
             else None
         ),
         observation=payload.observation,
@@ -152,14 +152,14 @@ async def create_transport(
             TransportEdit(
                 transport_id=transport.id,
                 action=TransportEditAction.CREATED,
-                previous_departure_time=None,
-                new_departure_time=readings["departure_time"],
-                previous_departure_temperature_celsius=None,
-                new_departure_temperature_celsius=readings["departure_temperature_celsius"],
-                previous_arrival_time=None,
-                new_arrival_time=readings["arrival_time"],
-                previous_arrival_temperature_celsius=None,
-                new_arrival_temperature_celsius=readings["arrival_temperature_celsius"],
+                previous_initial_time=None,
+                new_initial_time=readings["initial_time"],
+                previous_initial_temperature_celsius=None,
+                new_initial_temperature_celsius=readings["initial_temperature_celsius"],
+                previous_in_progress_time=None,
+                new_in_progress_time=readings["in_progress_time"],
+                previous_in_progress_temperature_celsius=None,
+                new_in_progress_temperature_celsius=readings["in_progress_temperature_celsius"],
                 previous_observation=None,
                 new_observation=readings["observation"],
                 changed_by=user.id,
@@ -228,14 +228,14 @@ async def update_transport_readings(
         TransportEdit(
             transport_id=transport.id,
             action=(TransportEditAction.UPDATED if had_readings else TransportEditAction.CREATED),
-            previous_departure_time=previous["departure_time"],
-            new_departure_time=current["departure_time"],
-            previous_departure_temperature_celsius=previous["departure_temperature_celsius"],
-            new_departure_temperature_celsius=current["departure_temperature_celsius"],
-            previous_arrival_time=previous["arrival_time"],
-            new_arrival_time=current["arrival_time"],
-            previous_arrival_temperature_celsius=previous["arrival_temperature_celsius"],
-            new_arrival_temperature_celsius=current["arrival_temperature_celsius"],
+            previous_initial_time=previous["initial_time"],
+            new_initial_time=current["initial_time"],
+            previous_initial_temperature_celsius=previous["initial_temperature_celsius"],
+            new_initial_temperature_celsius=current["initial_temperature_celsius"],
+            previous_in_progress_time=previous["in_progress_time"],
+            new_in_progress_time=current["in_progress_time"],
+            previous_in_progress_temperature_celsius=previous["in_progress_temperature_celsius"],
+            new_in_progress_temperature_celsius=current["in_progress_temperature_celsius"],
             previous_observation=previous["observation"],
             new_observation=current["observation"],
             changed_by=user.id,

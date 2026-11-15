@@ -93,15 +93,15 @@ export function TransportCard({
 
       <div className="grid grid-cols-2 gap-3">
         <CheckpointTile
-          label={t(locale, "Départ")}
-          time={transport.departure_time}
-          temperature={transport.departure_temperature_celsius}
+          label={t(locale, "Initial")}
+          time={transport.initial_time}
+          temperature={transport.initial_temperature_celsius}
           locale={locale}
         />
         <CheckpointTile
-          label={t(locale, "Arrivée")}
-          time={transport.arrival_time}
-          temperature={transport.arrival_temperature_celsius}
+          label={t(locale, "En cours")}
+          time={transport.in_progress_time}
+          temperature={transport.in_progress_temperature_celsius}
           locale={locale}
         />
       </div>

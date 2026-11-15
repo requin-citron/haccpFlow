@@ -133,7 +133,7 @@ Règles :
 
 - Champs : date, lieu, produit, numéro de lot (optionnel), véhicule du
   référentiel ou libellé libre, observation.
-- Deux checkpoints : départ et arrivée, chacun avec heure et température.
+- Deux checkpoints : initial et en cours, chacun avec heure et température.
 - Un transport est complet si les deux heures et les deux températures sont
   présentes.
 - Les corrections des relevés et de l'observation sont auditées.

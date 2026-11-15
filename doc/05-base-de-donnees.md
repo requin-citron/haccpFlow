@@ -128,7 +128,8 @@ Les révisions vivent dans `backend/alembic/versions/` :
 | `0011_product_rows_variable` | Type `products`. |
 | `0012_template_image_variables` | Type `image` et assets. |
 | `0013_refresh_token_family` | Famille de rotation des refresh tokens. |
-| `0014_user_auth_version` | Version d'authentification des comptes. |
+| `0014_user_auth_version` | Version d'authentification des utilisateurs. |
+| `0015_transport_checkpoints` | Renommage des checkpoints transport en initial et en cours. |
 
 `users.auth_version` est incrémenté lors d'un changement de rôle, d'une
 désactivation ou d'une réinitialisation de mot de passe. Les access tokens

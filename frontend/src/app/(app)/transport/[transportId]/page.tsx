@@ -112,7 +112,7 @@ export default async function TransportDetailPage({
           <p className="text-xs text-slate-500">
             {t(
               locale,
-              "Saisis le départ avant de partir, puis l'arrivée à la livraison. Chaque enregistrement est indépendant, et les corrections sont journalisées.",
+              "Saisis la température initiale, puis la température en cours pendant le transport. Chaque enregistrement est indépendant, et les corrections sont journalisées.",
             )}
           </p>
         </div>
@@ -120,19 +120,19 @@ export default async function TransportDetailPage({
         <div className="space-y-4">
           <TransportCheckpointForm
             transportId={transport.id}
-            kind="departure"
-            title={t(locale, "Départ")}
+            kind="initial"
+            title={t(locale, "Initial")}
             rank={1}
-            time={transport.departure_time}
-            temperature={transport.departure_temperature_celsius}
+            time={transport.initial_time}
+            temperature={transport.initial_temperature_celsius}
           />
           <TransportCheckpointForm
             transportId={transport.id}
-            kind="arrival"
-            title={t(locale, "Arrivée")}
+            kind="in_progress"
+            title={t(locale, "En cours")}
             rank={2}
-            time={transport.arrival_time}
-            temperature={transport.arrival_temperature_celsius}
+            time={transport.in_progress_time}
+            temperature={transport.in_progress_temperature_celsius}
           />
           <TransportNoteForm transportId={transport.id} observation={transport.observation} />
         </div>

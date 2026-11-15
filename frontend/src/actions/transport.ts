@@ -13,10 +13,10 @@ import type { Transport } from "@/lib/types";
 const TRANSPORTS_PATH = "/api/v1/transports";
 
 const READING_FIELDS = [
-  "departure_time",
-  "departure_temperature_celsius",
-  "arrival_time",
-  "arrival_temperature_celsius",
+  "initial_time",
+  "initial_temperature_celsius",
+  "in_progress_time",
+  "in_progress_temperature_celsius",
   "observation",
 ] as const;
 
@@ -116,7 +116,7 @@ export async function createTransportAction(
   }
 
   revalidatePath("/transport");
-  // Straight to the detail page: the departure is declared right away.
+  // Straight to the detail page: the initial reading is declared right away.
   redirect(`/transport/${created.id}`);
 }
 

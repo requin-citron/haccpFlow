@@ -272,7 +272,6 @@ async function main() {
 
   const equipmentCarousel = await evaluate(`(() => {
     const root = document.querySelector("[data-equipment-carousel]");
-    const stats = document.querySelector("[data-equipment-stats]");
     if (!root) return null;
     const groups = [...root.querySelectorAll("[data-equipment-group]")];
     return {
@@ -286,7 +285,7 @@ async function main() {
           root.querySelector("[data-equipment-previous]")?.parentElement?.parentElement ??
             root,
         ).display !== "none",
-      statsHidden: !!stats && getComputedStyle(stats).display === "none",
+      statsAbsent: document.querySelector("[data-equipment-stats]") === null,
     };
   })()`);
   report("carrousel Matériel présent", equipmentCarousel !== null);
@@ -301,7 +300,7 @@ async function main() {
       equipmentCarousel.dotCount === equipmentCarousel.groupCount,
     );
     report("contrôles du carrousel visibles", equipmentCarousel.controlsVisible);
-    report("statistiques masquées sur mobile", equipmentCarousel.statsHidden);
+    report("statistiques absentes", equipmentCarousel.statsAbsent);
 
     const nextGroup = await clickUntil(
       "[data-equipment-next]",
@@ -456,7 +455,6 @@ async function main() {
   await sleep(1500);
   const desktopEquipment = await evaluate(`(() => {
     const root = document.querySelector("[data-equipment-carousel]");
-    const stats = document.querySelector("[data-equipment-stats]");
     if (!root) return null;
     const groups = [...root.querySelectorAll("[data-equipment-group]")];
     return {
@@ -468,13 +466,13 @@ async function main() {
         getComputedStyle(
           root.querySelector("[data-equipment-previous]").parentElement.parentElement,
         ).display === "none",
-      statsVisible: !!stats && getComputedStyle(stats).display !== "none",
+      statsAbsent: document.querySelector("[data-equipment-stats]") === null,
     };
   })()`);
   if (desktopEquipment) {
     report("tous les groupes Matériel visibles sur desktop", desktopEquipment.allGroupsVisible);
     report("contrôles carrousel masqués sur desktop", desktopEquipment.controlsHidden);
-    report("statistiques visibles sur desktop", desktopEquipment.statsVisible);
+    report("statistiques absentes sur desktop", desktopEquipment.statsAbsent);
   }
   const collapseClicked = await clickUntil(
     'button[aria-label="Réduire la navigation"]',

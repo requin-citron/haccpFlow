@@ -106,7 +106,7 @@ export function TransportFormDialog({
                   {isEdit
                     ? t("Les relevés de température ne sont pas touchés.")
                     : t(
-                        "Les températures de départ et d'arrivée se saisissent ensuite, sur la fiche du transport.",
+                        "Les températures initiale et en cours se saisissent ensuite, sur la fiche du transport.",
                       )}
                 </p>
               </div>

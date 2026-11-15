@@ -202,10 +202,10 @@ export type Transport = {
   product_name: string;
   lot_number: string | null;
   vehicle: TransportVehicle;
-  departure_time: string | null;
-  departure_temperature_celsius: number | null;
-  arrival_time: string | null;
-  arrival_temperature_celsius: number | null;
+  initial_time: string | null;
+  initial_temperature_celsius: number | null;
+  in_progress_time: string | null;
+  in_progress_temperature_celsius: number | null;
   observation: string | null;
   is_complete: boolean;
   created_at: string;

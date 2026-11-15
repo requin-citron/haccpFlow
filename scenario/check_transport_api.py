@@ -46,11 +46,11 @@ def main() -> None:
                 "product_name": "Crème anglaise",
                 "lot_number": f"LOT-{suffix}",
                 "vehicle_id": vehicle["id"],
-                "departure_time": "08:00",
-                "departure_temperature_celsius": 3.5,
+                "initial_time": "08:00",
+                "initial_temperature_celsius": 3.5,
             },
         )
-        report.status("transport créé avec le départ", status, 201)
+        report.status("transport créé avec le relevé initial", status, 201)
         if isinstance(transport, dict):
             transport_id = transport["id"]
             created_transports.append(transport_id)
@@ -65,14 +65,14 @@ def main() -> None:
                 "PUT",
                 f"{TRANSPORTS}/{transport_id}/readings",
                 token=token,
-                body={"arrival_time": "10:15", "arrival_temperature_celsius": 4},
+                body={"in_progress_time": "10:15", "in_progress_temperature_celsius": 4},
             )
-            report.status("arrivée enregistrée", status)
+            report.status("relevé en cours enregistré", status)
             if isinstance(completed, dict):
                 report.check("transport complet", completed["is_complete"] is True)
                 report.equals(
-                    "départ conservé",
-                    completed["departure_temperature_celsius"],
+                    "relevé initial conservé",
+                    completed["initial_temperature_celsius"],
                     3.5,
                 )
 
@@ -124,7 +124,7 @@ def main() -> None:
         "PUT",
         f"{TRANSPORTS}/{transport_id}/readings",
         token=token,
-        body={"arrival_temperature_celsius": 8},
+        body={"in_progress_temperature_celsius": 8},
     )
     report.status("correction d'un relevé", status)
 
@@ -137,8 +137,8 @@ def main() -> None:
             corrected["changes"],
             [
                 {
-                    "field": "arrival_temperature_celsius",
-                    "label": "Température d'arrivée",
+                    "field": "in_progress_temperature_celsius",
+                    "label": "Température en cours",
                     "previous": "4.00",
                     "new": "8.00",
                 }

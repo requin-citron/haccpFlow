@@ -109,8 +109,8 @@ def _seed(api_client: TestClient, headers: dict[str, str]) -> dict[str, Any]:
             "product_name": "Crème export",
             "lot_number": "LOT-EXPORT",
             "vehicle_id": vehicle["id"],
-            "departure_time": "08:00",
-            "departure_temperature_celsius": 3.5,
+            "initial_time": "08:00",
+            "initial_temperature_celsius": 3.5,
         },
         headers=headers,
     ).json()
@@ -213,7 +213,7 @@ def test_the_transport_export_shows_the_vehicle(
     assert referenced[headers.index("Véhicule")] == "Camion export"
     assert referenced[headers.index("Plaque")] == "EX-123-PO"
     assert referenced[headers.index("Véhicule référencé")] == "Oui"
-    assert referenced[headers.index("Départ — température (°C)")] == "3,50"
+    assert referenced[headers.index("Initial — température (°C)")] == "3,50"
     assert referenced[headers.index("Chaîne du froid")] == "En cours"
 
     external = next(row for row in rows[1:] if row[1] == "Glace export")

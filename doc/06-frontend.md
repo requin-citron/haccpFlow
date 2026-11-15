@@ -87,8 +87,8 @@ page `/history` filtre ses sources et ses entrées de la même façon.
 
 ## Matériel sur mobile
 
-- Sous `640 px`, les statistiques globales sont masquées : chaque groupe affiche
-  directement son nombre d'éléments.
+- Les cartes de statistiques globales ne sont pas affichées : chaque groupe
+  indique directement son nombre d'éléments.
 - Le carrousel mobile regroupe Réfrigérateurs, Congélateurs, Véhicules et
   Caisses dans cet ordre. Les deux derniers groupes sont absents lorsque leur
   module est désactivé.

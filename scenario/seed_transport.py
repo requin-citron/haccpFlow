@@ -12,7 +12,7 @@ from common import API_V1, Report, call, login, require_env, today
 TRANSPORTS = f"{API_V1}/transports"
 VEHICLES = f"{API_V1}/vehicles"
 
-#: lot, produit, lieu, plaque attendue, départ (heure, °C), arrivée ou None
+#: lot, produit, lieu, plaque attendue, initial (heure, °C), en cours ou None
 DEMO_TRANSPORTS: list[tuple[str, str, str, str, tuple[str, float], tuple[str, float] | None]] = [
     (
         "LOT-TR-001",
@@ -53,7 +53,7 @@ def main() -> None:
         if vehicle["plate"]
     }
 
-    for lot, product, place, plate, departure, arrival in DEMO_TRANSPORTS:
+    for lot, product, place, plate, initial, in_progress in DEMO_TRANSPORTS:
         existing = call("GET", f"{TRANSPORTS}?lot={lot}", token=token)[1]
         if isinstance(existing, list) and existing:
             report.info(f"transport {lot} : déjà présent, ignoré")
@@ -76,31 +76,31 @@ def main() -> None:
         if status != 201 or not isinstance(transport, dict):
             continue
 
-        start_time, start_temperature = departure
+        start_time, start_temperature = initial
         status, _ = call(
             "PUT",
             f"{TRANSPORTS}/{transport['id']}/readings",
             token=token,
             body={
-                "departure_time": start_time,
-                "departure_temperature_celsius": start_temperature,
+                "initial_time": start_time,
+                "initial_temperature_celsius": start_temperature,
             },
         )
-        report.status(f"  {lot} · départ déclaré", status)
+        report.status(f"  {lot} · relevé initial déclaré", status)
 
-        if arrival is not None:
-            end_time, end_temperature = arrival
+        if in_progress is not None:
+            end_time, end_temperature = in_progress
             status, body = call(
                 "PUT",
                 f"{TRANSPORTS}/{transport['id']}/readings",
                 token=token,
                 body={
-                    "arrival_time": end_time,
-                    "arrival_temperature_celsius": end_temperature,
-                    "observation": "Produit conforme à l'arrivée",
+                    "in_progress_time": end_time,
+                    "in_progress_temperature_celsius": end_temperature,
+                    "observation": "Produit conforme pendant le transport",
                 },
             )
-            report.status(f"  {lot} · arrivée déclarée", status)
+            report.status(f"  {lot} · relevé en cours déclaré", status)
             if isinstance(body, dict):
                 report.check(f"  {lot} · chaîne du froid complète", body["is_complete"] is True)
 

@@ -227,7 +227,7 @@ def main() -> None:
     if isinstance(transports, list) and transports:
         status, html = fetch_page(f"/transport/{transports[0]['id']}", cookie=cookie)
         report.status("/transport/{id}", status)
-        for label in ("Relevés de température", "Départ", "Arrivée", "Observation"):
+        for label in ("Relevés de température", "Initial", "En cours", "Observation"):
             report.check(f"« {label} » rendu", label in html)
     else:
         report.info("aucun transport : lance seed_transport.py pour voir le détail rempli")

@@ -75,7 +75,7 @@ export default async function TransportPage({
           <p className="mt-1 max-w-xl text-sm text-slate-500">
             {t(
               locale,
-              "Chaque déplacement est enregistré au départ, puis complété à l'arrivée avec les deux températures de la chaîne du froid.",
+              "Chaque déplacement reçoit une température initiale, puis une température en cours avec les deux mesures de la chaîne du froid.",
             )}
           </p>
         </div>

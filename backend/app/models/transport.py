@@ -43,12 +43,12 @@ class Transport(TimestampMixin, Base):
         nullable=True,
     )
     vehicle_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    departure_time: Mapped[time | None] = mapped_column(Time, nullable=True)
-    departure_temperature_celsius: Mapped[Decimal | None] = mapped_column(
+    initial_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    initial_temperature_celsius: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2), nullable=True
     )
-    arrival_time: Mapped[time | None] = mapped_column(Time, nullable=True)
-    arrival_temperature_celsius: Mapped[Decimal | None] = mapped_column(
+    in_progress_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    in_progress_temperature_celsius: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2), nullable=True
     )
     observation: Mapped[str | None] = mapped_column(String(2000), nullable=True)
@@ -75,20 +75,20 @@ class TransportEdit(Base):
         ),
         nullable=False,
     )
-    previous_departure_time: Mapped[time | None] = mapped_column(Time, nullable=True)
-    new_departure_time: Mapped[time | None] = mapped_column(Time, nullable=True)
-    previous_departure_temperature_celsius: Mapped[Decimal | None] = mapped_column(
+    previous_initial_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    new_initial_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    previous_initial_temperature_celsius: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2), nullable=True
     )
-    new_departure_temperature_celsius: Mapped[Decimal | None] = mapped_column(
+    new_initial_temperature_celsius: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2), nullable=True
     )
-    previous_arrival_time: Mapped[time | None] = mapped_column(Time, nullable=True)
-    new_arrival_time: Mapped[time | None] = mapped_column(Time, nullable=True)
-    previous_arrival_temperature_celsius: Mapped[Decimal | None] = mapped_column(
+    previous_in_progress_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    new_in_progress_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    previous_in_progress_temperature_celsius: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2), nullable=True
     )
-    new_arrival_temperature_celsius: Mapped[Decimal | None] = mapped_column(
+    new_in_progress_temperature_celsius: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2), nullable=True
     )
     previous_observation: Mapped[str | None] = mapped_column(String(2000), nullable=True)

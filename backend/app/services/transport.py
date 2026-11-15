@@ -12,26 +12,26 @@ from app.models.transport import Transport
 
 #: Fields covered by the readings audit.
 TRANSPORT_READING_FIELDS = (
-    "departure_time",
-    "departure_temperature_celsius",
-    "arrival_time",
-    "arrival_temperature_celsius",
+    "initial_time",
+    "initial_temperature_celsius",
+    "in_progress_time",
+    "in_progress_temperature_celsius",
     "observation",
 )
 
 
 def transport_is_complete(
     *,
-    departure_time: time | None,
-    departure_temperature_celsius: Decimal | None,
-    arrival_time: time | None,
-    arrival_temperature_celsius: Decimal | None,
+    initial_time: time | None,
+    initial_temperature_celsius: Decimal | None,
+    in_progress_time: time | None,
+    in_progress_temperature_celsius: Decimal | None,
 ) -> bool:
     return (
-        departure_time is not None
-        and departure_temperature_celsius is not None
-        and arrival_time is not None
-        and arrival_temperature_celsius is not None
+        initial_time is not None
+        and initial_temperature_celsius is not None
+        and in_progress_time is not None
+        and in_progress_temperature_celsius is not None
     )
 
 

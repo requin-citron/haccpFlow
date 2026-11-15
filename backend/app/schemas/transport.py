@@ -11,14 +11,14 @@ from app.schemas.equipment import MAX_STORABLE_CELSIUS, MIN_ABSOLUTE_CELSIUS
 class TransportReadingsFields(BaseModel):
     """The five cold-chain fields, shared by creation and later edits."""
 
-    departure_time: time | None = None
-    departure_temperature_celsius: float | None = Field(
+    initial_time: time | None = None
+    initial_temperature_celsius: float | None = Field(
         default=None,
         ge=MIN_ABSOLUTE_CELSIUS,
         le=MAX_STORABLE_CELSIUS,
     )
-    arrival_time: time | None = None
-    arrival_temperature_celsius: float | None = Field(
+    in_progress_time: time | None = None
+    in_progress_temperature_celsius: float | None = Field(
         default=None,
         ge=MIN_ABSOLUTE_CELSIUS,
         le=MAX_STORABLE_CELSIUS,
@@ -77,7 +77,7 @@ class TransportHeaderFields(BaseModel):
 
 
 class TransportCreate(TransportHeaderFields, TransportReadingsFields):
-    """Payload accepted by POST: the header plus, optionally, the departure."""
+    """Payload accepted by POST: the header plus, optionally, the initial reading."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -102,10 +102,10 @@ class TransportRead(BaseModel):
     product_name: str
     lot_number: str | None
     vehicle: TransportVehicleRead
-    departure_time: time | None
-    departure_temperature_celsius: float | None
-    arrival_time: time | None
-    arrival_temperature_celsius: float | None
+    initial_time: time | None
+    initial_temperature_celsius: float | None
+    in_progress_time: time | None
+    in_progress_temperature_celsius: float | None
     observation: str | None
     #: True once both checkpoints carry a time and a temperature.
     is_complete: bool

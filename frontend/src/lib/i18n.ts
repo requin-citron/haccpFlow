@@ -569,8 +569,8 @@ const FR_MESSAGES = {
   "Pré": "Pré",
   "Pal": "Pal",
   "Ref": "Ref",
-  "Chaque déplacement est enregistré au départ, puis complété à l'arrivée avec les deux températures de la chaîne du froid.":
-    "Chaque déplacement est enregistré au départ, puis complété à l'arrivée avec les deux températures de la chaîne du froid.",
+  "Chaque déplacement reçoit une température initiale, puis une température en cours avec les deux mesures de la chaîne du froid.":
+    "Chaque déplacement reçoit une température initiale, puis une température en cours avec les deux mesures de la chaîne du froid.",
   "Transports trouvés": "Transports trouvés",
   "Transports enregistrés": "Transports enregistrés",
   "Terminés": "Terminés",
@@ -584,18 +584,17 @@ const FR_MESSAGES = {
   "non référencé": "non référencé",
   "Chaîne du froid complète": "Chaîne du froid complète",
   "Transport en cours": "Transport en cours",
-  "Saisis le départ avant de partir, puis l'arrivée à la livraison. Chaque enregistrement est indépendant, et les corrections sont journalisées.":
-    "Saisis le départ avant de partir, puis l'arrivée à la livraison. Chaque enregistrement est indépendant, et les corrections sont journalisées.",
-  "Départ": "Départ",
-  "Arrivée": "Arrivée",
+  "Saisis la température initiale, puis la température en cours pendant le transport. Chaque enregistrement est indépendant, et les corrections sont journalisées.":
+    "Saisis la température initiale, puis la température en cours pendant le transport. Chaque enregistrement est indépendant, et les corrections sont journalisées.",
+  "Initial": "Initial",
   "heure non saisie": "heure non saisie",
   "à {time}": "à {time}",
   "Nouveau transport": "Nouveau transport",
   "Modifier le transport": "Modifier le transport",
   "Les relevés de température ne sont pas touchés.":
     "Les relevés de température ne sont pas touchés.",
-  "Les températures de départ et d'arrivée se saisissent ensuite, sur la fiche du transport.":
-    "Les températures de départ et d'arrivée se saisissent ensuite, sur la fiche du transport.",
+  "Les températures initiale et en cours se saisissent ensuite, sur la fiche du transport.":
+    "Les températures initiale et en cours se saisissent ensuite, sur la fiche du transport.",
   "Produit transporté": "Produit transporté",
   "Lieu de livraison": "Lieu de livraison",
   "Autre véhicule (non référencé)…": "Autre véhicule (non référencé)…",
@@ -1475,8 +1474,8 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Pré": "Pre",
   "Pal": "Hold",
   "Ref": "Cool",
-  "Chaque déplacement est enregistré au départ, puis complété à l'arrivée avec les deux températures de la chaîne du froid.":
-    "Each trip is recorded at departure, then completed on arrival with both cold-chain temperatures.",
+  "Chaque déplacement reçoit une température initiale, puis une température en cours avec les deux mesures de la chaîne du froid.":
+    "Each trip receives an initial temperature, then an in-progress temperature using both cold-chain measurements.",
   "Transports trouvés": "Transports found",
   "Transports enregistrés": "Recorded transports",
   "Terminés": "Completed",
@@ -1490,18 +1489,17 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "non référencé": "unregistered",
   "Chaîne du froid complète": "Cold chain complete",
   "Transport en cours": "Transport in progress",
-  "Saisis le départ avant de partir, puis l'arrivée à la livraison. Chaque enregistrement est indépendant, et les corrections sont journalisées.":
-    "Enter departure before leaving, then arrival on delivery. Each entry is independent and corrections are logged.",
-  "Départ": "Departure",
-  "Arrivée": "Arrival",
+  "Saisis la température initiale, puis la température en cours pendant le transport. Chaque enregistrement est indépendant, et les corrections sont journalisées.":
+    "Enter the initial temperature, then the in-progress temperature during transport. Each entry is independent and corrections are logged.",
+  "Initial": "Initial",
   "heure non saisie": "time not entered",
   "à {time}": "at {time}",
   "Nouveau transport": "New transport",
   "Modifier le transport": "Edit transport",
   "Les relevés de température ne sont pas touchés.":
     "Temperature readings are not changed.",
-  "Les températures de départ et d'arrivée se saisissent ensuite, sur la fiche du transport.":
-    "Departure and arrival temperatures are entered later on the transport record.",
+  "Les températures initiale et en cours se saisissent ensuite, sur la fiche du transport.":
+    "The initial and in-progress temperatures are entered later on the transport record.",
   "Produit transporté": "Transported product",
   "Lieu de livraison": "Delivery location",
   "Autre véhicule (non référencé)…": "Other vehicle (unregistered)…",

@@ -30,7 +30,7 @@ pour contrôler que les entrées attendues sont présentes ou masquées.
 | `seed_equipment.py` | Trois équipements : deux frigos (dont un avec seuils explicites) et un congélateur, plus deux véhicules pour le suivi de transport. |
 | `seed_cleaning.py` | Quatre plans de nettoyage couvrant tous les états — un en retard, un à faire aujourd'hui, un à venir, un après chaque usage — avec leurs déclarations et une correction de date pour alimenter le journal. |
 | `seed_pasteurisation.py` | Trois lots de pasteurisation : un complet, un en cours (préchauffage seul) et un vide, pour voir les trois états dans l'interface. |
-| `seed_transport.py` | Trois transports : un complet avec ses deux températures, un en cours (départ seul) et un avec un véhicule externe non référencé. |
+| `seed_transport.py` | Trois transports : un complet avec les deux températures, un avec la température initiale seule et un avec un véhicule externe non référencé. |
 | `seed_delivery_note.py` | Remplace le modèle `bon-de-livraison` par le template LaTeX générique de `templates/delivery-note/` et crée ses variables avec des valeurs neutres (émetteur, client, unité, lignes produits). Supprime l'ancien logo de démonstration s'il existe. Idempotent. |
 
 Les deux sont **idempotents** : un nom déjà présent est ignoré, on peut les
@@ -44,7 +44,7 @@ relancer sans créer de doublon.
 | `check_readings_api.py` | Saisie du matin seul puis complétion du soir sans écraser l'existant, correction tracée dans l'historique, conformité recalculée, date antidatée acceptée, date trop future et température impossible refusées. |
 | `check_cleaning_api.py` | Cycle de vie d'un plan, déclarations multiples le même jour, correction et suppression auditées, calcul du prévisionnel et de la liste du retard. |
 | `check_pasteurisation_api.py` | Cycle de vie d'un lot de pasteurisation, remplissage progressif des trois phases (préchauffage, palier, refroidissement), durée calculée, correction auditée, refus d'une fin antérieure au début, recherche par numéro de lot. |
-| `check_transport_api.py` | Référentiel des véhicules (nom, plaque, doublons) et registre des transports : départ puis arrivée, véhicule du référentiel ou libellé libre, correction auditée, recherche par lot, désactivation. |
+| `check_transport_api.py` | Référentiel des véhicules (nom, plaque, doublons) et registre des transports : relevé initial puis en cours, véhicule du référentiel ou libellé libre, correction auditée, recherche par lot, désactivation. |
 | `check_export_api.py` | Télécharge les six extractions CSV et vérifie le BOM UTF-8, le séparateur point-virgule et la ligne d'en-tête de chacune, puis l'extract d'un suivi de caisse (blocs comptage d'ouverture, frais, clôture). L'export des documents générés ajoute une colonne par variable et les lignes produits en JSON. |
 | `check_cash_register_api.py` | Enrôlement d'une caisse avec son comptage initial : total calculé en centimes, coupures absentes à zéro, nom déjà pris, compteur négatif, coupure inconnue, correction, désactivation et nom libéré. |
 | `check_cash_sessions_api.py` | Suivi d'une caisse : fond repris de la caisse ou forcé, refus d'un second suivi ouvert, frais pro/perso ajoutés, corrigés et totalisés, comptage de clôture incomplet refusé, clôture qui met à jour la caisse, suivi figé ensuite, et nouvelle ouverture qui reprend le comptage de clôture. |
