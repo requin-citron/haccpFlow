@@ -23,6 +23,22 @@ Le layout `(app)/layout.tsx` appelle `GET /api/v1/auth/me`. Sans session, il
 redirige vers `/login`. Le shell affiche la navigation, l'utilisateur et le
 role.
 
+## Navigation mobile et desktop
+
+- À partir de `1024 px`, la sidebar desktop est toujours utilisée. Elle peut
+  être réduite en rail d'icônes ; l'état est conservé dans
+  `localStorage["haccpflow.sidebar.collapsed"]`.
+- Sous `1024 px`, le rail permanent disparaît au profit d'une barre supérieure
+  sticky et d'un drawer accessible avec le bouton burger.
+- Les mêmes règles de modules activés et de rôle admin s'appliquent à la
+  sidebar et au drawer.
+- L'entrée active suit le préfixe le plus long : `/cleaning/plans` prévaut sur
+  `/cleaning`, et `/equipment/{id}` active Matériel.
+- Le drawer ferme au clic sur un lien, sur l'overlay ou avec `Échap`. Il
+  verrouille le scroll d'arrière-plan, déplace et restaure le focus.
+- Les espacements inférieurs tiennent compte de `safe-area-inset-bottom` pour
+  conserver une marge correcte en PWA standalone.
+
 ## Modules visibles
 
 Les entrées du menu sont contrôlées par dix variables d'environnement :
@@ -206,6 +222,22 @@ Ces handlers gardent le jeton côté serveur et propagent les erreurs
 - Formulaires avec messages d'erreur dans la langue active et état `pending`.
 - Les téléchargements passent par des liens vers les proxies Next.
 
+## PWA
+
+- `public/manifest.webmanifest` déclare l'application installable, son nom,
+  son `start_url`, son scope et le mode `standalone`.
+- Les icônes 192, 512, maskable Android et Apple sont servies depuis
+  `public/icons/`.
+- `src/components/pwa-registration.tsx` enregistre `public/sw.js` uniquement en
+  production. Le hot reload de développement n'est donc jamais intercepté.
+- Le service worker met en cache les chunks `_next/static`, le manifest, les
+  icônes et `public/offline.html`.
+- Les navigations utilisent le réseau et basculent sur la page hors ligne en
+  cas d'échec. Les routes `/api/`, les Server Actions, les pages privées, les
+  exports et les réponses métier ne sont jamais mis en cache.
+- L'installation nécessite HTTPS. En release, Traefik fournit ce prérequis et
+  le service worker est enregistré au chargement de la première page.
+
 ## Ajouter une page ou une fonctionnalité
 
 1. Vérifier si la page doit être dans `(app)` (session requise).
@@ -214,7 +246,8 @@ Ces handlers gardent le jeton côté serveur et propagent les erreurs
 4. Créer une Server Action ou un route handler pour les mutations.
 5. Gérer `401`, `403`, `409`, `422` et les codes métier.
 6. Mettre à jour [06-frontend.md](./06-frontend.md) et la page métier.
-7. Vérifier `yarn typecheck` et le scénario de pages.
+7. Vérifier `yarn typecheck`, le scénario de pages et le parcours navigateur
+   mobile/desktop.
 
 ## Qualité
 

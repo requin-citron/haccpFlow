@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="haccpFlow">
+  <rect width="512" height="512" rx="112" fill="#0f172a"/>
+  <circle cx="256" cy="256" r="176" fill="#134e4a" opacity="0.72"/>
+  <circle cx="256" cy="256" r="126" fill="#0f766e" opacity="0.35"/>
+  <g transform="translate(88 88) scale(14)" fill="none" stroke="#99f6e4" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2v20"/>
+    <path d="m4.9 4.9 14.2 14.2"/>
+    <path d="M19.1 4.9 4.9 19.1"/>
+    <path d="M2 12h20"/>
+    <path d="m9 4 3 3 3-3"/>
+    <path d="m9 20 3-3 3 3"/>
+  </g>
+</svg>

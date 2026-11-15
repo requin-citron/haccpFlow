@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 
 import {
@@ -19,7 +18,7 @@ import {
   UsersIcon,
 } from "@/components/icons";
 import { useI18n } from "@/components/locale-provider";
-import { MODULE_NAV_ITEMS, type EnabledModules } from "@/lib/modules";
+import type { ModuleNavItem } from "@/lib/modules";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -38,26 +37,28 @@ const NAV_ICONS: Record<string, IconComponent> = {
   "/users": UsersIcon,
 };
 
+export type NavVariant = "sidebar" | "drawer";
+
 export function NavLinks({
-  isAdmin,
-  enabledModules,
+  items,
+  activeHref,
+  variant,
+  showLabels,
+  onNavigate,
 }: {
-  isAdmin: boolean;
-  enabledModules: EnabledModules;
+  items: readonly ModuleNavItem[];
+  activeHref: string | undefined;
+  variant: NavVariant;
+  showLabels: boolean;
+  onNavigate?: () => void;
 }) {
-  const pathname = usePathname();
   const { t } = useI18n();
-  const items = MODULE_NAV_ITEMS.filter(
-    (item) => enabledModules[item.key] && (!item.adminOnly || isAdmin),
-  );
-  // Longest matching href wins, so /cleaning/plans does not also light up
-  // the /cleaning entry.
-  const activeHref = items.filter(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-  ).sort((first, second) => second.href.length - first.href.length)[0]?.href;
 
   return (
-    <nav aria-label={t("Navigation principale")} className="space-y-1">
+    <nav
+      aria-label={t("Navigation principale")}
+      className={variant === "drawer" ? "space-y-1.5" : "space-y-1"}
+    >
       {items.map((item) => {
         const Icon = NAV_ICONS[item.href] ?? GridIcon;
         const active = item.href === activeHref;
@@ -66,15 +67,20 @@ export function NavLinks({
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
+            title={!showLabels ? t(item.labelKey) : undefined}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+            aria-label={!showLabels ? t(item.labelKey) : undefined}
+            className={`flex min-h-11 items-center rounded-xl text-sm font-medium transition ${
+              showLabels ? "gap-3 px-3 py-2.5" : "justify-center px-2 py-2.5"
+            } ${
               active
                 ? "bg-teal-500/15 text-teal-200 ring-1 ring-inset ring-teal-400/25"
                 : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
             <Icon className="size-5 shrink-0" />
-            <span className="hidden lg:block">{t(item.labelKey)}</span>
+            {showLabels ? <span className="truncate">{t(item.labelKey)}</span> : null}
           </Link>
         );
       })}

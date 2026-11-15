@@ -36,3 +36,13 @@ services:
       traefik.http.routers.haccpflow.tls: ""
       traefik.http.routers.haccpflow.tls.certresolver: ""
       traefik.http.services.haccpflow.loadbalancer.server.port: ""
+    # Uncomment to attach the frontend to the existing Traefik network:
+    # networks:
+    #   - haccp
+    #   - traefik
+
+# Uncomment when the frontend is attached to the shared Traefik network:
+# networks:
+#   traefik:
+#     external: true
+#     name: traefik

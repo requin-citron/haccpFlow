@@ -35,6 +35,9 @@ sanitaire :
 - **Interface FR/EN** — français par défaut, anglais disponible sans changer
   d'URL. Le choix est conservé dans le navigateur et appliqué côté serveur dès
   le rendu.
+- **PWA Android** — installation depuis le navigateur avec manifest, icônes,
+  affichage standalone et page hors ligne. Les pages authentifiées et l'API ne
+  sont jamais mises en cache.
 
 L'enrôlement de capteurs Zigbee2MQTT viendra compléter les relevés manuels.
 

@@ -17,7 +17,7 @@ export type ModuleKey = (typeof MODULE_KEYS)[number];
 
 export type EnabledModules = Record<ModuleKey, boolean>;
 
-type ModuleNavItem = {
+export type ModuleNavItem = {
   key: ModuleKey;
   href: string;
   labelKey: MessageKey;
@@ -39,14 +39,28 @@ export const MODULE_NAV_ITEMS: readonly ModuleNavItem[] = [
   { key: "users", href: "/users", labelKey: "Utilisateurs", adminOnly: true },
 ];
 
+export function visibleModuleNavItems(
+  enabledModules: EnabledModules,
+  isAdmin: boolean,
+): readonly ModuleNavItem[] {
+  return MODULE_NAV_ITEMS.filter(
+    (item) => enabledModules[item.key] && (!item.adminOnly || isAdmin),
+  );
+}
+
+export function activeModuleNavItem(
+  items: readonly ModuleNavItem[],
+  pathname: string,
+): ModuleNavItem | undefined {
+  return items
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((first, second) => second.href.length - first.href.length)[0];
+}
+
 export function firstEnabledModuleHref(
   enabledModules: EnabledModules,
   isAdmin: boolean,
 ): string | null {
-  return (
-    MODULE_NAV_ITEMS.find(
-      (item) => enabledModules[item.key] && (!item.adminOnly || isAdmin),
-    )?.href ?? null
-  );
+  return visibleModuleNavItems(enabledModules, isAdmin)[0]?.href ?? null;
 }
 

@@ -80,7 +80,8 @@ Renseigner les secrets habituels. Aucune variable Traefik n'est demandée dans
 Le service frontend écoute sur `3000` uniquement dans le réseau Compose. Aucun
 port hôte n'est publié pour le frontend ni pour le backend. Ton instance
 Traefik doit être raccordée au réseau Docker Compose pour router directement
-vers ces services.
+vers ces services. `docker-compose.release.yml` contient un bloc commenté
+permettant de déclarer le réseau Traefik externe et d'y rattacher le frontend.
 
 ### Démarrage
 
@@ -98,6 +99,11 @@ docker compose \
 La publication du domaine, le routage et les certificats restent gérés par
 Traefik déjà présent sur le serveur.
 
+Le service worker PWA n'est enregistré qu'en production. Une fois la release
+servie en HTTPS, Android peut proposer l'installation de haccpFlow. Le mode
+développement ne l'enregistre pas afin d'éviter de mettre en cache des assets
+de hot reload.
+
 Le fichier `docker-compose.release.yml` :
 
 - construit le frontend avec la cible `runner` et `NODE_ENV=production` ;
@@ -106,6 +112,10 @@ Le fichier `docker-compose.release.yml` :
 - remplace le montage des sources backend par le seul volume durable
   `./backend/data:/app/data` ;
 - ne publie aucun port hôte pour frontend/backend.
+
+Si Traefik utilise un réseau Docker externe, décommenter le bloc prévu dans
+`docker-compose.release.yml`, adapter `name` au réseau réel, puis compléter
+`traefik.docker.network` avec ce même nom.
 
 ### Mise à jour
 

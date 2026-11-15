@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const BASE_URL = (process.env.WEB_BASE_URL ?? "http://127.0.0.1:3000").replace(/\/+$/, "");
+const BASE_URL = (process.env.WEB_BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const EMAIL = process.env.ADMIN_EMAIL ?? "";
 const PASSWORD = process.env.ADMIN_PASSWORD ?? "";
 const CHROMIUM = process.env.CHROMIUM_BIN ?? "/usr/bin/chromium";
@@ -111,6 +111,17 @@ async function reload() {
   await waitFor("document.readyState === 'complete'");
 }
 
+async function clickUntil(selector, condition, attempts = 30) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    await evaluate(`document.querySelector(${JSON.stringify(selector)})?.click()`);
+    if (await waitFor(condition, 500)) {
+      return true;
+    }
+    await sleep(200);
+  }
+  return false;
+}
+
 function cleanup() {
   try {
     socket?.close();
@@ -122,7 +133,12 @@ function cleanup() {
   } catch {
     // Best effort.
   }
-  fs.rmSync(profile, { recursive: true, force: true });
+  fs.rmSync(profile, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  });
 }
 
 async function main() {
@@ -216,6 +232,105 @@ async function main() {
      localStorage.getItem("haccpflow.locale") === "fr"`,
   );
   report("localStorage resynchronise le cookie au chargement", synchronized);
+
+  await send("Emulation.setDeviceMetricsOverride", {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 3,
+    mobile: true,
+  });
+  await reload();
+  await sleep(1500);
+
+  const mobileState = await evaluate(`(() => {
+    const menu = document.querySelector('button[aria-label="Ouvrir le menu"]');
+    const sidebar = document.querySelector("aside");
+    const visible = (node) => !!node && getComputedStyle(node).display !== "none";
+    return {
+      menuVisible: visible(menu),
+      desktopSidebarHidden: !!sidebar && getComputedStyle(sidebar).display === "none",
+      bottomNavigationAbsent:
+        document.querySelector('nav[aria-label="Navigation mobile"]') === null,
+    };
+  })()`);
+  report("barre supérieure mobile visible", mobileState.menuVisible);
+  report("rail permanent masqué sur mobile", mobileState.desktopSidebarHidden);
+  report("bottom navigation absente", mobileState.bottomNavigationAbsent);
+
+  const drawerOpened = await clickUntil(
+    'button[aria-label="Ouvrir le menu"]',
+    'document.querySelector("#mobile-navigation-drawer") !== null',
+  );
+  report("drawer mobile ouvert", drawerOpened);
+  await sleep(250);
+  const drawerState = await evaluate(`(() => {
+    const drawer = document.querySelector("#mobile-navigation-drawer");
+    return {
+      focusInside: !!drawer && drawer.contains(document.activeElement),
+      bodyLocked: document.body.style.overflow === "hidden",
+      linkCount: drawer?.querySelectorAll("nav a").length ?? 0,
+    };
+  })()`);
+  report("focus déplacé dans le drawer", drawerState.focusInside);
+  report("scroll arrière-plan verrouillé", drawerState.bodyLocked);
+  report("navigation complète dans le drawer", drawerState.linkCount > 0);
+
+  await evaluate(
+    'document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))',
+  );
+  const drawerClosed = await waitFor(
+    'document.querySelector("#mobile-navigation-drawer") === null',
+  );
+  report("drawer fermé avec Échap", drawerClosed);
+  report(
+    "scroll restauré après fermeture",
+    (await evaluate("document.body.style.overflow")) !== "hidden",
+  );
+
+  await clickUntil(
+    'button[aria-label="Ouvrir le menu"]',
+    'document.querySelector("#mobile-navigation-drawer") !== null',
+  );
+  const routeTarget = await evaluate(`(() => {
+    const links = [...document.querySelectorAll("#mobile-navigation-drawer nav a")];
+    const link = links.find((item) => item.getAttribute("href") !== location.pathname);
+    if (!link) return null;
+    const href = link.getAttribute("href");
+    link.click();
+    return href;
+  })()`);
+  report("lien de navigation trouvé", typeof routeTarget === "string" && routeTarget.startsWith("/"));
+  if (typeof routeTarget === "string") {
+    report(
+      "drawer fermé après navigation",
+      await waitFor(
+        `location.pathname === ${JSON.stringify(routeTarget)} &&
+         document.querySelector("#mobile-navigation-drawer") === null`,
+        20_000,
+      ),
+    );
+  }
+
+  await send("Emulation.clearDeviceMetricsOverride");
+  await reload();
+  await sleep(1500);
+  const collapseClicked = await clickUntil(
+    'button[aria-label="Réduire la navigation"]',
+    'document.querySelector(\'button[aria-label="Développer la navigation"]\') !== null',
+  );
+  report("sidebar desktop repliée", collapseClicked);
+  report(
+    "repli desktop mémorisé",
+    (await evaluate('localStorage.getItem("haccpflow.sidebar.collapsed")')) === "1",
+  );
+  await reload();
+  await sleep(1000);
+  report(
+    "repli restauré après rechargement",
+    (await evaluate(
+      'document.querySelector(\'button[aria-label="Développer la navigation"]\') !== null',
+    )) === true,
+  );
 
   if (failures > 0) {
     throw new Error(`${failures} vérification(s) navigateur en échec`);

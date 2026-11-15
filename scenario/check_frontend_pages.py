@@ -138,6 +138,8 @@ def main() -> None:
 
     status, html = fetch_page("/cleaning", cookie=english_cookie)
     report.check("sélecteur de langue dans le shell", "FR / EN" in html)
+    report.check("menu mobile anglais présent", 'aria-label="Open menu"' in html)
+    report.check("bottom navigation absente", 'aria-label="Mobile navigation"' not in html)
     english_navigation = re.search(
         r'<nav aria-label="Main navigation".*?</nav>',
         html,
@@ -168,6 +170,9 @@ def main() -> None:
         report.check(f"{path} ne fuit aucune donnée", marker not in html)
 
     status, html = fetch_page("/cleaning", cookie=cookie)
+    report.check("menu mobile présent", 'aria-label="Ouvrir le menu"' in html)
+    report.check("bottom navigation absente", 'aria-label="Navigation mobile"' not in html)
+    report.check("bouton de repli desktop présent", 'aria-label="Réduire la navigation"' in html)
     navigation = re.search(
         r'<nav aria-label="Navigation principale".*?</nav>',
         html,

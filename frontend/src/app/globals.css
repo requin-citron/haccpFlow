@@ -30,3 +30,25 @@ body {
 .animate-fade-in {
   animation: haccp-fade-in 160ms ease-out;
 }
+
+@keyframes haccp-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-drawer-in {
+  animation: haccp-drawer-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-drawer-in {
+    animation: none;
+  }
+}
