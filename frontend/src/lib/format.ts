@@ -201,6 +201,7 @@ export function formatDate(locale: Locale, isoDate: string): string {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(isoDate));
 }
 

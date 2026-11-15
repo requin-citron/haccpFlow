@@ -321,6 +321,20 @@ const FR_MESSAGES = {
   "Équipements actifs": "Équipements actifs",
   "Réfrigérateurs": "Réfrigérateurs",
   "Congélateurs": "Congélateurs",
+  "Catégories de matériel": "Catégories de matériel",
+  "Catégorie précédente": "Catégorie précédente",
+  "Catégorie suivante": "Catégorie suivante",
+  "Afficher {category}": "Afficher {category}",
+  "1 équipement": "1 équipement",
+  "{count} équipements": "{count} équipements",
+  "1 véhicule": "1 véhicule",
+  "{count} véhicules": "{count} véhicules",
+  "1 caisse": "1 caisse",
+  "{count} caisses": "{count} caisses",
+  "Aucun réfrigérateur enregistré. Ajoute un réfrigérateur pour commencer.":
+    "Aucun réfrigérateur enregistré. Ajoute un réfrigérateur pour commencer.",
+  "Aucun congélateur enregistré. Ajoute un congélateur pour commencer.":
+    "Aucun congélateur enregistré. Ajoute un congélateur pour commencer.",
   "Aucun matériel pour l'instant": "Aucun matériel pour l'instant",
   "Ajoute ton premier réfrigérateur ou congélateur pour commencer à suivre la chaîne du froid.":
     "Ajoute ton premier réfrigérateur ou congélateur pour commencer à suivre la chaîne du froid.",
@@ -1215,6 +1229,20 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Équipements actifs": "Active equipment",
   "Réfrigérateurs": "Refrigerators",
   "Congélateurs": "Freezers",
+  "Catégories de matériel": "Equipment categories",
+  "Catégorie précédente": "Previous category",
+  "Catégorie suivante": "Next category",
+  "Afficher {category}": "Show {category}",
+  "1 équipement": "1 equipment item",
+  "{count} équipements": "{count} equipment items",
+  "1 véhicule": "1 vehicle",
+  "{count} véhicules": "{count} vehicles",
+  "1 caisse": "1 cash register",
+  "{count} caisses": "{count} cash registers",
+  "Aucun réfrigérateur enregistré. Ajoute un réfrigérateur pour commencer.":
+    "No refrigerator recorded. Add a refrigerator to get started.",
+  "Aucun congélateur enregistré. Ajoute un congélateur pour commencer.":
+    "No freezer recorded. Add a freezer to get started.",
   "Aucun matériel pour l'instant": "No equipment yet",
   "Ajoute ton premier réfrigérateur ou congélateur pour commencer à suivre la chaîne du froid.":
     "Add your first refrigerator or freezer to start tracking the cold chain.",

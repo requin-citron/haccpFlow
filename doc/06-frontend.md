@@ -85,6 +85,19 @@ Les références croisées suivent les mêmes indicateurs :
 La page `/export` ne propose que les fichiers des modules sources actifs. La
 page `/history` filtre ses sources et ses entrées de la même façon.
 
+## Matériel sur mobile
+
+- Sous `640 px`, les statistiques globales sont masquées : chaque groupe affiche
+  directement son nombre d'éléments.
+- Le carrousel mobile regroupe Réfrigérateurs, Congélateurs, Véhicules et
+  Caisses dans cet ordre. Les deux derniers groupes sont absents lorsque leur
+  module est désactivé.
+- Les groupes actifs restent affichés même vides avec leur état vide et leur
+  bouton de création.
+- Les flèches bouclent entre les groupes ; le balayage tactile et les points
+  sous le groupe permettent la même navigation.
+- Sur desktop, tous les groupes restent empilés avec leurs grilles de cartes.
+
 ## Pages
 
 | Route | Contenu |
@@ -222,6 +235,9 @@ Ces handlers gardent le jeton côté serveur et propagent les erreurs
 - Dialogues accessibles (`role="dialog"`, `aria-modal`, fermeture Échap quand
   prévu).
 - Dates et nombres affichés dans la langue active, données stockées en UTC.
+- Tous les timestamps affichés, y compris les dates de création des cartes, sont
+  formatés explicitement en UTC afin d'éviter les changements de jour entre le
+  serveur et le navigateur pendant l'hydratation.
 - Formulaires avec messages d'erreur dans la langue active et état `pending`.
 - Les téléchargements passent par des liens vers les proxies Next.
 

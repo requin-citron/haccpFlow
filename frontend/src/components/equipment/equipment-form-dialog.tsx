@@ -15,9 +15,15 @@ import {
   SECONDARY_TRIGGER_CLASS,
   SUBMIT_BUTTON_CLASS,
 } from "@/lib/ui";
-import type { Equipment } from "@/lib/types";
+import type { Equipment, EquipmentType } from "@/lib/types";
 
-export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
+export function EquipmentFormDialog({
+  equipment,
+  defaultType = "fridge",
+}: {
+  equipment?: Equipment;
+  defaultType?: EquipmentType;
+}) {
   const { t } = useI18n();
   const isEdit = equipment !== undefined;
   const [open, setOpen] = useState(false);
@@ -26,6 +32,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
     INITIAL_EQUIPMENT_FORM_STATE,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const selectedType = equipment?.type ?? defaultType;
 
   useEffect(() => {
     if (state.status === "success") {
@@ -130,7 +137,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                       type="radio"
                       name="type"
                       value="fridge"
-                      defaultChecked={equipment?.type !== "freezer"}
+                      defaultChecked={selectedType === "fridge"}
                       className="peer sr-only"
                     />
                     <span className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-medium text-slate-700 transition peer-checked:border-teal-500 peer-checked:bg-teal-50 peer-checked:text-teal-800 peer-focus-visible:ring-4 peer-focus-visible:ring-teal-500/20">
@@ -143,7 +150,7 @@ export function EquipmentFormDialog({ equipment }: { equipment?: Equipment }) {
                       type="radio"
                       name="type"
                       value="freezer"
-                      defaultChecked={equipment?.type === "freezer"}
+                      defaultChecked={selectedType === "freezer"}
                       className="peer sr-only"
                     />
                     <span className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-medium text-slate-700 transition peer-checked:border-teal-500 peer-checked:bg-teal-50 peer-checked:text-teal-800 peer-focus-visible:ring-4 peer-focus-visible:ring-teal-500/20">

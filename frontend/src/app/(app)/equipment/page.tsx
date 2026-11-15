@@ -1,10 +1,5 @@
-import { EquipmentCard } from "@/components/equipment/equipment-card";
-import { EquipmentFormDialog } from "@/components/equipment/equipment-form-dialog";
+import { EquipmentGroups } from "@/components/equipment/equipment-groups";
 import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
-import { VehicleCard } from "@/components/vehicles/vehicle-card";
-import { VehicleFormDialog } from "@/components/vehicles/vehicle-form-dialog";
-import { CashRegisterCard } from "@/components/cash-registers/cash-register-card";
-import { CashRegisterFormDialog } from "@/components/cash-registers/cash-register-form-dialog";
 import { apiFetch } from "@/lib/api";
 import { getEnabledModules } from "@/lib/module-settings";
 import { t } from "@/lib/i18n";
@@ -73,10 +68,9 @@ export default async function EquipmentPage() {
               : ""}
           </p>
         </div>
-        <EquipmentFormDialog />
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section data-equipment-stats className="hidden gap-4 sm:grid sm:grid-cols-3">
         <StatCard
           label={t(locale, "Équipements actifs")}
           value={equipment.length}
@@ -97,106 +91,14 @@ export default async function EquipmentPage() {
         />
       </section>
 
-      {equipment.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center">
-          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-500">
-            <FridgeIcon className="size-6" />
-          </span>
-          <h2 className="mt-4 text-base font-semibold text-slate-900">
-            {t(locale, "Aucun matériel pour l'instant")}
-          </h2>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            {t(
-              locale,
-              "Ajoute ton premier réfrigérateur ou congélateur pour commencer à suivre la chaîne du froid.",
-            )}
-          </p>
-        </section>
-      ) : (
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {equipment.map((item) => (
-            <EquipmentCard key={item.id} equipment={item} locale={locale} />
-          ))}
-        </section>
-      )}
-
-      {enabledModules.transport ? (
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">{t(locale, "Véhicules")}</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                {t(
-                  locale,
-                  "Les véhicules utilisés pour le suivi de transport. Ils se choisissent ensuite lors de la déclaration d'un transport.",
-                )}
-              </p>
-            </div>
-            <VehicleFormDialog />
-          </div>
-
-          {vehicles.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
-              <p className="text-sm text-slate-500">
-                {t(
-                  locale,
-                  "Aucun véhicule enregistré. Ajoute un nom ou une plaque pour pouvoir déclarer des transports.",
-                )}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {vehicles.map((vehicle) => (
-                <VehicleCard
-                  key={vehicle.id}
-                  vehicle={vehicle}
-                  isAdmin={isAdmin}
-                  locale={locale}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      {enabledModules.cashSessions ? (
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">{t(locale, "Caisses")}</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                {t(
-                  locale,
-                  "Les caisses enrôlées avec leur comptage initial, coupure par coupure. Le suivi des comptages viendra ensuite.",
-                )}
-              </p>
-            </div>
-            <CashRegisterFormDialog />
-          </div>
-
-          {cashRegisters.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center">
-              <p className="text-sm text-slate-500">
-                {t(
-                  locale,
-                  "Aucune caisse enregistrée. Déclare une caisse et son comptage initial pour préparer le suivi.",
-                )}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {cashRegisters.map((cashRegister) => (
-                <CashRegisterCard
-                  key={cashRegister.id}
-                  cashRegister={cashRegister}
-                  isAdmin={isAdmin}
-                  locale={locale}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      ) : null}
+      <EquipmentGroups
+        equipment={equipment}
+        vehicles={vehicles}
+        cashRegisters={cashRegisters}
+        isAdmin={isAdmin}
+        includeVehicles={enabledModules.transport}
+        includeCashRegisters={enabledModules.cashSessions}
+      />
     </div>
   );
 }

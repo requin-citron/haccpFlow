@@ -20,6 +20,7 @@ let socket;
 let nextId = 1;
 let failures = 0;
 const pending = new Map();
+const hydrationErrors = [];
 
 function report(label, ok, detail = "") {
   console.log(`  [${ok ? "OK" : "ÉCHEC"}] ${label}${!ok && detail ? ` — ${detail}` : ""}`);
@@ -63,6 +64,18 @@ function connect(url) {
           fail(new Error(message.error.message));
         } else {
           done(message.result);
+        }
+      } else if (message.method === "Runtime.consoleAPICalled") {
+        const text = message.params.args
+          .map((arg) => arg.value ?? arg.description ?? "")
+          .join(" ");
+        if (text.includes("Hydration failed") || text.includes("didn't match")) {
+          hydrationErrors.push(text);
+        }
+      } else if (message.method === "Runtime.exceptionThrown") {
+        const text = message.params.exceptionDetails.exception?.description ?? "";
+        if (text.includes("Hydration failed") || text.includes("didn't match")) {
+          hydrationErrors.push(text);
         }
       }
     });
@@ -257,6 +270,98 @@ async function main() {
   report("rail permanent masqué sur mobile", mobileState.desktopSidebarHidden);
   report("bottom navigation absente", mobileState.bottomNavigationAbsent);
 
+  const equipmentCarousel = await evaluate(`(() => {
+    const root = document.querySelector("[data-equipment-carousel]");
+    const stats = document.querySelector("[data-equipment-stats]");
+    if (!root) return null;
+    const groups = [...root.querySelectorAll("[data-equipment-group]")];
+    return {
+      groupCount: groups.length,
+      visibleGroups: groups.filter(
+        (group) => getComputedStyle(group).display !== "none",
+      ).length,
+      dotCount: root.querySelectorAll("[data-equipment-dot]").length,
+      controlsVisible:
+        getComputedStyle(
+          root.querySelector("[data-equipment-previous]")?.parentElement?.parentElement ??
+            root,
+        ).display !== "none",
+      statsHidden: !!stats && getComputedStyle(stats).display === "none",
+    };
+  })()`);
+  report("carrousel Matériel présent", equipmentCarousel !== null);
+  if (equipmentCarousel) {
+    report(
+      "groupes Matériel disponibles",
+      equipmentCarousel.groupCount >= 2 && equipmentCarousel.groupCount <= 4,
+    );
+    report("un seul groupe mobile visible", equipmentCarousel.visibleGroups === 1);
+    report(
+      "un point par groupe",
+      equipmentCarousel.dotCount === equipmentCarousel.groupCount,
+    );
+    report("contrôles du carrousel visibles", equipmentCarousel.controlsVisible);
+    report("statistiques masquées sur mobile", equipmentCarousel.statsHidden);
+
+    const nextGroup = await clickUntil(
+      "[data-equipment-next]",
+      `[...document.querySelectorAll("[data-equipment-dot]")].findIndex(
+        (dot) => dot.getAttribute("aria-pressed") === "true",
+      ) === 1`,
+    );
+    report("flèche suivante : groupe 2", nextGroup);
+
+    await evaluate(`
+      document.querySelectorAll("[data-equipment-dot]")[
+        document.querySelectorAll("[data-equipment-dot]").length - 1
+      ]?.click()
+    `);
+    await waitFor(
+      `[...document.querySelectorAll("[data-equipment-dot]")].findIndex(
+        (dot) => dot.getAttribute("aria-pressed") === "true",
+      ) === document.querySelectorAll("[data-equipment-dot]").length - 1`,
+    );
+    const looped = await clickUntil(
+      "[data-equipment-next]",
+      `[...document.querySelectorAll("[data-equipment-dot]")].findIndex(
+        (dot) => dot.getAttribute("aria-pressed") === "true",
+      ) === 0`,
+    );
+    report("navigation circulaire dernier → premier", looped);
+
+    const swiped = await evaluate(`(() => {
+      const target = document.querySelector("[data-equipment-swipe]");
+      if (!target) return false;
+      const start = new Event("touchstart", { bubbles: true, cancelable: true });
+      Object.defineProperty(start, "touches", {
+        value: [{ clientX: 320, clientY: 240 }],
+      });
+      target.dispatchEvent(start);
+      const end = new Event("touchend", { bubbles: true, cancelable: true });
+      Object.defineProperty(end, "changedTouches", {
+        value: [{ clientX: 120, clientY: 235 }],
+      });
+      target.dispatchEvent(end);
+      return true;
+    })()`);
+    report(
+      "swipe horizontal vers la gauche",
+      swiped &&
+        (await waitFor(
+          `[...document.querySelectorAll("[data-equipment-dot]")].findIndex(
+            (dot) => dot.getAttribute("aria-pressed") === "true",
+          ) === 1`,
+        )),
+    );
+  }
+
+  await evaluate(`(() => {
+    if (document.documentElement.scrollHeight > window.innerHeight + 600) return;
+    const spacer = document.createElement("div");
+    spacer.dataset.scrollTestSpacer = "true";
+    spacer.style.height = "1600px";
+    document.body.appendChild(spacer);
+  })()`);
   await evaluate("window.scrollTo(0, 500)");
   report(
     "header masqué en descendant",
@@ -290,6 +395,7 @@ async function main() {
       'document.querySelector("[data-mobile-header]")?.getAttribute("aria-hidden") === "false"',
     ),
   );
+  await evaluate('document.querySelector("[data-scroll-test-spacer]")?.remove()');
 
   const drawerOpened = await clickUntil(
     'button[aria-label="Ouvrir le menu"]',
@@ -348,6 +454,28 @@ async function main() {
   await send("Emulation.clearDeviceMetricsOverride");
   await reload();
   await sleep(1500);
+  const desktopEquipment = await evaluate(`(() => {
+    const root = document.querySelector("[data-equipment-carousel]");
+    const stats = document.querySelector("[data-equipment-stats]");
+    if (!root) return null;
+    const groups = [...root.querySelectorAll("[data-equipment-group]")];
+    return {
+      allGroupsVisible:
+        groups.length > 0 &&
+        groups.every((group) => getComputedStyle(group).display !== "none"),
+      controlsHidden:
+        !root.querySelector("[data-equipment-previous]") ||
+        getComputedStyle(
+          root.querySelector("[data-equipment-previous]").parentElement.parentElement,
+        ).display === "none",
+      statsVisible: !!stats && getComputedStyle(stats).display !== "none",
+    };
+  })()`);
+  if (desktopEquipment) {
+    report("tous les groupes Matériel visibles sur desktop", desktopEquipment.allGroupsVisible);
+    report("contrôles carrousel masqués sur desktop", desktopEquipment.controlsHidden);
+    report("statistiques visibles sur desktop", desktopEquipment.statsVisible);
+  }
   const collapseClicked = await clickUntil(
     'button[aria-label="Réduire la navigation"]',
     'document.querySelector(\'button[aria-label="Développer la navigation"]\') !== null',
@@ -364,6 +492,11 @@ async function main() {
     (await evaluate(
       'document.querySelector(\'button[aria-label="Développer la navigation"]\') !== null',
     )) === true,
+  );
+  report(
+    "aucune erreur d'hydratation React",
+    hydrationErrors.length === 0,
+    hydrationErrors[0] ?? "",
   );
 
   if (failures > 0) {
