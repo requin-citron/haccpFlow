@@ -21,6 +21,8 @@ sanitaire :
   pasteurisation, transport, états successifs des caisses, documents générés)
   filtrables par période, désactivés compris, pour répondre à un contrôle ou
   archiver ; un suivi de caisse peut aussi être sorti seul, en un petit CSV.
+  Les exports contiennent les données métier mais pas les auteurs ou
+  horodatages techniques, qui restent disponibles dans l'audit.
 - **Caisses** — enrôlement d'une caisse avec son comptage initial, coupure par
   coupure, des pièces de 1 centime aux billets de 50 euros.
 - **Suivi de caisse** — ouverture d'un suivi sur une caisse (fond repris de son

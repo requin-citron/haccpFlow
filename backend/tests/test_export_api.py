@@ -144,6 +144,32 @@ def test_every_dataset_is_served_as_a_csv(
     assert disposition.endswith(f'-complet-{_today()}.csv"')
 
 
+@pytest.mark.parametrize("dataset", DATASETS)
+def test_exports_do_not_expose_audit_actor_or_timestamp_columns(
+    api_client: TestClient, admin_headers: dict[str, str], dataset: str
+) -> None:
+    headers = _rows(api_client.get(f"{EXPORTS}/{dataset}", headers=admin_headers))[0]
+    audit_headers = {
+        "Matin relevé le",
+        "Matin modifié le",
+        "Auteur correction matin",
+        "Soir relevé le",
+        "Soir modifié le",
+        "Auteur correction soir",
+        "Déclaré par",
+        "Déclaré le",
+        "Ouvert par",
+        "Ouvert le",
+        "Clôturé par",
+        "Clôturé le",
+        "Supprimé le",
+        "Date de génération",
+        "Généré par",
+    }
+
+    assert audit_headers.isdisjoint(headers)
+
+
 def test_the_readings_export_lists_the_values(
     api_client: TestClient, admin_headers: dict[str, str]
 ) -> None:
@@ -163,12 +189,6 @@ def test_the_readings_export_lists_the_values(
         "Justification soir",
         "Conforme",
         "Source",
-        "Matin relevé le",
-        "Matin modifié le",
-        "Auteur correction matin",
-        "Soir relevé le",
-        "Soir modifié le",
-        "Auteur correction soir",
     ]
     assert len(rows) == 2
     reading = rows[1]
@@ -184,12 +204,6 @@ def test_the_readings_export_lists_the_values(
     assert reading[index["Justification soir"]] == ""
     assert reading[index["Conforme"]] == "Non"
     assert reading[index["Source"]] == "Manuel"
-    assert reading[index["Matin relevé le"]]
-    assert reading[index["Matin modifié le"]]
-    assert reading[index["Auteur correction matin"]] == "admin@test.local"
-    assert reading[index["Soir relevé le"]]
-    assert reading[index["Soir modifié le"]] == ""
-    assert reading[index["Auteur correction soir"]] == ""
 
 
 def test_the_readings_export_escapes_a_justification_and_marks_an_incomplete_day(
@@ -216,7 +230,6 @@ def test_the_readings_export_escapes_a_justification_and_marks_an_incomplete_day
     assert reading[headers.index("Justification matin")] == f"'{justification}"
     assert reading[headers.index("Conforme")] == "Incomplet"
     assert reading[headers.index("Soir (°C)")] == ""
-    assert reading[headers.index("Auteur correction soir")] == ""
 
 
 def test_the_cleanings_export_escapes_free_text(
@@ -230,7 +243,7 @@ def test_the_cleanings_export_escapes_free_text(
     assert record[1] == "Quotidien"
     assert record[3] == datetime.now(UTC).date().strftime("%d/%m/%Y")
     assert record[4] == TRICKY_COMMENT
-    assert record[5] == "admin@test.local"
+    assert len(record) == 5
 
 
 def test_the_pasteurisation_export_lays_out_the_phases(
@@ -415,13 +428,7 @@ def test_the_cash_register_export_lists_the_successive_states(
     ]
     assert headers[19] == "Clôture — 1 centime"
     assert headers[30] == "Clôture — 50 euros"
-    assert headers[31:] == [
-        "Ouvert par",
-        "Ouvert le",
-        "Clôturé par",
-        "Clôturé le",
-        "Supprimé le",
-    ]
+    assert len(headers) == 31
 
     states = [row for row in rows[1:] if row[0] == "Caisse export"]
     assert len(states) == 3
@@ -433,17 +440,13 @@ def test_the_cash_register_export_lists_the_successive_states(
     assert closed_row[headers.index("Total des frais (€)")] == "7,50"
     assert closed_row[headers.index("Clôture — total (€)")] == "20,00"
     assert closed_row[headers.index("Clôture — 20 euros")] == "1"
-    assert closed_row[headers.index("Clôturé par")] == "admin@test.local"
-    assert closed_row[headers.index("Supprimé le")] == ""
 
-    # Le suivi supprimé reste dans la succession, avec sa date de suppression.
+    # Le suivi supprimé reste dans la succession des états.
     assert removed_row[headers.index("Fond — total (€)")] == "20,00"
-    assert removed_row[headers.index("Supprimé le")] != ""
 
     # Le suivi en cours n'a pas encore de comptage de clôture.
     assert open_row[headers.index("Clôture — total (€)")] == ""
     assert open_row[headers.index("Clôture — 20 euros")] == ""
-    assert open_row[headers.index("Clôturé le")] == ""
 
     # Le filtre de période porte sur la date du suivi.
     filtered = api_client.get(
@@ -490,7 +493,10 @@ def test_a_session_extract_shows_the_counts_and_the_expenses(
         f'attachment; filename="caisse-caisse-generale-{_today()}.csv"'
     )
     assert rows[0] == ["Suivi de caisse", "Caisse générale"]
-    assert ["Ouvert par", "admin@test.local"] in rows
+    assert not any(
+        row and row[0] in {"Ouvert par", "Ouvert le", "Clôturé par", "Clôturé le", "Supprimé le"}
+        for row in rows
+    )
     assert ["Comptage d'ouverture"] in rows
     assert ["1 euro", "3", "3,00"] in rows
     assert ["Total", "", "3,00"] in rows
@@ -629,15 +635,8 @@ def test_the_documents_export_lists_generation_info_and_variables(
     assert response.status_code == 200
     rows = _rows(response)
     headers = rows[0]
-    assert headers[:6] == [
-        "Date de génération",
-        "Modèle",
-        "Généré par",
-        "Fichier PDF",
-        "Taille (octets)",
-        "SHA-256",
-    ]
-    assert headers[6:] == sorted(
+    assert headers[:4] == ["Modèle", "Fichier PDF", "Taille (octets)", "SHA-256"]
+    assert headers[4:] == sorted(
         ["bl_numero", "client_nom", "formule", "lignes_produits", "logo"],
         key=str.casefold,
     )
@@ -671,4 +670,4 @@ def test_the_documents_export_lists_generation_info_and_variables(
             headers=admin_headers,
         )
     )
-    assert empty == [headers[:6]]
+    assert empty == [headers[:4]]

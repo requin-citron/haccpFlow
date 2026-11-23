@@ -177,16 +177,19 @@ Six jeux de données, filtrables par `from`/`to` :
 
 | Dataset | Contenu |
 | --- | --- |
-| `readings` | Relevés de température, une ligne par matériel et par jour avec originales, corrections et justifications. |
-| `cleanings` | Déclarations de nettoyage. |
+| `readings` | Relevés de température, une ligne par matériel et par jour avec originales, corrections et justifications ; sans auteurs ni horodatages d'audit. |
+| `cleanings` | Déclarations de nettoyage, sans auteur ni horodatage de déclaration. |
 | `pasteurisations` | Lots et trois phases. |
 | `transports` | Transports et checkpoints. |
-| `cash-registers` | États successifs des caisses. |
-| `documents` | PDF générés : métadonnées + une colonne par variable. |
+| `cash-registers` | États successifs des caisses, sans acteurs ni horodatages d'ouverture, clôture ou suppression. |
+| `documents` | PDF générés : modèle, fichier, taille, SHA-256 et une colonne par variable. |
 
 Format : UTF-8 BOM, séparateur `;`, dates françaises, valeurs texte échappées
 par le writer CSV. L'export `documents` neutralise en plus les valeurs
 commençant par `=`, `+`, `-` ou `@` pour éviter les formules Excel.
+
+Les auteurs et horodatages techniques restent en base et dans le journal
+d'audit, mais ne font pas partie des fichiers CSV destinés aux clients.
 
 ## Historique d'audit
 

@@ -8,14 +8,12 @@ import unicodedata
 import uuid
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from dataclasses import field as dataclass_field
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import NamedTuple
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased
 
 from app.core.errors import ApiError
 from app.models.cash_register import DENOMINATIONS, CashRegister
@@ -30,7 +28,6 @@ from app.models.temperature_reading import (
     TemperatureReading,
 )
 from app.models.transport import Transport
-from app.models.user import User
 from app.models.vehicle import Vehicle
 from app.schemas.export import ExportDataset
 from app.services.cash_session import (
@@ -124,10 +121,6 @@ def _time(value: time | None) -> str:
     return value.strftime("%H:%M") if value is not None else ""
 
 
-def _datetime(value: datetime | None) -> str:
-    return value.astimezone(UTC).strftime("%d/%m/%Y %H:%M") if value is not None else ""
-
-
 def _decimal(value: Decimal | None) -> str:
     """Decimal comma, so Excel reads the cell as a number."""
 
@@ -182,7 +175,6 @@ class ReadingExportDay:
     reading_date: date
     morning: TemperatureReading | None = None
     evening: TemperatureReading | None = None
-    correction_authors: dict[ReadingSlot, str | None] = dataclass_field(default_factory=dict)
 
 
 def _day_compliance(day: ReadingExportDay) -> str:
@@ -216,17 +208,10 @@ async def _readings(db: AsyncSession, start: date | None, end: date | None) -> E
         "Justification soir",
         "Conforme",
         "Source",
-        "Matin relevé le",
-        "Matin modifié le",
-        "Auteur correction matin",
-        "Soir relevé le",
-        "Soir modifié le",
-        "Auteur correction soir",
     ]
     query = (
-        select(TemperatureReading, Equipment, User.email)
+        select(TemperatureReading, Equipment)
         .join(Equipment, Equipment.id == TemperatureReading.equipment_id)
-        .outerjoin(User, User.id == TemperatureReading.corrected_by)
         .order_by(
             TemperatureReading.reading_date,
             func.lower(Equipment.name),
@@ -239,7 +224,7 @@ async def _readings(db: AsyncSession, start: date | None, end: date | None) -> E
         query = query.where(TemperatureReading.reading_date <= end)
 
     grouped: dict[tuple[uuid.UUID, date], ReadingExportDay] = {}
-    for reading, equipment, correction_author in await db.execute(query):
+    for reading, equipment in await db.execute(query):
         key = (equipment.id, reading.reading_date)
         day = grouped.setdefault(
             key,
@@ -249,8 +234,6 @@ async def _readings(db: AsyncSession, start: date | None, end: date | None) -> E
             day.morning = reading
         else:
             day.evening = reading
-        if reading.corrected_at is not None:
-            day.correction_authors[reading.slot] = correction_author
 
     rows: list[list[str]] = []
     for day in grouped.values():
@@ -285,20 +268,6 @@ async def _readings(db: AsyncSession, start: date | None, end: date | None) -> E
                 ),
                 _day_compliance(day),
                 _day_source(day),
-                _datetime(morning.recorded_at if morning is not None else None),
-                _datetime(
-                    morning.corrected_at
-                    if morning is not None and morning.corrected_at is not None
-                    else None
-                ),
-                _text(day.correction_authors.get(ReadingSlot.MORNING)),
-                _datetime(evening.recorded_at if evening is not None else None),
-                _datetime(
-                    evening.corrected_at
-                    if evening is not None and evening.corrected_at is not None
-                    else None
-                ),
-                _text(day.correction_authors.get(ReadingSlot.EVENING)),
             ]
         )
     return headers, rows
@@ -311,14 +280,11 @@ async def _cleanings(db: AsyncSession, start: date | None, end: date | None) -> 
         "Produits",
         "Date du nettoyage",
         "Commentaire",
-        "Déclaré par",
-        "Déclaré le",
     ]
     # A deleted declaration was withdrawn as a mistake: the audit trail keeps it.
     query = (
-        select(CleaningRecord, CleaningPlan, User.email)
+        select(CleaningRecord, CleaningPlan)
         .join(CleaningPlan, CleaningPlan.id == CleaningRecord.plan_id)
-        .outerjoin(User, User.id == CleaningRecord.performed_by)
         .where(CleaningRecord.deleted_at.is_(None))
         .order_by(CleaningRecord.cleaning_date, CleaningPlan.name)
     )
@@ -328,7 +294,7 @@ async def _cleanings(db: AsyncSession, start: date | None, end: date | None) -> 
         query = query.where(CleaningRecord.cleaning_date <= end)
 
     rows: list[list[str]] = []
-    for record, plan, email in await db.execute(query):
+    for record, plan in await db.execute(query):
         rows.append(
             [
                 plan.name,
@@ -336,8 +302,6 @@ async def _cleanings(db: AsyncSession, start: date | None, end: date | None) -> 
                 _text(plan.products),
                 _date(record.cleaning_date),
                 _text(record.comment),
-                _text(email),
-                _datetime(record.recorded_at),
             ]
         )
     return headers, rows
@@ -497,15 +461,10 @@ async def _cash_registers(db: AsyncSession, start: date | None, end: date | None
         ["Frais pro (€)", "Frais perso (€)", "Total des frais (€)", "Clôture — total (€)"]
     )
     headers.extend(f"Clôture — {_DENOMINATION_LABELS[field]}" for field, _ in DENOMINATIONS)
-    headers.extend(["Ouvert par", "Ouvert le", "Clôturé par", "Clôturé le", "Supprimé le"])
 
-    opened_user = aliased(User)
-    closed_user = aliased(User)
     query = (
-        select(CashSession, CashRegister.name, opened_user.email, closed_user.email)
+        select(CashSession, CashRegister.name)
         .join(CashRegister, CashRegister.id == CashSession.cash_register_id)
-        .outerjoin(opened_user, opened_user.id == CashSession.opened_by)
-        .outerjoin(closed_user, closed_user.id == CashSession.closed_by)
         .order_by(
             func.lower(CashRegister.name),
             CashSession.session_date,
@@ -518,10 +477,10 @@ async def _cash_registers(db: AsyncSession, start: date | None, end: date | None
         query = query.where(CashSession.session_date <= end)
 
     rows_data = list(await db.execute(query))
-    expenses = await _expenses_by_session(db, [session.id for session, _, _, _ in rows_data])
+    expenses = await _expenses_by_session(db, [session.id for session, _ in rows_data])
 
     rows: list[list[str]] = []
-    for session, register_name, opened_email, closed_email in rows_data:
+    for session, register_name in rows_data:
         session_expenses = expenses.get(session.id, [])
         opening = counts_from(session)
         closing = closing_counts_of(session)
@@ -536,15 +495,6 @@ async def _cash_registers(db: AsyncSession, start: date | None, end: date | None
             ]
         )
         row.extend("" if closing is None else str(closing[field]) for field, _ in DENOMINATIONS)
-        row.extend(
-            [
-                _text(opened_email),
-                _datetime(session.created_at),
-                _text(closed_email),
-                _datetime(session.closed_at),
-                _datetime(session.deleted_at),
-            ]
-        )
         rows.append(row)
     return headers, rows
 
@@ -553,22 +503,12 @@ def _session_extract(
     session: CashSession,
     *,
     register_name: str,
-    opened_by_email: str | None,
-    closed_by_email: str | None,
     expenses: Sequence[CashExpense],
 ) -> Extract:
     """One session as a block-per-block document, readable for a control."""
 
     headers = ["Suivi de caisse", register_name]
-    rows: list[list[str]] = [
-        ["Date", _date(session.session_date)],
-        ["Ouvert par", _text(opened_by_email)],
-        ["Ouvert le", _datetime(session.created_at)],
-        ["Clôturé par", _text(closed_by_email)],
-        ["Clôturé le", _datetime(session.closed_at)],
-    ]
-    if session.deleted_at is not None:
-        rows.append(["Supprimé le", _datetime(session.deleted_at)])
+    rows: list[list[str]] = [["Date", _date(session.session_date)]]
 
     rows.append([])
     rows.append(["Comptage d'ouverture"])
@@ -619,14 +559,10 @@ def _session_extract(
 async def build_cash_session_export(db: AsyncSession, session_id: uuid.UUID) -> CashSessionExport:
     """The extract of one session, with the file name to hand out."""
 
-    opened_user = aliased(User)
-    closed_user = aliased(User)
     row = (
         await db.execute(
-            select(CashSession, CashRegister.name, opened_user.email, closed_user.email)
+            select(CashSession, CashRegister.name)
             .join(CashRegister, CashRegister.id == CashSession.cash_register_id)
-            .outerjoin(opened_user, opened_user.id == CashSession.opened_by)
-            .outerjoin(closed_user, closed_user.id == CashSession.closed_by)
             .where(
                 CashSession.id == session_id,
                 CashSession.deleted_at.is_(None),
@@ -635,13 +571,11 @@ async def build_cash_session_export(db: AsyncSession, session_id: uuid.UUID) -> 
     ).one_or_none()
     if row is None:
         raise ApiError(404, "cash_session_not_found", "Cash session not found")
-    session, register_name, opened_by_email, closed_by_email = row
+    session, register_name = row
 
     headers, rows = _session_extract(
         session,
         register_name=register_name,
-        opened_by_email=opened_by_email,
-        closed_by_email=closed_by_email,
         expenses=list(
             await db.scalars(
                 select(CashExpense)
@@ -660,19 +594,8 @@ async def _documents(
     start: date | None,
     end: date | None,
 ) -> Extract:
-    headers = [
-        "Date de génération",
-        "Modèle",
-        "Généré par",
-        "Fichier PDF",
-        "Taille (octets)",
-        "SHA-256",
-    ]
-    query = (
-        select(GeneratedDocument, User.email)
-        .outerjoin(User, GeneratedDocument.generated_by_id == User.id)
-        .order_by(GeneratedDocument.created_at, GeneratedDocument.id)
-    )
+    headers = ["Modèle", "Fichier PDF", "Taille (octets)", "SHA-256"]
+    query = select(GeneratedDocument).order_by(GeneratedDocument.created_at, GeneratedDocument.id)
     if start is not None:
         query = query.where(
             GeneratedDocument.created_at >= datetime.combine(start, time.min, tzinfo=UTC)
@@ -683,19 +606,17 @@ async def _documents(
             < datetime.combine(end + timedelta(days=1), time.min, tzinfo=UTC)
         )
 
-    documents = (await db.execute(query)).all()
+    documents = list(await db.scalars(query))
     variable_names = sorted(
-        {name for document, _email in documents for name in document.values},
+        {name for document in documents for name in document.values},
         key=str.casefold,
     )
     headers.extend(variable_names)
 
     rows: list[list[str]] = []
-    for document, email in documents:
+    for document in documents:
         row = [
-            _datetime(document.created_at),
             _text(document.template_name),
-            _text(email),
             _text(document.filename),
             str(document.size_bytes),
             _text(document.sha256),

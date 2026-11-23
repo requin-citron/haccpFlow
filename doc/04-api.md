@@ -255,11 +255,15 @@ Réponse : CSV UTF-8 avec BOM, séparateur `;`.
 
 L'export `readings` produit une ligne par matériel et par date avec les
 colonnes : matériel, type, date, températures matin et soir originales,
-températures modifiées, justifications, conformité effective, source effective,
-dates de relevé/correction et auteurs des corrections.
+températures modifiées, justifications, conformité effective et source
+effective. Les auteurs et horodatages d'audit ne sont pas exportés.
 
-L'export `documents` ajoute, après les métadonnées, une colonne par nom de
-variable présent dans les documents exportés.
+L'export `documents` expose le modèle, le fichier PDF, sa taille, son SHA-256,
+puis une colonne par nom de variable présent dans les documents exportés.
+
+Les exports nettoyages, caisses et documents n'exposent pas non plus les
+auteurs ou horodatages techniques. Les filtres `from`/`to` restent disponibles
+et l'audit complet reste accessible via les API d'historique.
 
 ## Modèles LaTeX
 
