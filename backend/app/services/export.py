@@ -7,6 +7,8 @@ import re
 import unicodedata
 import uuid
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import NamedTuple
@@ -44,6 +46,11 @@ from app.services.pasteurisation import (
     load_phase_records,
     phase_is_complete,
 )
+from app.services.temperature import (
+    effective_compliance,
+    effective_source,
+    effective_temperature,
+)
 from app.services.transport import transport_is_complete
 
 #: Excel in French expects a semicolon delimiter, and the BOM keeps accents intact.
@@ -54,7 +61,6 @@ _EQUIPMENT_TYPE_LABELS = {
     EquipmentType.FRIDGE: "Réfrigérateur",
     EquipmentType.FREEZER: "Congélateur",
 }
-_SLOT_LABELS = {ReadingSlot.MORNING: "Matin", ReadingSlot.EVENING: "Soir"}
 _SOURCE_LABELS = {ReadingSource.MANUAL: "Manuel", ReadingSource.SENSOR: "Capteur"}
 _FREQUENCY_LABELS = {
     CleaningFrequency.AFTER_EACH_USE: "Après chaque usage",
@@ -170,39 +176,129 @@ def _boolean(value: bool) -> str:
     return "Oui" if value else "Non"
 
 
+@dataclass
+class ReadingExportDay:
+    equipment: Equipment
+    reading_date: date
+    morning: TemperatureReading | None = None
+    evening: TemperatureReading | None = None
+    correction_authors: dict[ReadingSlot, str | None] = dataclass_field(default_factory=dict)
+
+
+def _day_compliance(day: ReadingExportDay) -> str:
+    readings = [reading for reading in (day.morning, day.evening) if reading is not None]
+    if day.morning is None or day.evening is None:
+        return "Incomplet"
+    return "Oui" if all(effective_compliance(reading) for reading in readings) else "Non"
+
+
+def _day_source(day: ReadingExportDay) -> str:
+    sources = {
+        effective_source(reading) for reading in (day.morning, day.evening) if reading is not None
+    }
+    if not sources:
+        return ""
+    if len(sources) > 1:
+        return "Mixte"
+    return _SOURCE_LABELS[sources.pop()]
+
+
 async def _readings(db: AsyncSession, start: date | None, end: date | None) -> Extract:
     headers = [
         "Matériel",
         "Type",
         "Date",
-        "Créneau",
-        "Température (°C)",
+        "Matin (°C)",
+        "Soir (°C)",
+        "Matin modifié (°C)",
+        "Soir modifié (°C)",
+        "Justification matin",
+        "Justification soir",
         "Conforme",
         "Source",
-        "Relevé le",
+        "Matin relevé le",
+        "Matin modifié le",
+        "Auteur correction matin",
+        "Soir relevé le",
+        "Soir modifié le",
+        "Auteur correction soir",
     ]
     query = (
-        select(TemperatureReading, Equipment)
+        select(TemperatureReading, Equipment, User.email)
         .join(Equipment, Equipment.id == TemperatureReading.equipment_id)
-        .order_by(TemperatureReading.reading_date, Equipment.name)
+        .outerjoin(User, User.id == TemperatureReading.corrected_by)
+        .order_by(
+            TemperatureReading.reading_date,
+            func.lower(Equipment.name),
+            TemperatureReading.slot,
+        )
     )
     if start is not None:
         query = query.where(TemperatureReading.reading_date >= start)
     if end is not None:
         query = query.where(TemperatureReading.reading_date <= end)
 
+    grouped: dict[tuple[uuid.UUID, date], ReadingExportDay] = {}
+    for reading, equipment, correction_author in await db.execute(query):
+        key = (equipment.id, reading.reading_date)
+        day = grouped.setdefault(
+            key,
+            ReadingExportDay(equipment=equipment, reading_date=reading.reading_date),
+        )
+        if reading.slot is ReadingSlot.MORNING:
+            day.morning = reading
+        else:
+            day.evening = reading
+        if reading.corrected_at is not None:
+            day.correction_authors[reading.slot] = correction_author
+
     rows: list[list[str]] = []
-    for reading, equipment in await db.execute(query):
+    for day in grouped.values():
+        morning = day.morning
+        evening = day.evening
         rows.append(
             [
-                equipment.name,
-                _EQUIPMENT_TYPE_LABELS[equipment.type],
-                _date(reading.reading_date),
-                _SLOT_LABELS[reading.slot],
-                _decimal(reading.temperature_celsius),
-                _boolean(reading.is_compliant),
-                _SOURCE_LABELS[reading.source],
-                _datetime(reading.recorded_at),
+                day.equipment.name,
+                _EQUIPMENT_TYPE_LABELS[day.equipment.type],
+                _date(day.reading_date),
+                _decimal(morning.temperature_celsius if morning is not None else None),
+                _decimal(evening.temperature_celsius if evening is not None else None),
+                _decimal(
+                    effective_temperature(morning)
+                    if morning is not None and morning.corrected_at is not None
+                    else None
+                ),
+                _decimal(
+                    effective_temperature(evening)
+                    if evening is not None and evening.corrected_at is not None
+                    else None
+                ),
+                _text(
+                    _excel_safe(morning.correction_justification)
+                    if morning is not None and morning.correction_justification is not None
+                    else None
+                ),
+                _text(
+                    _excel_safe(evening.correction_justification)
+                    if evening is not None and evening.correction_justification is not None
+                    else None
+                ),
+                _day_compliance(day),
+                _day_source(day),
+                _datetime(morning.recorded_at if morning is not None else None),
+                _datetime(
+                    morning.corrected_at
+                    if morning is not None and morning.corrected_at is not None
+                    else None
+                ),
+                _text(day.correction_authors.get(ReadingSlot.MORNING)),
+                _datetime(evening.recorded_at if evening is not None else None),
+                _datetime(
+                    evening.corrected_at
+                    if evening is not None and evening.corrected_at is not None
+                    else None
+                ),
+                _text(day.correction_authors.get(ReadingSlot.EVENING)),
             ]
         )
     return headers, rows

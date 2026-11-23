@@ -152,6 +152,25 @@ Suppression définitive :
 | `GET` | `/api/v1/equipment/{equipment_id}/readings/{reading_date}` | admin, opérateur |
 | `GET` | `/api/v1/equipment/{equipment_id}/readings/{reading_date}/history` | admin, opérateur |
 
+`PUT .../readings/{reading_date}` accepte les champs partiels
+`morning_celsius`, `evening_celsius`, `morning_justification` et
+`evening_justification`. Un champ de température absent conserve la valeur
+effective courante. Une modification d'une valeur existante est refusée en
+`422` avec `reading_justification_required` si la justification du même
+créneau manque.
+
+La réponse expose :
+
+- `morning` et `evening` : valeurs effectives, pour rester compatibles avec
+  les clients existants ;
+- `morning_original` et `evening_original` : mesures initiales immuables ;
+- `morning_modified` et `evening_modified` : dernière correction, ou `null`.
+
+Un objet modifié contient `previous_celsius`, `new_celsius`,
+`is_compliant`, `justification`, `changed_by_email` et `changed_at`.
+Plusieurs corrections successives sont consolidées : seule la dernière est
+exposée, tandis que l'originale reste inchangée.
+
 ## Nettoyage
 
 | Méthode | Route | Accès |
@@ -233,6 +252,11 @@ Les anciens noms `departure_*` et `arrival_*` ne sont plus acceptés.
 
 Paramètres optionnels : `from`, `to` (`YYYY-MM-DD`, bornes incluses).
 Réponse : CSV UTF-8 avec BOM, séparateur `;`.
+
+L'export `readings` produit une ligne par matériel et par date avec les
+colonnes : matériel, type, date, températures matin et soir originales,
+températures modifiées, justifications, conformité effective, source effective,
+dates de relevé/correction et auteurs des corrections.
 
 L'export `documents` ajoute, après les métadonnées, une colonne par nom de
 variable présent dans les documents exportés.

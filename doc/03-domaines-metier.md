@@ -53,13 +53,21 @@ désactivés.
 
 ### Relevés de température
 
-- Deux créneaux : `morning` et `evening`, une valeur par créneau et par jour.
+- Deux créneaux : `morning` et `evening`, chacun avec une valeur originale et
+  une éventuelle valeur corrigée.
 - L'API accepte un créneau seul ; le second peut être complété plus tard sans
   écraser le premier.
-- La conformité est recalculée à chaque écriture :
-  `min <= température <= max`.
-- Les corrections sont journalisées dans `temperature_reading_edits` avec
-  l'auteur, l'ancienne valeur, la nouvelle valeur et l'horodatage.
+- La conformité originale et celle de la correction sont figées à leur
+  écriture respective avec `min <= température <= max`.
+- Une modification d'une valeur déjà enregistrée exige une justification
+  propre au créneau, que la valeur soit conforme ou hors seuils. Une création
+  ou une complétion de créneau absent n'en demande pas.
+- La valeur originale est immuable. Une ligne conserve au plus la dernière
+  correction du créneau, avec sa justification, son auteur et son horodatage.
+- Plusieurs corrections successives ne conservent que l'état final : avec
+  `2 → 3 → 4`, l'original reste `2` et la correction finale vaut `4`.
+- Une correction revenue à la valeur originale reste tracée avec sa dernière
+  justification.
 - Une date antidatée est acceptée ; une date trop future est refusée (tolérance
   d'un jour pour les décalages de fuseau).
 - Les listes par défaut couvrent les 7 derniers jours ; une plage explicite ne
@@ -169,7 +177,7 @@ Six jeux de données, filtrables par `from`/`to` :
 
 | Dataset | Contenu |
 | --- | --- |
-| `readings` | Relevés de température, par créneau. |
+| `readings` | Relevés de température, une ligne par matériel et par jour avec originales, corrections et justifications. |
 | `cleanings` | Déclarations de nettoyage. |
 | `pasteurisations` | Lots et trois phases. |
 | `transports` | Transports et checkpoints. |

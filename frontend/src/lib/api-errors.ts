@@ -68,6 +68,8 @@ const ERROR_CODE_KEYS: Record<string, MessageKey> = {
   user_self_lockout:
     "Tu ne peux pas modifier tes propres droits, désactiver ou supprimer ton compte.",
   reading_value_required: "Saisis au moins une température.",
+  reading_justification_required:
+    "La modification d’une température existante doit être justifiée.",
   export_range_invalid: "La date de début doit précéder la date de fin.",
   template_name_taken: "Un modèle porte déjà ce nom. Choisis-en un autre.",
   template_too_large: "Le fichier dépasse la taille maximale autorisée.",

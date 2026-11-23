@@ -7,11 +7,13 @@ from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
     ForeignKey,
     Numeric,
+    Text,
     UniqueConstraint,
     Uuid,
     func,
@@ -47,6 +49,26 @@ class TemperatureReading(TimestampMixin, Base):
             "slot",
             name="uq_temperature_readings_slot",
         ),
+        CheckConstraint(
+            """
+            (
+                corrected_at IS NULL
+                AND corrected_temperature_celsius IS NULL
+                AND corrected_is_compliant IS NULL
+                AND correction_justification IS NULL
+                AND corrected_by IS NULL
+            )
+            OR
+            (
+                corrected_at IS NOT NULL
+                AND corrected_temperature_celsius IS NOT NULL
+                AND corrected_is_compliant IS NOT NULL
+                AND correction_justification IS NOT NULL
+                AND btrim(correction_justification) <> ''
+            )
+            """,
+            name="ck_temperature_readings_correction_complete",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -81,10 +103,33 @@ class TemperatureReading(TimestampMixin, Base):
     )
     # When the measurement was taken: set once, never moved by an edit.
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # The initial author is kept separately so creation remains auditable
+    # without writing an event row to the legacy edits table.
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # One optional final correction lives on the slot row itself. A later
+    # correction overwrites these values; the original measurement above stays
+    # immutable.
+    corrected_temperature_celsius: Mapped[Decimal | None] = mapped_column(
+        Numeric(5, 2),
+        nullable=True,
+    )
+    corrected_is_compliant: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    correction_justification: Mapped[str | None] = mapped_column(Text, nullable=True)
+    corrected_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    corrected_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
 
 class TemperatureReadingEdit(Base):
-    """Audit trail: every change applied to a temperature reading."""
+    """Legacy audit trail retained for pre-migration correction history."""
 
     __tablename__ = "temperature_reading_edits"
 

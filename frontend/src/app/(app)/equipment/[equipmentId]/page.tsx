@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { FridgeIcon, PinIcon, SnowflakeIcon } from "@/components/icons";
 import { ReadingDialog } from "@/components/readings/reading-dialog";
+import { ReadingSlotDisplay } from "@/components/readings/reading-slot";
 import { apiFetch } from "@/lib/api";
 import {
   addDays,
@@ -14,30 +15,9 @@ import {
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { getEnabledModules } from "@/lib/module-settings";
-import type { Equipment, TemperatureReadingDay, TemperatureReadingSlot } from "@/lib/types";
+import type { Equipment, TemperatureReadingDay } from "@/lib/types";
 
 const HISTORY_DAYS = 14;
-
-function SlotValue({
-  slot,
-  locale,
-}: {
-  slot: TemperatureReadingSlot | null;
-  locale: Awaited<ReturnType<typeof getLocale>>;
-}) {
-  if (slot === null) {
-    return <span className="text-slate-400">—</span>;
-  }
-  return (
-    <span
-      className={`font-medium tabular-nums ${
-        slot.is_compliant ? "text-emerald-700" : "text-rose-700"
-      }`}
-    >
-      {formatTemperature(locale, slot.temperature_celsius)}
-    </span>
-  );
-}
 
 export default async function EquipmentDetailPage({
   params,
@@ -145,10 +125,24 @@ export default async function EquipmentDetailPage({
                       {formatShortDay(locale, day.reading_date)}
                     </td>
                     <td className="px-5 py-3">
-                      <SlotValue slot={day.morning} locale={locale} />
+                      <ReadingSlotDisplay
+                        label={t(locale, "Matin")}
+                        effective={day.morning}
+                        original={day.morning_original}
+                        modified={day.morning_modified}
+                        locale={locale}
+                        compact
+                      />
                     </td>
                     <td className="px-5 py-3">
-                      <SlotValue slot={day.evening} locale={locale} />
+                      <ReadingSlotDisplay
+                        label={t(locale, "Soir")}
+                        effective={day.evening}
+                        original={day.evening_original}
+                        modified={day.evening_modified}
+                        locale={locale}
+                        compact
+                      />
                     </td>
                     <td className="px-5 py-3">
                       <ReadingDialog equipment={equipment} readingDate={day.reading_date} day={day} />

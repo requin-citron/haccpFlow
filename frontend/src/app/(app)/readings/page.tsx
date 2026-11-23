@@ -2,55 +2,19 @@ import Link from "next/link";
 
 import { DayNavigation } from "@/components/readings/day-navigation";
 import { ReadingDialog } from "@/components/readings/reading-dialog";
+import { ReadingSlotDisplay } from "@/components/readings/reading-slot";
 import { FridgeIcon, GridIcon, SnowflakeIcon } from "@/components/icons";
 import { apiFetch } from "@/lib/api";
 import {
   equipmentTypeLabel,
   formatTemperature,
   isIsoDate,
-  readingSourceLabel,
   todayIso,
 } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { getEnabledModules } from "@/lib/module-settings";
-import type { Equipment, TemperatureReadingDay, TemperatureReadingSlot } from "@/lib/types";
-
-function SlotTile({
-  label,
-  slot,
-  locale,
-}: {
-  label: string;
-  slot: TemperatureReadingSlot | null;
-  locale: Awaited<ReturnType<typeof getLocale>>;
-}) {
-  if (slot === null) {
-    return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-3">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
-        <p className="mt-1 text-sm text-slate-400">{t(locale, "Non saisi")}</p>
-      </div>
-    );
-  }
-
-  const tone = slot.is_compliant
-    ? { box: "border-emerald-200 bg-emerald-50", value: "text-emerald-700" }
-    : { box: "border-rose-200 bg-rose-50", value: "text-rose-700" };
-
-  return (
-    <div className={`rounded-xl border px-4 py-3 ${tone.box}`}>
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-1 text-lg font-semibold tabular-nums ${tone.value}`}>
-        {formatTemperature(locale, slot.temperature_celsius)}
-      </p>
-      <p className="mt-0.5 text-xs text-slate-500">
-        {readingSourceLabel(locale, slot.source)} ·{" "}
-        {slot.is_compliant ? t(locale, "conforme") : t(locale, "hors seuils")}
-      </p>
-    </div>
-  );
-}
+import type { Equipment, TemperatureReadingDay } from "@/lib/types";
 
 export default async function ReadingsPage({
   searchParams,
@@ -171,8 +135,20 @@ export default async function ReadingsPage({
                 </header>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <SlotTile label={t(locale, "Matin")} slot={day.morning} locale={locale} />
-                  <SlotTile label={t(locale, "Soir")} slot={day.evening} locale={locale} />
+                  <ReadingSlotDisplay
+                    label={t(locale, "Matin")}
+                    effective={day.morning}
+                    original={day.morning_original}
+                    modified={day.morning_modified}
+                    locale={locale}
+                  />
+                  <ReadingSlotDisplay
+                    label={t(locale, "Soir")}
+                    effective={day.evening}
+                    original={day.evening_original}
+                    modified={day.evening_modified}
+                    locale={locale}
+                  />
                 </div>
               </article>
             );

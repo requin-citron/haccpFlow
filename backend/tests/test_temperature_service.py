@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
 
 from app.core.errors import ApiError
-from app.models.temperature_reading import ReadingSlot
+from app.models.temperature_reading import ReadingSlot, ReadingSource, TemperatureReading
 from app.schemas.temperature_reading import TemperatureReadingWrite
 from app.services.temperature import (
     as_celsius,
+    effective_compliance,
+    effective_source,
+    effective_temperature,
     evaluate_compliance,
     requested_slots,
     resolve_range,
@@ -48,6 +51,59 @@ def test_requested_slots_keeps_only_provided_values() -> None:
         ReadingSlot.EVENING: Decimal("5.00"),
     }
     assert requested_slots(TemperatureReadingWrite()) == {}
+
+
+def _reading(**overrides: object) -> TemperatureReading:
+    values: dict[str, object] = {
+        "equipment_id": "00000000-0000-0000-0000-000000000001",
+        "reading_date": date(2026, 11, 23),
+        "slot": ReadingSlot.MORNING,
+        "temperature_celsius": Decimal("2.00"),
+        "is_compliant": True,
+        "source": ReadingSource.SENSOR,
+        "recorded_at": datetime(2026, 11, 23, 8, tzinfo=UTC),
+    }
+    values.update(overrides)
+    return TemperatureReading(**values)
+
+
+def test_effective_temperature_uses_the_final_correction() -> None:
+    original = _reading()
+    corrected = _reading(corrected_temperature_celsius=Decimal("4.00"))
+
+    assert effective_temperature(original) == Decimal("2.00")
+    assert effective_temperature(corrected) == Decimal("4.00")
+
+
+def test_effective_compliance_uses_the_frozen_correction_value() -> None:
+    original = _reading()
+    corrected = _reading(corrected_is_compliant=False)
+
+    assert effective_compliance(original) is True
+    assert effective_compliance(corrected) is False
+
+
+def test_a_human_correction_makes_the_effective_source_manual() -> None:
+    original = _reading()
+    corrected = _reading(corrected_at=datetime(2026, 11, 23, 9, tzinfo=UTC))
+
+    assert effective_source(original) is ReadingSource.SENSOR
+    assert effective_source(corrected) is ReadingSource.MANUAL
+
+
+def test_justifications_are_trimmed_and_blank_values_are_ignored() -> None:
+    provided = TemperatureReadingWrite(
+        morning_justification="  Thermomètre déplacé  ",
+        evening_justification="   ",
+    )
+
+    assert provided.morning_justification == "Thermomètre déplacé"
+    assert provided.evening_justification is None
+
+
+def test_a_justification_longer_than_the_limit_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        TemperatureReadingWrite(morning_justification="x" * 2001)
 
 
 def test_validate_reading_date_accepts_past_today_and_tomorrow() -> None:

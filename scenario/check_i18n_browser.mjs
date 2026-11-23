@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 const BASE_URL = (process.env.WEB_BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+const API_BASE_URL = (process.env.API_BASE_URL ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
 const EMAIL = process.env.ADMIN_EMAIL ?? "";
 const PASSWORD = process.env.ADMIN_PASSWORD ?? "";
 const CHROMIUM = process.env.CHROMIUM_BIN ?? "/usr/bin/chromium";
@@ -21,6 +22,8 @@ let nextId = 1;
 let failures = 0;
 const pending = new Map();
 const hydrationErrors = [];
+let apiToken = "";
+let testEquipmentId = "";
 
 function report(label, ok, detail = "") {
   console.log(`  [${ok ? "OK" : "ÉCHEC"}] ${label}${!ok && detail ? ` — ${detail}` : ""}`);
@@ -135,7 +138,76 @@ async function clickUntil(selector, condition, attempts = 30) {
   return false;
 }
 
-function cleanup() {
+async function apiRequest(path, options = {}, token = apiToken) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`API ${options.method ?? "GET"} ${path}: ${response.status}`);
+  }
+  return response;
+}
+
+async function loginApi() {
+  const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ username: EMAIL, password: PASSWORD }),
+  });
+  if (!response.ok) {
+    throw new Error(`Connexion API impossible: ${response.status}`);
+  }
+  const payload = await response.json();
+  apiToken = payload.access_token;
+}
+
+async function createReadingEquipment() {
+  const response = await apiRequest("/api/v1/equipment", {
+    method: "POST",
+    body: JSON.stringify({
+      name: `Frigo navigateur ${Date.now()}`,
+      type: "fridge",
+      min_temperature_celsius: 0,
+      max_temperature_celsius: 4,
+    }),
+  });
+  const equipment = await response.json();
+  testEquipmentId = equipment.id;
+  return equipment;
+}
+
+async function setFormValue(selector, value) {
+  return evaluate(`(() => {
+    const control = document.querySelector(${JSON.stringify(selector)});
+    if (!control) return false;
+    const prototype =
+      control instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
+    setter?.call(control, ${JSON.stringify(value)});
+    control.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  })()`);
+}
+
+async function cleanup() {
+  if (apiToken && testEquipmentId) {
+    try {
+      await apiRequest(
+        `/api/v1/equipment/${testEquipmentId}`,
+        { method: "DELETE" },
+        apiToken,
+      );
+    } catch {
+      // Best effort: the test equipment is uniquely named.
+    }
+  }
   try {
     socket?.close();
   } catch {
@@ -171,7 +243,7 @@ async function main() {
   await send("Page.enable");
   await send("Runtime.enable");
 
-  console.log("\n=== Frontend — changement de langue dans le navigateur");
+  console.log("\n=== Frontend — langue, mobile et corrections de température");
 
   await navigate(`${BASE_URL}/login`);
   await evaluate(`
@@ -450,7 +522,180 @@ async function main() {
     );
   }
 
-  await send("Emulation.clearDeviceMetricsOverride");
+  await loginApi();
+  const readingEquipment = await createReadingEquipment();
+  await navigate(`${BASE_URL}/readings`);
+  const readingCardVisible = await waitFor(
+    `document.body.innerText.includes(${JSON.stringify(readingEquipment.name)})`,
+    20_000,
+  );
+  report("matériel de correction affiché sur mobile", readingCardVisible);
+
+  const readingSelector = `[data-equipment-id="${readingEquipment.id}"][data-reading-action="enter"]`;
+  const openedReading = await clickUntil(
+    readingSelector,
+    "document.querySelector('[data-reading-dialog-panel]') !== null",
+  );
+  report("formulaire de relevé ouvert", openedReading);
+  await sleep(250);
+  const sheetPosition = await evaluate(`(() => {
+    const overlay = document.querySelector("[data-reading-dialog-overlay]");
+    const panel = document.querySelector("[data-reading-dialog-panel]");
+    if (!overlay || !panel) return null;
+    const overlayRect = overlay.getBoundingClientRect();
+    const rect = panel.getBoundingClientRect();
+    return {
+      anchoredBottom: Math.abs(rect.bottom - overlayRect.bottom) < 2,
+      leavesTopSpace: rect.top > overlayRect.top,
+    };
+  })()`);
+  report("formulaire mobile en bottom sheet", sheetPosition?.anchoredBottom === true);
+  report("bottom sheet laisse voir le fond", sheetPosition?.leavesTopSpace === true);
+  report(
+    "aucune justification demandée pour une création",
+    (await evaluate('document.querySelector("#morning_justification") === null')) === true,
+  );
+
+  await setFormValue("#morning_celsius", "2.5");
+  await setFormValue("#evening_celsius", "3.5");
+  const initialReady = await waitFor(
+    '!document.querySelector("[data-reading-form] button[type=submit]")?.disabled',
+  );
+  report("création matin/soir prête", initialReady);
+  await evaluate('document.querySelector("[data-reading-form]")?.requestSubmit()');
+  const initialSaved = await waitFor(
+    `document.querySelector(${JSON.stringify(
+      `[data-equipment-id="${readingEquipment.id}"][data-reading-action="correct"]`,
+    )}) !== null && document.querySelector("[data-reading-dialog-panel]") === null`,
+    20_000,
+  );
+  report("création matin/soir enregistrée", initialSaved);
+
+  const correctionSelector = `[data-equipment-id="${readingEquipment.id}"][data-reading-action="correct"]`;
+  await clickUntil(
+    correctionSelector,
+    "document.querySelector('[data-reading-dialog-panel]') !== null",
+  );
+  await setFormValue("#morning_celsius", "3.5");
+  const justificationRevealed = await waitFor(
+    'document.querySelector("#morning_justification") !== null',
+  );
+  report("justification révélée après modification", justificationRevealed);
+  const correctionBlocked = await evaluate(`(() => {
+    const submit = document.querySelector("[data-reading-form] button[type=submit]");
+    const justification = document.querySelector("#morning_justification");
+    return {
+      submitDisabled: submit?.disabled === true,
+      justificationRequired: justification?.required === true,
+    };
+  })()`);
+  report("enregistrement bloqué sans justification", correctionBlocked.submitDisabled);
+  report("justification marquée obligatoire", correctionBlocked.justificationRequired);
+
+  await setFormValue("#morning_justification", "Thermomètre mal positionné");
+  const correctionReady = await waitFor(
+    '!document.querySelector("[data-reading-form] button[type=submit]")?.disabled',
+  );
+  report("correction prête après justification", correctionReady);
+  await evaluate('document.querySelector("[data-reading-form]")?.requestSubmit()');
+  const correctionSaved = await waitFor(
+    `document.querySelector(${JSON.stringify(
+      `[data-equipment-id="${readingEquipment.id}"]`,
+    )})?.closest("article")?.querySelector("[data-reading-corrected]") !== null &&
+     document.querySelector("[data-reading-dialog-panel]") === null`,
+    20_000,
+  );
+  report("correction enregistrée et badge affiché", correctionSaved);
+
+  const correctionDetails = await evaluate(`(() => {
+    const trigger = document.querySelector(${JSON.stringify(
+      `[data-equipment-id="${readingEquipment.id}"]`,
+    )});
+    const article = trigger?.closest("article");
+    const details = article?.querySelector("[data-correction-details]");
+    if (!details) return null;
+    details.open = true;
+    return details.innerText;
+  })()`);
+  report(
+    "détail : mesure originale",
+    typeof correctionDetails === "string" && correctionDetails.includes("2,5 °C"),
+  );
+  report(
+    "détail : valeur corrigée",
+    typeof correctionDetails === "string" && correctionDetails.includes("3,5 °C"),
+  );
+  report(
+    "détail : justification",
+    typeof correctionDetails === "string" &&
+      correctionDetails.includes("Thermomètre mal positionné"),
+  );
+
+  await clickUntil(
+    correctionSelector,
+    "document.querySelector('[data-reading-dialog-panel]') !== null",
+  );
+  await setFormValue("#morning_celsius", "3.8");
+  await waitFor('document.querySelector("#morning_justification") !== null');
+  report(
+    "justification précédente reprise pour une nouvelle correction",
+    (await evaluate(
+      'document.querySelector("#morning_justification")?.value === "Thermomètre mal positionné"',
+    )) === true,
+  );
+  await evaluate(
+    'document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))',
+  );
+  await waitFor('document.querySelector("[data-reading-dialog-panel]") === null');
+
+  await reload();
+  report(
+    "correction conservée après rechargement",
+    await waitFor(
+      `document.querySelector(${JSON.stringify(
+        `[data-equipment-id="${readingEquipment.id}"]`,
+      )})?.closest("article")?.querySelector("[data-reading-corrected]") !== null`,
+      20_000,
+    ),
+  );
+
+  await evaluate(`
+    localStorage.setItem("haccpflow.locale", "en");
+    document.cookie = "haccp_locale=en; path=/; SameSite=Lax";
+  `);
+  await reload();
+  await waitFor('document.documentElement.lang === "en"', 20_000);
+  const englishCorrection = await evaluate(`(() => {
+    const trigger = document.querySelector(${JSON.stringify(
+      `[data-equipment-id="${readingEquipment.id}"]`,
+    )});
+    const article = trigger?.closest("article");
+    return {
+      trigger: trigger?.textContent?.trim(),
+      badge: article?.querySelector("[data-reading-corrected]")?.textContent?.trim(),
+      detail:
+        article?.querySelector("[data-correction-details] summary")?.textContent?.trim(),
+    };
+  })()`);
+  report("bouton anglais Correct", englishCorrection.trigger === "Correct");
+  report("badge anglais Corrected", englishCorrection.badge === "Corrected");
+  report(
+    "détail anglais Correction details",
+    englishCorrection.detail === "Correction details",
+  );
+
+  await evaluate(`
+    localStorage.setItem("haccpflow.locale", "fr");
+    document.cookie = "haccp_locale=fr; path=/; SameSite=Lax";
+  `);
+  await navigate(`${BASE_URL}/equipment`);
+  await sleep(1000);
+  await send("Emulation.setDeviceMetricsOverride", {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
   await reload();
   await sleep(1500);
   const desktopEquipment = await evaluate(`(() => {
@@ -509,5 +754,5 @@ try {
   console.error(`\nECHEC: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 } finally {
-  cleanup();
+  await cleanup();
 }

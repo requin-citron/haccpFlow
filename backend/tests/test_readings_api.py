@@ -94,9 +94,25 @@ def test_update_records_the_previous_value_in_the_history(
     url = _readings_url(equipment["id"], _today())
     api_client.put(url, json={"morning_celsius": 2}, headers=admin_headers)
 
-    response = api_client.put(url, json={"morning_celsius": 3.5}, headers=admin_headers)
+    response = api_client.put(
+        url,
+        json={
+            "morning_celsius": 3.5,
+            "morning_justification": "Thermomètre mal positionné",
+        },
+        headers=admin_headers,
+    )
     assert response.status_code == 200
     assert response.json()["morning"]["temperature_celsius"] == 3.5
+    assert response.json()["morning_original"]["temperature_celsius"] == 2
+    assert response.json()["morning_modified"] == {
+        "previous_celsius": 2.0,
+        "new_celsius": 3.5,
+        "is_compliant": True,
+        "justification": "Thermomètre mal positionné",
+        "changed_by_email": "admin@test.local",
+        "changed_at": response.json()["morning_modified"]["changed_at"],
+    }
 
     history = api_client.get(f"{url}/history", headers=admin_headers)
     assert history.status_code == 200
@@ -105,6 +121,7 @@ def test_update_records_the_previous_value_in_the_history(
     assert entries[0]["slot"] == "morning"
     assert entries[0]["previous_celsius"] == 2
     assert entries[0]["new_celsius"] == 3.5
+    assert entries[0]["justification"] == "Thermomètre mal positionné"
     assert entries[0]["changed_by_email"] == "admin@test.local"
     assert entries[0]["changed_at"]
     assert entries[1]["previous_celsius"] is None
@@ -122,6 +139,138 @@ def test_rewriting_the_same_value_adds_no_audit_line(
     assert response.status_code == 200
     history = api_client.get(f"{url}/history", headers=admin_headers).json()
     assert [entry["action"] for entry in history] == ["created"]
+
+
+def test_correcting_a_reading_without_a_justification_is_rejected(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    equipment = _create_equipment(api_client, admin_headers)
+    url = _readings_url(equipment["id"], _today())
+    api_client.put(url, json={"morning_celsius": 2}, headers=admin_headers)
+
+    response = api_client.put(url, json={"morning_celsius": 3}, headers=admin_headers)
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "reading_justification_required"
+    assert response.json()["context"] == {"slot": "morning"}
+    assert api_client.get(url, headers=admin_headers).json()["morning"]["temperature_celsius"] == 2
+
+
+def test_each_slot_requires_its_own_justification(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    equipment = _create_equipment(api_client, admin_headers)
+    url = _readings_url(equipment["id"], _today())
+    api_client.put(
+        url,
+        json={"morning_celsius": 2, "evening_celsius": 3},
+        headers=admin_headers,
+    )
+
+    missing_evening = api_client.put(
+        url,
+        json={
+            "morning_celsius": 2.5,
+            "evening_celsius": 3.5,
+            "morning_justification": "Position corrigée",
+        },
+        headers=admin_headers,
+    )
+    assert missing_evening.status_code == 422
+    assert missing_evening.json()["context"] == {"slot": "evening"}
+
+    response = api_client.put(
+        url,
+        json={
+            "morning_celsius": 2.5,
+            "evening_celsius": 3.5,
+            "morning_justification": "Position corrigée",
+            "evening_justification": "Erreur de lecture",
+        },
+        headers=admin_headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["morning_modified"]["justification"] == "Position corrigée"
+    assert body["evening_modified"]["justification"] == "Erreur de lecture"
+
+
+def test_only_the_final_correction_is_kept_but_the_original_never_moves(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    equipment = _create_equipment(api_client, admin_headers)
+    url = _readings_url(equipment["id"], _today())
+    api_client.put(url, json={"morning_celsius": 2}, headers=admin_headers)
+
+    for value in range(3, 13):
+        response = api_client.put(
+            url,
+            json={
+                "morning_celsius": value,
+                "morning_justification": f"Correction {value}",
+            },
+            headers=admin_headers,
+        )
+        assert response.status_code == 200, response.text
+
+    body = api_client.get(url, headers=admin_headers).json()
+    assert body["morning"]["temperature_celsius"] == 12
+    assert body["morning_original"]["temperature_celsius"] == 2
+    assert body["morning_modified"] == {
+        "previous_celsius": 2.0,
+        "new_celsius": 12.0,
+        "is_compliant": False,
+        "justification": "Correction 12",
+        "changed_by_email": "admin@test.local",
+        "changed_at": body["morning_modified"]["changed_at"],
+    }
+    history = api_client.get(f"{url}/history", headers=admin_headers).json()
+    assert [entry["action"] for entry in history] == ["updated", "created"]
+    assert history[0]["justification"] == "Correction 12"
+
+
+def test_correcting_back_to_the_original_keeps_the_audit_trace(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    equipment = _create_equipment(api_client, admin_headers)
+    url = _readings_url(equipment["id"], _today())
+    api_client.put(url, json={"morning_celsius": 2}, headers=admin_headers)
+    api_client.put(
+        url,
+        json={"morning_celsius": 3, "morning_justification": "Première correction"},
+        headers=admin_headers,
+    )
+
+    response = api_client.put(
+        url,
+        json={"morning_celsius": 2, "morning_justification": "Retour à la mesure initiale"},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["morning"]["temperature_celsius"] == 2
+    assert body["morning_modified"]["new_celsius"] == 2
+    assert body["morning_modified"]["justification"] == "Retour à la mesure initiale"
+    history = api_client.get(f"{url}/history", headers=admin_headers).json()
+    assert [entry["action"] for entry in history] == ["updated", "created"]
+
+
+def test_a_blank_justification_does_not_count_as_provided(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    equipment = _create_equipment(api_client, admin_headers)
+    url = _readings_url(equipment["id"], _today())
+    api_client.put(url, json={"morning_celsius": 2}, headers=admin_headers)
+
+    response = api_client.put(
+        url,
+        json={"morning_celsius": 3, "morning_justification": "   "},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "reading_justification_required"
 
 
 def test_compliance_is_frozen_when_the_reading_is_recorded(
@@ -147,9 +296,14 @@ def test_compliance_is_recomputed_when_a_reading_is_edited(
     url = _readings_url(equipment["id"], _today())
     api_client.put(url, json={"morning_celsius": 2}, headers=admin_headers)
 
-    response = api_client.put(url, json={"morning_celsius": 9}, headers=admin_headers)
+    response = api_client.put(
+        url,
+        json={"morning_celsius": 9, "morning_justification": "Erreur de lecture"},
+        headers=admin_headers,
+    )
 
     assert response.json()["morning"]["is_compliant"] is False
+    assert response.json()["morning_original"]["is_compliant"] is True
 
 
 def test_a_past_date_can_be_filled_in(
@@ -233,7 +387,15 @@ def test_an_empty_day_is_not_an_error(
     )
 
     assert response.status_code == 200
-    assert response.json() == {"reading_date": _today(), "morning": None, "evening": None}
+    assert response.json() == {
+        "reading_date": _today(),
+        "morning": None,
+        "evening": None,
+        "morning_original": None,
+        "evening_original": None,
+        "morning_modified": None,
+        "evening_modified": None,
+    }
 
 
 def test_unknown_equipment_returns_404(

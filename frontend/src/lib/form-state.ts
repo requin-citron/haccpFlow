@@ -16,6 +16,10 @@ export const INITIAL_EQUIPMENT_FORM_STATE: EquipmentFormState = { status: "idle"
 export type ReadingFormState = {
   status: "idle" | "error" | "success";
   message?: string;
+  fieldErrors?: {
+    morning?: string;
+    evening?: string;
+  };
 };
 
 export const INITIAL_READING_FORM_STATE: ReadingFormState = { status: "idle" };

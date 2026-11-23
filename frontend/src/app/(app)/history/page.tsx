@@ -8,6 +8,7 @@ import {
   HISTORY_ENTITY_TONES,
   HISTORY_ENTITY_MODULES,
   historyActionLabel,
+  historyChangeLabel,
   historyEntityLabel,
   historyEntryLink,
 } from "@/lib/history";
@@ -257,10 +258,14 @@ export default async function HistoryPage({
                                 key={change.field}
                                 className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600"
                               >
-                                <span className="font-medium text-slate-700">{change.label}</span>{" "}
+                                <span className="font-medium text-slate-700">
+                                  {historyChangeLabel(locale, change.field, change.label)}
+                                </span>{" "}
                                 <span className="text-slate-400">{change.previous ?? "—"}</span>
                                 {" → "}
-                                <span className="text-slate-800">{change.new ?? "—"}</span>
+                                <span className="whitespace-pre-wrap break-words text-slate-800">
+                                  {change.new ?? "—"}
+                                </span>
                               </li>
                             ))}
                           </ul>

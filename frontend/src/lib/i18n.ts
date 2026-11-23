@@ -417,8 +417,34 @@ const FR_MESSAGES = {
   "conforme": "conforme",
   "hors seuils": "hors seuils",
   "Saisir": "Saisir",
+  "Compléter": "Compléter",
+  "Corriger": "Corriger",
   "Matin (°C)": "Matin (°C)",
   "Soir (°C)": "Soir (°C)",
+  "Température": "Température",
+  "Corrigé": "Corrigé",
+  "Détail de la correction": "Détail de la correction",
+  "Mesure originale": "Mesure originale",
+  "Valeur corrigée": "Valeur corrigée",
+  "Justification": "Justification",
+  "Justification du matin": "Justification du matin",
+  "Justification du soir": "Justification du soir",
+  "Saisir les relevés": "Saisir les relevés",
+  "Compléter les relevés": "Compléter les relevés",
+  "Corriger les relevés": "Corriger les relevés",
+  "La justification sera enregistrée avec cette correction. Seule la dernière correction du créneau est conservée.":
+    "La justification sera enregistrée avec cette correction. Seule la dernière correction du créneau est conservée.",
+  "La justification précédente est reprise ; modifie-la si nécessaire.":
+    "La justification précédente est reprise ; modifie-la si nécessaire.",
+  "Mesure originale : {original} · valeur actuelle : {current}":
+    "Mesure originale : {original} · valeur actuelle : {current}",
+  "Valeur actuelle : {current}": "Valeur actuelle : {current}",
+  "Une justification est obligatoire pour modifier cette température.":
+    "Une justification est obligatoire pour modifier cette température.",
+  "La modification d’une température existante doit être justifiée.":
+    "La modification d’une température existante doit être justifiée.",
+  "Saisis une température valide.": "Saisis une température valide.",
+  "Vérifie les températures saisies.": "Vérifie les températures saisies.",
   "Plage cible : {min} à {max}. Laisse un champ vide pour ne pas le modifier.":
     "Plage cible : {min} à {max}. Laisse un champ vide pour ne pas le modifier.",
   "Jour précédent": "Jour précédent",
@@ -1322,8 +1348,34 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "conforme": "compliant",
   "hors seuils": "out of range",
   "Saisir": "Enter",
+  "Compléter": "Complete",
+  "Corriger": "Correct",
   "Matin (°C)": "Morning (°C)",
   "Soir (°C)": "Evening (°C)",
+  "Température": "Temperature",
+  "Corrigé": "Corrected",
+  "Détail de la correction": "Correction details",
+  "Mesure originale": "Original reading",
+  "Valeur corrigée": "Corrected value",
+  "Justification": "Justification",
+  "Justification du matin": "Morning justification",
+  "Justification du soir": "Evening justification",
+  "Saisir les relevés": "Enter readings",
+  "Compléter les relevés": "Complete readings",
+  "Corriger les relevés": "Correct readings",
+  "La justification sera enregistrée avec cette correction. Seule la dernière correction du créneau est conservée.":
+    "The justification will be saved with this correction. Only the latest correction for the slot is kept.",
+  "La justification précédente est reprise ; modifie-la si nécessaire.":
+    "The previous justification is reused; change it if needed.",
+  "Mesure originale : {original} · valeur actuelle : {current}":
+    "Original reading: {original} · current value: {current}",
+  "Valeur actuelle : {current}": "Current value: {current}",
+  "Une justification est obligatoire pour modifier cette température.":
+    "A justification is required to change this temperature.",
+  "La modification d’une température existante doit être justifiée.":
+    "Changing an existing temperature must be justified.",
+  "Saisis une température valide.": "Enter a valid temperature.",
+  "Vérifie les températures saisies.": "Check the temperatures entered.",
   "Plage cible : {min} à {max}. Laisse un champ vide pour ne pas le modifier.":
     "Target range: {min} to {max}. Leave a field empty to keep it unchanged.",
   "Jour précédent": "Previous day",

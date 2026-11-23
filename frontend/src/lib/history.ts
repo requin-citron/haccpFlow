@@ -51,6 +51,21 @@ export function historyActionLabel(locale: Locale, action: HistoryAction): strin
   }
 }
 
+export function historyChangeLabel(
+  locale: Locale,
+  field: string,
+  fallback: string,
+): string {
+  switch (field) {
+    case "temperature_celsius":
+      return t(locale, "Température");
+    case "correction_justification":
+      return t(locale, "Justification");
+    default:
+      return fallback;
+  }
+}
+
 export const HISTORY_ACTION_TONES: Record<HistoryAction, string> = {
   created: "text-emerald-700",
   updated: "text-amber-700",

@@ -50,10 +50,23 @@ export type TemperatureReadingSlot = {
   updated_at: string;
 };
 
+export type TemperatureReadingCorrection = {
+  previous_celsius: number;
+  new_celsius: number;
+  is_compliant: boolean;
+  justification: string;
+  changed_by_email: string | null;
+  changed_at: string;
+};
+
 export type TemperatureReadingDay = {
   reading_date: string;
   morning: TemperatureReadingSlot | null;
   evening: TemperatureReadingSlot | null;
+  morning_original: TemperatureReadingSlot | null;
+  evening_original: TemperatureReadingSlot | null;
+  morning_modified: TemperatureReadingCorrection | null;
+  evening_modified: TemperatureReadingCorrection | null;
 };
 
 export type TemperatureReadingEdit = {
@@ -61,6 +74,7 @@ export type TemperatureReadingEdit = {
   action: ReadingEditAction;
   previous_celsius: number | null;
   new_celsius: number;
+  justification: string | null;
   changed_by_email: string | null;
   changed_at: string;
 };

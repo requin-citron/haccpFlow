@@ -96,7 +96,10 @@ def test_the_history_explains_what_changed(
     equipment = seeded["equipment"]
     api_client.put(
         f"{EQUIPMENT}/{equipment['id']}/readings/{_today()}",
-        json={"morning_celsius": 9},
+        json={
+            "morning_celsius": 9,
+            "morning_justification": "Thermomètre déplacé",
+        },
         headers=admin_headers,
     )
 
@@ -112,6 +115,45 @@ def test_the_history_explains_what_changed(
             "label": "Température",
             "previous": "2.00",
             "new": "9.00",
+        },
+        {
+            "field": "correction_justification",
+            "label": "Justification",
+            "previous": None,
+            "new": "Thermomètre déplacé",
+        },
+    ]
+
+
+def test_a_correction_back_to_the_original_remains_visible(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    seeded = _seed_one_of_each(api_client, admin_headers)
+    equipment = seeded["equipment"]
+    url = f"{EQUIPMENT}/{equipment['id']}/readings/{_today()}"
+    api_client.put(
+        url,
+        json={"morning_celsius": 3, "morning_justification": "Première correction"},
+        headers=admin_headers,
+    )
+    api_client.put(
+        url,
+        json={
+            "morning_celsius": 2,
+            "morning_justification": "Retour à la valeur initiale",
+        },
+        headers=admin_headers,
+    )
+
+    entries = api_client.get(f"{HISTORY}?entity=temperature_reading", headers=admin_headers).json()
+    correction = next(entry for entry in entries if entry["action"] == "updated")
+
+    assert correction["changes"] == [
+        {
+            "field": "correction_justification",
+            "label": "Justification",
+            "previous": None,
+            "new": "Retour à la valeur initiale",
         }
     ]
 

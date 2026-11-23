@@ -5,7 +5,8 @@ instance par client**. Elle couvre aujourd'hui deux volets du plan de maîtrise
 sanitaire :
 
 - **Chaîne du froid** — parc de matériel (frigos, congélateurs) avec seuils
-  réglementaires, relevés matin et soir, et journal des corrections.
+  réglementaires, relevés matin et soir, corrections justifiées, détail
+  original/corrigé et journal d'audit consolidé.
 - **Plan de nettoyage et de désinfection (PND)** — zones et matériels à
   nettoyer, fréquences, produits, déclarations de nettoyage, prévisionnel et
   liste du retard.
@@ -422,7 +423,8 @@ dessus.
 - Autorisations vérifiées sur chaque route, jamais dans l'interface seule.
 - Seuils HACCP configurables par matériel, jamais figés dans le code.
 - Modifications des relevés et des nettoyages journalisées : auteur, valeur
-  précédente et horodatage.
+  originale, dernière correction et horodatage. Une correction de température
+  exige une justification.
 - Base et broker non exposés hors de `127.0.0.1`.
 
 ## Feuille de route

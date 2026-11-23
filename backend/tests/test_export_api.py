@@ -61,7 +61,15 @@ def _seed(api_client: TestClient, headers: dict[str, str]) -> dict[str, Any]:
     ).json()
     api_client.put(
         f"{EQUIPMENT}/{equipment['id']}/readings/{_today()}",
-        json={"morning_celsius": 2.5, "evening_celsius": 9},
+        json={"morning_celsius": 2.5, "evening_celsius": 3.5},
+        headers=headers,
+    )
+    api_client.put(
+        f"{EQUIPMENT}/{equipment['id']}/readings/{_today()}",
+        json={
+            "morning_celsius": 9,
+            "morning_justification": "Thermomètre mal positionné",
+        },
         headers=headers,
     )
 
@@ -143,17 +151,72 @@ def test_the_readings_export_lists_the_values(
 
     rows = _rows(api_client.get(f"{EXPORTS}/readings", headers=admin_headers))
 
-    assert rows[0][0] == "Matériel"
-    assert rows[0][4] == "Température (°C)"
-    morning = next(row for row in rows[1:] if row[3] == "Matin")
-    assert morning[0] == "Frigo export"
-    assert morning[1] == "Réfrigérateur"
-    assert morning[4] == "2,50"
-    assert morning[5] == "Oui"
-    assert morning[6] == "Manuel"
-    assert morning[2] == datetime.now(UTC).date().strftime("%d/%m/%Y")
-    evening = next(row for row in rows[1:] if row[3] == "Soir")
-    assert evening[5] == "Non"
+    assert rows[0] == [
+        "Matériel",
+        "Type",
+        "Date",
+        "Matin (°C)",
+        "Soir (°C)",
+        "Matin modifié (°C)",
+        "Soir modifié (°C)",
+        "Justification matin",
+        "Justification soir",
+        "Conforme",
+        "Source",
+        "Matin relevé le",
+        "Matin modifié le",
+        "Auteur correction matin",
+        "Soir relevé le",
+        "Soir modifié le",
+        "Auteur correction soir",
+    ]
+    assert len(rows) == 2
+    reading = rows[1]
+    index = {name: position for position, name in enumerate(rows[0])}
+    assert reading[index["Matériel"]] == "Frigo export"
+    assert reading[index["Type"]] == "Réfrigérateur"
+    assert reading[index["Date"]] == datetime.now(UTC).date().strftime("%d/%m/%Y")
+    assert reading[index["Matin (°C)"]] == "2,50"
+    assert reading[index["Soir (°C)"]] == "3,50"
+    assert reading[index["Matin modifié (°C)"]] == "9,00"
+    assert reading[index["Soir modifié (°C)"]] == ""
+    assert reading[index["Justification matin"]] == "Thermomètre mal positionné"
+    assert reading[index["Justification soir"]] == ""
+    assert reading[index["Conforme"]] == "Non"
+    assert reading[index["Source"]] == "Manuel"
+    assert reading[index["Matin relevé le"]]
+    assert reading[index["Matin modifié le"]]
+    assert reading[index["Auteur correction matin"]] == "admin@test.local"
+    assert reading[index["Soir relevé le"]]
+    assert reading[index["Soir modifié le"]] == ""
+    assert reading[index["Auteur correction soir"]] == ""
+
+
+def test_the_readings_export_escapes_a_justification_and_marks_an_incomplete_day(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    equipment = api_client.post(
+        EQUIPMENT,
+        json={"name": "Frigo justification", "type": "fridge"},
+        headers=admin_headers,
+    ).json()
+    url = f"{EQUIPMENT}/{equipment['id']}/readings/{_today()}"
+    api_client.put(url, json={"morning_celsius": 2}, headers=admin_headers)
+    justification = '=position ; "à revoir"\nligne suivante'
+    api_client.put(
+        url,
+        json={"morning_celsius": 3, "morning_justification": justification},
+        headers=admin_headers,
+    )
+
+    rows = _rows(api_client.get(f"{EXPORTS}/readings", headers=admin_headers))
+    headers = rows[0]
+    reading = next(row for row in rows[1:] if row[0] == "Frigo justification")
+
+    assert reading[headers.index("Justification matin")] == f"'{justification}"
+    assert reading[headers.index("Conforme")] == "Incomplet"
+    assert reading[headers.index("Soir (°C)")] == ""
+    assert reading[headers.index("Auteur correction soir")] == ""
 
 
 def test_the_cleanings_export_escapes_free_text(
@@ -267,7 +330,7 @@ def test_the_date_range_filters_the_rows(
 
     assert filtered.status_code == 200
     assert filtered.headers["content-disposition"].endswith(f'{_days_ago(1)}-{_today()}.csv"')
-    assert len(rows) == 3  # header + matin + soir
+    assert len(rows) == 2  # header + the equipment/day pair
     assert all(len(row) == len(rows[0]) for row in rows)
 
 

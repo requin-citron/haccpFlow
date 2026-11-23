@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from app.core.errors import ApiError
-from app.models.temperature_reading import ReadingSlot
+from app.models.temperature_reading import ReadingSlot, ReadingSource, TemperatureReading
 from app.schemas.temperature_reading import TemperatureReadingWrite
 from app.services.dates import ensure_not_in_the_future
 
@@ -24,6 +24,26 @@ def evaluate_compliance(value: Decimal, minimum: Decimal, maximum: Decimal) -> b
     """A reading is compliant when it sits inside the equipment thresholds."""
 
     return minimum <= value <= maximum
+
+
+def effective_temperature(reading: TemperatureReading) -> Decimal:
+    """The latest corrected value, or the original when no correction exists."""
+
+    if reading.corrected_temperature_celsius is not None:
+        return reading.corrected_temperature_celsius
+    return reading.temperature_celsius
+
+
+def effective_compliance(reading: TemperatureReading) -> bool:
+    if reading.corrected_is_compliant is not None:
+        return reading.corrected_is_compliant
+    return reading.is_compliant
+
+
+def effective_source(reading: TemperatureReading) -> ReadingSource:
+    if reading.corrected_at is not None:
+        return ReadingSource.MANUAL
+    return reading.source
 
 
 def requested_slots(payload: TemperatureReadingWrite) -> dict[ReadingSlot, Decimal]:

@@ -16,6 +16,7 @@ fidèlement, pas anticiper des fonctionnalités non implémentées.
 | --- | --- |
 | Nouvelle route API / nouveau payload | [04-api.md](./04-api.md), page métier concernée, [README](./README.md) |
 | Nouvelle règle métier | [03-domaines-metier.md](./03-domaines-metier.md), [04-api.md](./04-api.md) |
+| Nouvelle règle de correction ou d'audit | [03-domaines-metier.md](./03-domaines-metier.md), [04-api.md](./04-api.md), [05-base-de-donnees.md](./05-base-de-donnees.md), [06-frontend.md](./06-frontend.md), `scenario/README.md` |
 | Nouvelle table / colonne / migration | [05-base-de-donnees.md](./05-base-de-donnees.md), [08-exploitation.md](./08-exploitation.md) si sauvegarde impactée |
 | Nouvelle variable d'environnement | [08-exploitation.md](./08-exploitation.md), `.env.example`, `README.md` |
 | Nouveau module frontend activable | [06-frontend.md](./06-frontend.md), [08-exploitation.md](./08-exploitation.md), [03-domaines-metier.md](./03-domaines-metier.md), `.env.example`, `README.md`, `scenario/README.md` |

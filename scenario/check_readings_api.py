@@ -46,10 +46,33 @@ def main() -> None:
             f"matin={day['morning']['temperature_celsius']}",
         )
 
-    status, day = call("PUT", day_url, token=token, body={"morning_celsius": 9})
-    report.status("correction hors seuils", status)
+    status, payload = call("PUT", day_url, token=token, body={"morning_celsius": 9})
+    report.status("correction sans justification refusée", status, 422)
+    if isinstance(payload, dict):
+        report.equals("code d'erreur", payload.get("code"), "reading_justification_required")
+        report.equals("créneau concerné", payload.get("context", {}).get("slot"), "morning")
+
+    status, day = call(
+        "PUT",
+        day_url,
+        token=token,
+        body={
+            "morning_celsius": 9,
+            "morning_justification": "Thermomètre mal positionné",
+        },
+    )
+    report.status("correction hors seuils justifiée", status)
     if isinstance(day, dict):
         report.check("relevé marqué non conforme", day["morning"]["is_compliant"] is False)
+        report.check(
+            "valeur originale conservée",
+            day["morning_original"]["temperature_celsius"] == 2.5,
+        )
+        report.equals(
+            "justification conservée",
+            day["morning_modified"]["justification"],
+            "Thermomètre mal positionné",
+        )
 
     status, history = call("GET", f"{day_url}/history", token=token)
     report.status("historique", status)
@@ -57,9 +80,39 @@ def main() -> None:
         # L'historique couvre la journée entière, donc les deux créneaux.
         report.equals("la correction est la plus récente", history[0]["action"], "updated")
         report.equals("valeur précédente conservée", history[0]["previous_celsius"], 2.5)
+        report.equals(
+            "justification journalisée",
+            history[0]["justification"],
+            "Thermomètre mal positionné",
+        )
         report.check(
             "les créations sont aussi journalisées",
             sum(1 for entry in history if entry["action"] == "created") == 2,
+        )
+
+    for value, justification in ((10, "Deuxième correction"), (1.5, "Valeur finale")):
+        status, _ = call(
+            "PUT",
+            day_url,
+            token=token,
+            body={
+                "morning_celsius": value,
+                "morning_justification": justification,
+            },
+        )
+        report.status(f"correction consolidée à {value} °C", status)
+    status, day = call("GET", day_url, token=token)
+    report.status("état final relu", status)
+    if isinstance(day, dict):
+        report.equals(
+            "seule la dernière correction est exposée",
+            day["morning_modified"]["new_celsius"],
+            1.5,
+        )
+        report.equals(
+            "dernière justification conservée",
+            day["morning_modified"]["justification"],
+            "Valeur finale",
         )
 
     status, _ = call(
@@ -88,13 +141,15 @@ def main() -> None:
     status, _ = call("PUT", day_url, token=token, body={"morning_celsius": -300})
     report.status("température impossible refusée", status, 422)
 
-    status, range_days = call(
-        "GET", f"{EQUIPMENT}/{equipment_id}/readings", token=token
-    )
+    status, range_days = call("GET", f"{EQUIPMENT}/{equipment_id}/readings", token=token)
     report.status("plage par défaut", status)
     if isinstance(range_days, list):
         report.equals("sept jours renvoyés", len(range_days), 7)
-        report.equals("dernier jour = aujourd'hui", range_days[-1]["reading_date"], today().isoformat())
+        report.equals(
+            "dernier jour = aujourd'hui",
+            range_days[-1]["reading_date"],
+            today().isoformat(),
+        )
 
     call("DELETE", f"{EQUIPMENT}/{equipment_id}", token=token)
     report.info("matériel de test supprimé")

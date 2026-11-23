@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.models.cleaning_plan import CleaningPlan, CleaningRecord, CleaningRecordEdit
 from app.models.equipment import Equipment
@@ -17,7 +19,6 @@ from app.models.pasteurisation import (
 from app.models.temperature_reading import (
     ReadingSlot,
     TemperatureReading,
-    TemperatureReadingEdit,
 )
 from app.models.transport import Transport, TransportEdit
 from app.models.user import User
@@ -81,46 +82,109 @@ async def _reading_entries(
     end: datetime | None,
     limit: int,
 ) -> list[HistoryEntryRead]:
-    query = (
+    created_user = aliased(User)
+    created_query = (
         select(
-            TemperatureReadingEdit,
-            TemperatureReading.slot,
-            TemperatureReading.reading_date,
+            TemperatureReading,
             Equipment.id,
             Equipment.name,
-            User.email,
+            created_user.email,
         )
-        .join(TemperatureReading, TemperatureReading.id == TemperatureReadingEdit.reading_id)
         .join(Equipment, Equipment.id == TemperatureReading.equipment_id)
-        .outerjoin(User, User.id == TemperatureReadingEdit.changed_by)
-        .order_by(TemperatureReadingEdit.changed_at.desc())
+        .outerjoin(created_user, created_user.id == TemperatureReading.created_by)
+        .order_by(TemperatureReading.recorded_at.desc())
         .limit(limit)
     )
     if start is not None:
-        query = query.where(TemperatureReadingEdit.changed_at >= start)
+        created_query = created_query.where(TemperatureReading.recorded_at >= start)
     if end is not None:
-        query = query.where(TemperatureReadingEdit.changed_at <= end)
+        created_query = created_query.where(TemperatureReading.recorded_at <= end)
 
     entries: list[HistoryEntryRead] = []
-    for edit, slot, reading_date, equipment_id, equipment_name, email in await db.execute(query):
+    for reading, equipment_id, equipment_name, email in await db.execute(created_query):
         entries.append(
             HistoryEntryRead(
-                id=edit.id,
-                occurred_at=edit.changed_at,
+                id=uuid.uuid5(
+                    uuid.NAMESPACE_URL,
+                    f"temperature-reading:{reading.id}:created",
+                ),
+                occurred_at=reading.recorded_at,
                 entity=HistoryEntity.TEMPERATURE_READING,
-                action=HistoryAction(str(edit.action)),
+                action=HistoryAction.CREATED,
                 actor_email=email,
                 target_id=equipment_id,
                 subject=equipment_name,
-                detail=f"Relevé du {reading_date.isoformat()} · {_SLOT_LABELS[slot]}",
+                detail=(
+                    f"Relevé du {reading.reading_date.isoformat()} · {_SLOT_LABELS[reading.slot]}"
+                ),
                 changes=_compact(
                     [
                         _change(
                             "temperature_celsius",
                             "Température",
-                            edit.previous_celsius,
-                            edit.new_celsius,
+                            None,
+                            reading.temperature_celsius,
                         )
+                    ]
+                ),
+            )
+        )
+
+    corrected_user = aliased(User)
+    corrected_query = (
+        select(
+            TemperatureReading,
+            Equipment.id,
+            Equipment.name,
+            corrected_user.email,
+        )
+        .join(Equipment, Equipment.id == TemperatureReading.equipment_id)
+        .outerjoin(corrected_user, corrected_user.id == TemperatureReading.corrected_by)
+        .where(TemperatureReading.corrected_at.is_not(None))
+        .order_by(TemperatureReading.corrected_at.desc())
+        .limit(limit)
+    )
+    if start is not None:
+        corrected_query = corrected_query.where(TemperatureReading.corrected_at >= start)
+    if end is not None:
+        corrected_query = corrected_query.where(TemperatureReading.corrected_at <= end)
+
+    for reading, equipment_id, equipment_name, email in await db.execute(corrected_query):
+        if (
+            reading.corrected_at is None
+            or reading.corrected_temperature_celsius is None
+            or reading.correction_justification is None
+        ):
+            raise RuntimeError("Incomplete corrected temperature reading")
+        entries.append(
+            HistoryEntryRead(
+                id=uuid.uuid5(
+                    uuid.NAMESPACE_URL,
+                    f"temperature-reading:{reading.id}:corrected",
+                ),
+                occurred_at=reading.corrected_at,
+                entity=HistoryEntity.TEMPERATURE_READING,
+                action=HistoryAction.UPDATED,
+                actor_email=email,
+                target_id=equipment_id,
+                subject=equipment_name,
+                detail=(
+                    f"Relevé du {reading.reading_date.isoformat()} · {_SLOT_LABELS[reading.slot]}"
+                ),
+                changes=_compact(
+                    [
+                        _change(
+                            "temperature_celsius",
+                            "Température",
+                            reading.temperature_celsius,
+                            reading.corrected_temperature_celsius,
+                        ),
+                        _change(
+                            "correction_justification",
+                            "Justification",
+                            None,
+                            reading.correction_justification,
+                        ),
                     ]
                 ),
             )

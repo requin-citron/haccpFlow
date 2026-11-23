@@ -184,6 +184,27 @@ Deux patterns coexistent :
 Ces handlers gardent le jeton côté serveur et propagent les erreurs
 `{ code, detail, context }`.
 
+## Relevés et corrections de température
+
+- `/readings` et le détail Matériel utilisent le même composant d'affichage :
+  valeur effective, conformité, badge `Corrigé` et détail replié.
+- Le détail montre la mesure originale, la valeur corrigée et la justification.
+  L'auteur et la date restent dans le journal d'historique.
+- L'action du formulaire est contextuelle : `Saisir`, `Compléter` ou
+  `Corriger`.
+- Une justification propre au créneau apparaît dès que sa valeur effective
+  change. Si les deux créneaux changent, les deux justifications sont requises.
+- La dernière justification connue est reprise dans le formulaire et peut être
+  remplacée. Une création de créneau ne demande pas de justification.
+- L'enregistrement reste désactivé tant qu'aucune valeur ne change, qu'une
+  valeur est invalide ou qu'une justification requise manque.
+- Sur mobile, le formulaire est une bottom sheet défilable avec actions fixes,
+  champs pleine largeur et blocage du défilement de la page en arrière-plan.
+- L'erreur backend `reading_justification_required` est rattachée au créneau
+  indiqué dans `context.slot`, en français comme en anglais.
+- L'historique traduit les champs de température et de justification et préserve
+  les retours à la ligne des textes saisis.
+
 ## Gestion des utilisateurs
 
 - La page `/users` est réservée aux admins et masquée de la navigation pour les

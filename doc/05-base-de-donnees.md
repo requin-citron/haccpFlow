@@ -34,8 +34,8 @@
 | Table | Rôle |
 | --- | --- |
 | `equipment` | Matériel surveillé, type, seuils min/max, localisation, notes, `deleted_at`. |
-| `temperature_readings` | Une ligne par matériel/date/créneau, valeur, conformité, source. |
-| `temperature_reading_edits` | Audit des créations/corrections de relevés. |
+| `temperature_readings` | Une ligne par matériel/date/créneau : mesure originale immuable, dernière correction, justification, conformité, sources et auteurs. |
+| `temperature_reading_edits` | Archive des créations/corrections antérieures à la consolidation ; elle ne reçoit plus les nouvelles corrections. |
 
 ### Nettoyage
 
@@ -130,6 +130,7 @@ Les révisions vivent dans `backend/alembic/versions/` :
 | `0013_refresh_token_family` | Famille de rotation des refresh tokens. |
 | `0014_user_auth_version` | Version d'authentification des utilisateurs. |
 | `0015_transport_checkpoints` | Renommage des checkpoints transport en initial et en cours. |
+| `0016_temperature_corrections` | Valeurs originales/corrigées et justification finale dans les relevés. |
 
 `users.auth_version` est incrémenté lors d'un changement de rôle, d'une
 désactivation ou d'une réinitialisation de mot de passe. Les access tokens

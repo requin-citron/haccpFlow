@@ -10,7 +10,7 @@ CASH_SESSIONS = f"{API_V1}/cash-sessions"
 
 #: jeu de données, début de la ligne d'en-tête attendue
 EXPECTED_HEADERS = {
-    "readings": "Matériel;Type;Date;Créneau",
+    "readings": "Matériel;Type;Date;Matin (°C);Soir (°C);Matin modifié (°C);Soir modifié (°C)",
     "cleanings": "Plan;Fréquence;Produits",
     "pasteurisations": "Date;Produit;N° de lot;Quantité;Préchauffage — début",
     "transports": "Date;Produit;N° de lot;Lieu;Véhicule",
@@ -64,9 +64,7 @@ def main() -> None:
             "  séparateur point-virgule",
             ";" in lines[0],
         )
-        report.info(
-            f"  {len(lines) - 1} ligne(s) · {headers.get('content-disposition', '')}"
-        )
+        report.info(f"  {len(lines) - 1} ligne(s) · {headers.get('content-disposition', '')}")
 
     # L'extract d'un seul suivi : caisse + frais + clôture, puis nettoyage.
     suffix = uuid.uuid4().hex[:6].upper()
