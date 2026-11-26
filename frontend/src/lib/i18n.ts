@@ -80,16 +80,9 @@ const FR_MESSAGES = {
   "Relevés manquants": "Relevés manquants",
   "Créneaux de température non renseignés.":
     "Créneaux de température non renseignés.",
-  "Deux créneaux par jour et par équipement.":
-    "Deux créneaux par jour et par équipement.",
   "{filled} / {total} saisis": "{filled} / {total} saisis",
   "créneaux à compléter": "créneaux à compléter",
-  "{count} équipements suivis": "{count} équipements suivis",
   "Tous les relevés sont complets.": "Tous les relevés sont complets.",
-  "Des relevés restent à saisir sur cette période.":
-    "Des relevés restent à saisir sur cette période.",
-  "Les jours futurs et les équipements supprimés sont exclus.":
-    "Les jours futurs et les équipements supprimés sont exclus.",
   "Ouvrir le menu": "Ouvrir le menu",
   "Fermer le menu": "Fermer le menu",
   "Réduire la navigation": "Réduire la navigation",
@@ -1139,16 +1132,9 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Relevés manquants": "Missing readings",
   "Créneaux de température non renseignés.":
     "Unfilled temperature reading slots.",
-  "Deux créneaux par jour et par équipement.":
-    "Two slots per day and per equipment unit.",
   "{filled} / {total} saisis": "{filled} / {total} entered",
   "créneaux à compléter": "slots to complete",
-  "{count} équipements suivis": "{count} equipment units tracked",
   "Tous les relevés sont complets.": "All readings are complete.",
-  "Des relevés restent à saisir sur cette période.":
-    "Some readings still need to be entered for this period.",
-  "Les jours futurs et les équipements supprimés sont exclus.":
-    "Future days and deleted equipment are excluded.",
   "Ouvrir le menu": "Open menu",
   "Fermer le menu": "Close menu",
   "Réduire la navigation": "Collapse navigation",

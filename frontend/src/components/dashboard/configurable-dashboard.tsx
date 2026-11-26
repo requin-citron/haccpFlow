@@ -33,7 +33,6 @@ import type {
 } from "@/lib/types";
 
 const MIN_WIDTH = 3;
-const MIN_HEIGHT = 5;
 
 type GridStyle = CSSProperties & {
   "--widget-start": number;
@@ -53,6 +52,10 @@ function widgetStyle(widget: DashboardWidgetConfig): GridStyle {
     "--widget-width": widget.width_columns,
     "--widget-rows": widget.row_span,
   };
+}
+
+function minimumHeight(widget: DashboardWidgetConfig["key"]): number {
+  return widget === "revenue" ? 5 : 3;
 }
 
 function widgetsOverlap(
@@ -237,7 +240,11 @@ export function ConfigurableDashboard({
               : Math.round((initialPointerY - moveEvent.clientY) / rowStep);
           return {
             ...current,
-            row_span: clamp(initialRows + delta, MIN_HEIGHT, 12),
+            row_span: clamp(
+              initialRows + delta,
+              minimumHeight(widget.key),
+              12,
+            ),
           };
         }
         if (side === "right") {

@@ -273,7 +273,7 @@ def main() -> None:
             )
             status, html = fetch_page(f"/?from={today}&to={today}", cookie=cookie)
             report.status("dashboard avec relevés manquants", status)
-            for label in ("Relevés manquants", "créneaux à compléter", "équipements suivis"):
+            for label in ("Relevés manquants", "créneaux à compléter"):
                 report.check(f"widget relevés : « {label} » rendu", label in html)
         finally:
             status, _ = call(

@@ -22,12 +22,15 @@ class DashboardWidgetConfig(BaseModel):
     column_start: int = Field(ge=1, le=12)
     row_start: int = Field(default=1, ge=1, le=1_000)
     width_columns: int = Field(ge=3, le=12)
-    row_span: int = Field(default=6, ge=5, le=12)
+    row_span: int = Field(default=6, ge=3, le=12)
 
     @model_validator(mode="after")
     def _validate_grid_bounds(self) -> DashboardWidgetConfig:
         if self.column_start + self.width_columns - 1 > 12:
             raise ValueError("widget must fit inside the twelve-column grid")
+        minimum_height = 5 if self.key is DashboardWidgetKey.REVENUE else 3
+        if self.row_span < minimum_height:
+            raise ValueError(f"{self.key.value} widgets require at least {minimum_height} rows")
         return self
 
 

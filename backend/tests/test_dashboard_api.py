@@ -546,6 +546,7 @@ def test_layouts_are_isolated_per_user(
         {"key": "revenue", "column_start": 1, "width_columns": 2},
         {"key": "revenue", "column_start": 1, "width_columns": 13},
         {"key": "revenue", "column_start": 1, "width_columns": 6, "row_span": 2},
+        {"key": "revenue", "column_start": 1, "width_columns": 6, "row_span": 4},
         {"key": "revenue", "column_start": 1, "row_start": 0, "width_columns": 6},
     ],
 )
@@ -616,7 +617,7 @@ def test_missing_readings_widget_key_is_accepted(
                     "key": "missing_readings",
                     "column_start": 1,
                     "width_columns": 6,
-                    "row_span": 6,
+                    "row_span": 3,
                 }
             ]
         },
