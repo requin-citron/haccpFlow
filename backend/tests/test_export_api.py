@@ -428,7 +428,8 @@ def test_the_cash_register_export_lists_the_successive_states(
     ]
     assert headers[19] == "Clôture — 1 centime"
     assert headers[30] == "Clôture — 50 euros"
-    assert len(headers) == 31
+    assert headers[31:] == ["Type", "Encaissement du jour (€)"]
+    assert len(headers) == 33
 
     states = [row for row in rows[1:] if row[0] == "Caisse export"]
     assert len(states) == 3
@@ -440,6 +441,8 @@ def test_the_cash_register_export_lists_the_successive_states(
     assert closed_row[headers.index("Total des frais (€)")] == "7,50"
     assert closed_row[headers.index("Clôture — total (€)")] == "20,00"
     assert closed_row[headers.index("Clôture — 20 euros")] == "1"
+    assert closed_row[headers.index("Type")] == "Espèces"
+    assert closed_row[headers.index("Encaissement du jour (€)")] == ""
 
     # Le suivi supprimé reste dans la succession des états.
     assert removed_row[headers.index("Fond — total (€)")] == "20,00"
@@ -456,6 +459,32 @@ def test_the_cash_register_export_lists_the_successive_states(
     assert filtered.status_code == 200
     # Seule la ligne d'en-tête : le filtre porte bien sur la date du suivi.
     assert len(_rows(filtered)) == 1
+
+
+def test_the_cash_register_export_includes_non_cash_collections(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = api_client.post(
+        CASH_REGISTERS,
+        json={"name": "Cartes export", "kind": "card"},
+        headers=admin_headers,
+    ).json()
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+    api_client.post(
+        f"{CASH_SESSIONS}/{session['id']}/close",
+        json={"collected_amount_cents": 12_500},
+        headers=admin_headers,
+    )
+
+    rows = _rows(api_client.get(f"{EXPORTS}/cash-registers", headers=admin_headers))
+    headers = rows[0]
+    row = next(row for row in rows[1:] if row[0] == "Cartes export")
+
+    assert row[headers.index("Fond — total (€)")] == ""
+    assert row[headers.index("Fond — 1 euro")] == ""
+    assert row[headers.index("Clôture — total (€)")] == ""
+    assert row[headers.index("Type")] == "Cartes bancaires"
+    assert row[headers.index("Encaissement du jour (€)")] == "125,00"
 
 
 def test_a_session_extract_shows_the_counts_and_the_expenses(
@@ -508,6 +537,29 @@ def test_a_session_extract_shows_the_counts_and_the_expenses(
     assert ["Comptage de clôture"] in rows
     assert ["10 euros", "2", "20,00"] in rows
     assert ["Total", "", "25,00"] in rows
+
+
+def test_a_non_cash_session_extract_shows_the_daily_collection(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = api_client.post(
+        CASH_REGISTERS,
+        json={"name": "Chèques export", "kind": "cheque"},
+        headers=admin_headers,
+    ).json()
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+    api_client.post(
+        f"{CASH_SESSIONS}/{session['id']}/close",
+        json={"collected_amount_cents": 8_750},
+        headers=admin_headers,
+    )
+
+    rows = _rows(api_client.get(f"{CASH_SESSIONS}/{session['id']}/export", headers=admin_headers))
+
+    assert ["Type", "Chèques"] in rows
+    assert ["Comptage d'ouverture"] not in rows
+    assert ["Encaissement du jour"] in rows
+    assert ["Montant", "", "87,50"] in rows
 
 
 def test_a_session_extract_mentions_an_ongoing_session(

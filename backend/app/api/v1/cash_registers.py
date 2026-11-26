@@ -9,12 +9,13 @@ from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import DbSession, require_role
 from app.core.errors import ApiError
-from app.models.cash_register import DENOMINATION_FIELDS, CashRegister
+from app.models.cash_register import DENOMINATION_FIELDS, CashRegister, CashRegisterKind
 from app.models.user import UserRole
 from app.schemas.cash_register import CashRegisterRead, CashRegisterWrite
 from app.services.cash_register import (
     cash_register_total_cents,
     get_active_cash_register,
+    kind_uses_denominations,
     name_is_taken,
 )
 from app.services.cash_session import register_has_open_session
@@ -41,11 +42,23 @@ def _read(cash_register: CashRegister) -> CashRegisterRead:
     return CashRegisterRead(
         id=cash_register.id,
         name=cash_register.name,
+        kind=cash_register.kind,
         total_cents=cash_register_total_cents(cash_register),
         created_at=cash_register.created_at,
         updated_at=cash_register.updated_at,
         **_counts(cash_register),
     )
+
+
+def _validate_counts_for_kind(payload: CashRegisterWrite) -> None:
+    if kind_uses_denominations(payload.kind):
+        return
+    if any(getattr(payload, field) != 0 for field in DENOMINATION_FIELDS):
+        raise ApiError(
+            422,
+            "cash_register_counts_not_supported",
+            "Cheque and card registers cannot contain denomination counts",
+        )
 
 
 @router.get("", response_model=list[CashRegisterRead], dependencies=[_ANY_ROLE])
@@ -63,10 +76,15 @@ async def create_cash_register(
     payload: CashRegisterWrite,
     db: DbSession,
 ) -> CashRegisterRead:
+    _validate_counts_for_kind(payload)
     if await name_is_taken(db, payload.name):
         raise _conflict_error(payload.name)
 
-    cash_register = CashRegister(name=payload.name, **_counts(payload))
+    cash_register = CashRegister(
+        name=payload.name,
+        kind=payload.kind,
+        **_counts(payload),
+    )
     db.add(cash_register)
     try:
         await db.commit()
@@ -85,13 +103,21 @@ async def update_cash_register(
     db: DbSession,
 ) -> CashRegisterRead:
     cash_register = await get_active_cash_register(db, cash_register_id, for_update=True)
+    if payload.kind is not cash_register.kind:
+        raise ApiError(
+            409,
+            "cash_register_kind_immutable",
+            "A cash register kind cannot be changed after creation",
+        )
+    _validate_counts_for_kind(payload)
 
     if await name_is_taken(db, payload.name, exclude_id=cash_register_id):
         raise _conflict_error(payload.name)
 
     cash_register.name = payload.name
-    for field, value in _counts(payload).items():
-        setattr(cash_register, field, value)
+    if cash_register.kind is CashRegisterKind.CASH:
+        for field, value in _counts(payload).items():
+            setattr(cash_register, field, value)
 
     try:
         await db.commit()

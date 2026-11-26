@@ -11,6 +11,7 @@ from app.models.cash_register import (
     DENOMINATION_FIELDS,
     DENOMINATIONS,
     CashRegister,
+    CashRegisterKind,
 )
 
 
@@ -24,6 +25,14 @@ def cash_register_total_cents(cash_register: CashRegister) -> int:
     return compute_total_cents(
         {field: getattr(cash_register, field) for field in DENOMINATION_FIELDS}
     )
+
+
+def cash_register_has_denomination_counts(cash_register: CashRegister) -> bool:
+    return any(getattr(cash_register, field) != 0 for field in DENOMINATION_FIELDS)
+
+
+def kind_uses_denominations(kind: CashRegisterKind) -> bool:
+    return kind is CashRegisterKind.CASH
 
 
 async def get_active_cash_register(

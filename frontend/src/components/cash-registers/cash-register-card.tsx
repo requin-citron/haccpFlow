@@ -1,7 +1,12 @@
 import { BanknoteIcon } from "@/components/icons";
 import { CashRegisterFormDialog } from "@/components/cash-registers/cash-register-form-dialog";
 import { DeleteCashRegisterButton } from "@/components/cash-registers/delete-cash-register-button";
-import { DENOMINATIONS, countsOf } from "@/lib/cash-register";
+import {
+  DENOMINATIONS,
+  cashRegisterKindLabelKey,
+  countsOf,
+  isPhysicalCash,
+} from "@/lib/cash-register";
 import { formatDate, formatEuros } from "@/lib/format";
 import { t, type Locale } from "@/lib/i18n";
 import type { CashRegister } from "@/lib/types";
@@ -16,6 +21,7 @@ export function CashRegisterCard({
   locale: Locale;
 }) {
   const counts = countsOf(cashRegister);
+  const isCash = isPhysicalCash(cashRegister.kind);
 
   return (
     <article className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
@@ -28,36 +34,47 @@ export function CashRegisterCard({
             {cashRegister.name}
           </h3>
           <span className="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            {t(locale, "Caisse")}
+            {t(locale, cashRegisterKindLabelKey(cashRegister.kind))}
           </span>
         </div>
       </header>
 
-      <div className="rounded-xl bg-slate-50 px-4 py-3">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-          {t(locale, "Comptage initial")}
-        </p>
-        <p className="mt-0.5 text-lg font-semibold tabular-nums text-slate-900">
-          {formatEuros(locale, cashRegister.total_cents)}
-        </p>
-      </div>
+      {isCash ? (
+        <>
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              {t(locale, "Comptage initial")}
+            </p>
+            <p className="mt-0.5 text-lg font-semibold tabular-nums text-slate-900">
+              {formatEuros(locale, cashRegister.total_cents)}
+            </p>
+          </div>
 
-      <ul className="grid grid-cols-4 gap-1.5">
-        {DENOMINATIONS.map((denomination) => {
-          const count = counts[denomination.field];
-          return (
-            <li
-              key={denomination.field}
-              className={`rounded-lg px-2 py-1.5 text-center ${
-                count > 0 ? "bg-slate-50 text-slate-700" : "text-slate-300"
-              }`}
-            >
-              <span className="block text-[11px] font-semibold tabular-nums">{count}</span>
-              <span className="block text-[11px]">{denomination.label}</span>
-            </li>
-          );
-        })}
-      </ul>
+          <ul className="grid grid-cols-4 gap-1.5">
+            {DENOMINATIONS.map((denomination) => {
+              const count = counts[denomination.field];
+              return (
+                <li
+                  key={denomination.field}
+                  className={`rounded-lg px-2 py-1.5 text-center ${
+                    count > 0 ? "bg-slate-50 text-slate-700" : "text-slate-300"
+                  }`}
+                >
+                  <span className="block text-[11px] font-semibold tabular-nums">{count}</span>
+                  <span className="block text-[11px]">{denomination.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : (
+        <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          {t(
+            locale,
+            "Aucun comptage initial. Le montant encaissé sera saisi à la clôture du suivi.",
+          )}
+        </div>
+      )}
 
       <p className="mt-auto text-xs text-slate-400">
         {t(locale, "Enregistrée le {date}", {

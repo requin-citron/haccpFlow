@@ -9,11 +9,14 @@ import {
 import { AlertIcon, CloseIcon, PencilIcon, PlusIcon } from "@/components/icons";
 import { useI18n } from "@/components/locale-provider";
 import {
+  CASH_REGISTER_KINDS,
   COIN_DENOMINATIONS,
   DENOMINATIONS,
   NOTE_DENOMINATIONS,
+  cashRegisterKindLabelKey,
   countsOf,
   emptyCounts,
+  isPhysicalCash,
   type Denomination,
 } from "@/lib/cash-register";
 import { INITIAL_CASH_REGISTER_FORM_STATE } from "@/lib/form-state";
@@ -27,7 +30,7 @@ import {
   SECONDARY_TRIGGER_CLASS,
   SUBMIT_BUTTON_CLASS,
 } from "@/lib/ui";
-import type { CashRegister } from "@/lib/types";
+import type { CashRegister, CashRegisterKind } from "@/lib/types";
 
 type Draft = Record<string, string>;
 
@@ -85,6 +88,7 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
   const isEdit = cashRegister !== undefined;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => toDraft(cashRegister));
+  const [kind, setKind] = useState<CashRegisterKind>(cashRegister?.kind ?? "cash");
   const [state, formAction, pending] = useActionState(
     isEdit ? updateCashRegisterAction : createCashRegisterAction,
     INITIAL_CASH_REGISTER_FORM_STATE,
@@ -94,6 +98,7 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
     if (state.status === "success") {
       setOpen(false);
       setDraft(toDraft());
+      setKind("cash");
     }
   }, [state]);
 
@@ -121,6 +126,7 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
           type="button"
           onClick={() => {
             setDraft(toDraft(cashRegister));
+            setKind(cashRegister.kind);
             setOpen(true);
           }}
           aria-label={t("Modifier {name}", { name: cashRegister.name })}
@@ -134,6 +140,7 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
           type="button"
           onClick={() => {
             setDraft(toDraft());
+            setKind("cash");
             setOpen(true);
           }}
           className={PRIMARY_TRIGGER_CLASS}
@@ -165,7 +172,11 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
                   {isEdit ? t("Modifier la caisse") : t("Nouvelle caisse")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  {t("Saisis le comptage initial, coupure par coupure.")}
+                  {isPhysicalCash(kind)
+                    ? t("Saisis le comptage initial, coupure par coupure.")
+                    : t(
+                        "Les encaissements de cette caisse seront saisis à la clôture de chaque suivi.",
+                      )}
                 </p>
               </div>
               <button
@@ -197,40 +208,75 @@ export function CashRegisterFormDialog({ cashRegister }: { cashRegister?: CashRe
                 />
               </div>
 
-              <fieldset className="space-y-2">
-                <legend className={LABEL_CLASS}>{t("Pièces")}</legend>
-                <div className="grid grid-cols-4 gap-3">
-                  {COIN_DENOMINATIONS.map((denomination) => (
-                    <CountField
-                      key={denomination.field}
-                      denomination={denomination}
-                      value={draft[denomination.field] ?? ""}
-                      onChange={updateField}
-                    />
-                  ))}
-                </div>
-              </fieldset>
+              <div className="space-y-1.5">
+                <label htmlFor="kind" className={LABEL_CLASS}>
+                  {t("Type de caisse")}
+                </label>
+                {isEdit ? (
+                  <>
+                    <input type="hidden" name="kind" value={kind} />
+                    <p className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-slate-700">
+                    {t(cashRegisterKindLabelKey(kind))}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {t("Le type d'une caisse ne peut plus être modifié après sa création.")}
+                    </p>
+                  </>
+                ) : (
+                  <select
+                    id="kind"
+                    name="kind"
+                    value={kind}
+                    onChange={(event) => setKind(event.target.value as CashRegisterKind)}
+                    className={FIELD_CLASS}
+                  >
+                    {CASH_REGISTER_KINDS.map((option) => (
+                      <option key={option} value={option}>
+                        {t(cashRegisterKindLabelKey(option))}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
-              <fieldset className="space-y-2">
-                <legend className={LABEL_CLASS}>{t("Billets")}</legend>
-                <div className="grid grid-cols-4 gap-3">
-                  {NOTE_DENOMINATIONS.map((denomination) => (
-                    <CountField
-                      key={denomination.field}
-                      denomination={denomination}
-                      value={draft[denomination.field] ?? ""}
-                      onChange={updateField}
-                    />
-                  ))}
-                </div>
-              </fieldset>
+              {isPhysicalCash(kind) ? (
+                <>
+                  <fieldset className="space-y-2">
+                    <legend className={LABEL_CLASS}>{t("Pièces")}</legend>
+                    <div className="grid grid-cols-4 gap-3">
+                      {COIN_DENOMINATIONS.map((denomination) => (
+                        <CountField
+                          key={denomination.field}
+                          denomination={denomination}
+                          value={draft[denomination.field] ?? ""}
+                          onChange={updateField}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
 
-              <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                {t("Total du comptage :")}{" "}
-                <span className="text-base font-semibold tabular-nums text-slate-900">
-                  {formatEuros(locale, draftTotal(draft))}
-                </span>
-              </p>
+                  <fieldset className="space-y-2">
+                    <legend className={LABEL_CLASS}>{t("Billets")}</legend>
+                    <div className="grid grid-cols-4 gap-3">
+                      {NOTE_DENOMINATIONS.map((denomination) => (
+                        <CountField
+                          key={denomination.field}
+                          denomination={denomination}
+                          value={draft[denomination.field] ?? ""}
+                          onChange={updateField}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    {t("Total du comptage :")}{" "}
+                    <span className="text-base font-semibold tabular-nums text-slate-900">
+                      {formatEuros(locale, draftTotal(draft))}
+                    </span>
+                  </p>
+                </>
+              ) : null}
 
               {state.status === "error" && state.message ? (
                 <p

@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
 import { translateApiError } from "@/lib/api-errors";
-import { DENOMINATIONS } from "@/lib/cash-register";
+import {
+  DENOMINATIONS,
+  isCashRegisterKind,
+  isPhysicalCash,
+} from "@/lib/cash-register";
 import {
   draftTotals,
   eurosToCents,
@@ -40,12 +44,19 @@ function revalidateSessions(sessionId?: string): void {
 
 function buildOpenPayload(formData: FormData, locale: Locale): PayloadResult {
   const cashRegisterId = String(formData.get("cash_register_id") ?? "").trim();
+  const kind = String(formData.get("cash_register_kind") ?? "").trim();
   const sessionDate = String(formData.get("session_date") ?? "").trim();
   if (!cashRegisterId) {
     return { ok: false, error: t(locale, "Choisis la caisse à suivre.") };
   }
   if (!isIsoDate(sessionDate)) {
     return { ok: false, error: t(locale, "La date du suivi est obligatoire.") };
+  }
+  if (!isCashRegisterKind(kind)) {
+    return { ok: false, error: t(locale, "Choisis un type de caisse.") };
+  }
+  if (!isPhysicalCash(kind)) {
+    return { ok: true, payload: { cash_register_id: cashRegisterId, session_date: sessionDate } };
   }
 
   // The float is copied from the register unless the override is ticked.
@@ -98,6 +109,7 @@ export async function updateCashSessionAction(
 ): Promise<CashSessionFormState> {
   const locale = await getLocale();
   const sessionId = String(formData.get("session_id") ?? "").trim();
+  const kind = String(formData.get("cash_register_kind") ?? "").trim();
   const sessionDate = String(formData.get("session_date") ?? "").trim();
   if (!sessionId) {
     return { status: "error", message: t(locale, "Suivi introuvable.") };
@@ -105,15 +117,22 @@ export async function updateCashSessionAction(
   if (!isIsoDate(sessionDate)) {
     return { status: "error", message: t(locale, "La date du suivi est obligatoire.") };
   }
+  if (!isCashRegisterKind(kind)) {
+    return { status: "error", message: t(locale, "Type de caisse introuvable.") };
+  }
 
   try {
     await apiFetch(`${SESSIONS_PATH}/${encodeURIComponent(sessionId)}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_date: sessionDate,
-        opening_counts: draftTotals(readCounts(formData)),
-      }),
+      body: JSON.stringify(
+        isPhysicalCash(kind)
+          ? {
+              session_date: sessionDate,
+              opening_counts: draftTotals(readCounts(formData)),
+            }
+          : { session_date: sessionDate },
+      ),
     });
   } catch (error) {
     return {
@@ -135,15 +154,33 @@ export async function closeCashSessionAction(
 ): Promise<CashSessionFormState> {
   const locale = await getLocale();
   const sessionId = String(formData.get("session_id") ?? "").trim();
+  const kind = String(formData.get("cash_register_kind") ?? "").trim();
   if (!sessionId) {
     return { status: "error", message: t(locale, "Suivi introuvable.") };
+  }
+  if (!isCashRegisterKind(kind)) {
+    return { status: "error", message: t(locale, "Type de caisse introuvable.") };
+  }
+
+  let payload: Record<string, unknown>;
+  if (isPhysicalCash(kind)) {
+    payload = { closing_counts: draftTotals(readCounts(formData)) };
+  } else {
+    const collectedAmount = eurosToCents(String(formData.get("collected_amount") ?? ""));
+    if (collectedAmount === null) {
+      return {
+        status: "error",
+        message: t(locale, "Le montant encaissé doit être un prix en euros."),
+      };
+    }
+    payload = { collected_amount_cents: collectedAmount };
   }
 
   try {
     await apiFetch(`${SESSIONS_PATH}/${encodeURIComponent(sessionId)}/close`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ closing_counts: draftTotals(readCounts(formData)) }),
+      body: JSON.stringify(payload),
     });
   } catch (error) {
     return {

@@ -12,7 +12,7 @@ from sqlalchemy.orm import aliased
 
 from app.api.deps import DbSession, require_role
 from app.core.errors import ApiError
-from app.models.cash_register import CashRegister
+from app.models.cash_register import CashRegister, CashRegisterKind
 from app.models.cash_session import CashExpense, CashExpenseKind, CashSession
 from app.models.user import User, UserRole
 from app.schemas.cash_register import CashRegisterCounts
@@ -25,7 +25,10 @@ from app.schemas.cash_session import (
     CashSessionRead,
     CashSessionWrite,
 )
+from app.services.cash_register import get_active_cash_register
 from app.services.cash_session import (
+    OPENING_COUNTS_NOT_SUPPORTED,
+    OPENING_COUNTS_REQUIRED,
     close_cash_session,
     closing_counts_of,
     closing_total_cents,
@@ -55,7 +58,13 @@ def _session_query() -> Select[Any]:
     opened_user = aliased(User)
     closed_user = aliased(User)
     return (
-        select(CashSession, CashRegister.name, opened_user.email, closed_user.email)
+        select(
+            CashSession,
+            CashRegister.name,
+            CashRegister.kind,
+            opened_user.email,
+            closed_user.email,
+        )
         .join(CashRegister, CashRegister.id == CashSession.cash_register_id)
         .outerjoin(opened_user, opened_user.id == CashSession.opened_by)
         .outerjoin(closed_user, closed_user.id == CashSession.closed_by)
@@ -80,18 +89,21 @@ def _session_read(
     session: CashSession,
     *,
     cash_register_name: str,
+    cash_register_kind: CashRegisterKind,
     opened_by_email: str | None,
     closed_by_email: str | None,
     expenses: list[CashExpense],
 ) -> CashSessionRead:
-    closing = closing_counts_of(session)
+    closing = None if session.collected_amount_cents is not None else closing_counts_of(session)
     return CashSessionRead(
         id=session.id,
         cash_register_id=session.cash_register_id,
         cash_register_name=cash_register_name,
+        cash_register_kind=cash_register_kind,
         session_date=session.session_date,
         opening_counts=CashRegisterCounts(**opening_counts_of(session)),
         closing_counts=CashRegisterCounts(**closing) if closing is not None else None,
+        collected_amount_cents=session.collected_amount_cents,
         opening_total_cents=opening_total_cents(session),
         closing_total_cents=closing_total_cents(session),
         expenses_total_cents=expenses_total_cents(expenses),
@@ -111,7 +123,7 @@ def _session_read(
 
 async def _session_row(
     db: AsyncSession, session_id: uuid.UUID
-) -> tuple[CashSession, str, str | None, str | None]:
+) -> tuple[CashSession, str, CashRegisterKind, str | None, str | None]:
     row = (
         await db.execute(
             _session_query().where(
@@ -122,17 +134,22 @@ async def _session_row(
     ).one_or_none()
     if row is None:
         raise ApiError(404, "cash_session_not_found", "Cash session not found")
-    session, cash_register_name, opened_by_email, closed_by_email = row
-    return session, cash_register_name, opened_by_email, closed_by_email
+    session, cash_register_name, cash_register_kind, opened_by_email, closed_by_email = row
+    return session, cash_register_name, cash_register_kind, opened_by_email, closed_by_email
 
 
 async def _load_session_read(db: AsyncSession, session_id: uuid.UUID) -> CashSessionRead:
-    session, cash_register_name, opened_by_email, closed_by_email = await _session_row(
-        db, session_id
-    )
+    (
+        session,
+        cash_register_name,
+        cash_register_kind,
+        opened_by_email,
+        closed_by_email,
+    ) = await _session_row(db, session_id)
     return _session_read(
         session,
         cash_register_name=cash_register_name,
+        cash_register_kind=cash_register_kind,
         opened_by_email=opened_by_email,
         closed_by_email=closed_by_email,
         expenses=await load_session_expenses(db, session.id),
@@ -164,7 +181,7 @@ async def list_sessions(
     if not rows:
         return []
 
-    session_ids = [session.id for session, _, _, _ in rows]
+    session_ids = [session.id for session, _, _, _, _ in rows]
     grouped: dict[uuid.UUID, list[CashExpense]] = {}
     for expense in await db.scalars(
         select(CashExpense)
@@ -177,11 +194,18 @@ async def list_sessions(
         _session_read(
             session,
             cash_register_name=cash_register_name,
+            cash_register_kind=cash_register_kind,
             opened_by_email=opened_by_email,
             closed_by_email=closed_by_email,
             expenses=grouped.get(session.id, []),
         )
-        for session, cash_register_name, opened_by_email, closed_by_email in rows
+        for (
+            session,
+            cash_register_name,
+            cash_register_kind,
+            opened_by_email,
+            closed_by_email,
+        ) in rows
     ]
 
 
@@ -220,10 +244,16 @@ async def update_session(
     session = await get_cash_session(db, session_id, for_update=True)
     ensure_session_is_open(session)
     ensure_not_in_the_future(payload.session_date, code="cash_session_date_in_future")
+    cash_register = await get_active_cash_register(db, session.cash_register_id)
 
     session.session_date = payload.session_date
-    for field, value in payload.opening_counts.model_dump().items():
-        setattr(session, field, int(value))
+    if cash_register.kind is CashRegisterKind.CASH:
+        if payload.opening_counts is None:
+            raise ApiError(*OPENING_COUNTS_REQUIRED)
+        for field, value in payload.opening_counts.model_dump().items():
+            setattr(session, field, int(value))
+    elif payload.opening_counts is not None:
+        raise ApiError(*OPENING_COUNTS_NOT_SUPPORTED)
 
     await db.commit()
     await db.refresh(session)
@@ -314,7 +344,10 @@ async def close_session(
     await close_cash_session(
         db,
         session=session,
-        closing_counts=payload.closing_counts.model_dump(),
+        closing_counts=(
+            payload.closing_counts.model_dump() if payload.closing_counts is not None else None
+        ),
+        collected_amount_cents=payload.collected_amount_cents,
         closed_by=user.id,
     )
     return await _load_session_read(db, session.id)

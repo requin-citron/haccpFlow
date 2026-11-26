@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
-from app.models.cash_register import DENOMINATION_FIELDS, CashRegister
+from app.models.cash_register import DENOMINATION_FIELDS, CashRegister, CashRegisterKind
 from app.models.cash_session import CashExpense, CashExpenseKind, CashSession
 from app.services.cash_register import compute_total_cents, get_active_cash_register
 
@@ -22,6 +22,22 @@ ALREADY_CLOSED = (
     409,
     "cash_session_closed",
     "This cash session is closed and can no longer be changed",
+)
+
+OPENING_COUNTS_NOT_SUPPORTED = (
+    422,
+    "cash_session_opening_counts_not_supported",
+    "This cash register does not use denomination counts",
+)
+OPENING_COUNTS_REQUIRED = (
+    422,
+    "cash_session_opening_counts_required",
+    "A cash register session requires denomination counts",
+)
+CLOSING_PAYLOAD_MISMATCH = (
+    422,
+    "cash_session_closing_payload_mismatch",
+    "Closing payload does not match this cash register kind",
 )
 
 
@@ -69,6 +85,8 @@ def opening_total_cents(session: CashSession) -> int:
 
 
 def closing_total_cents(session: CashSession) -> int | None:
+    if session.collected_amount_cents is not None:
+        return session.collected_amount_cents
     counts = closing_counts_of(session)
     if counts is None:
         return None
@@ -158,7 +176,12 @@ async def open_cash_session(
     if await get_open_cash_session(db, cash_register.id) is not None:
         raise ApiError(*ALREADY_OPEN)
 
+    if cash_register.kind is not CashRegisterKind.CASH and opening_counts is not None:
+        raise ApiError(*OPENING_COUNTS_NOT_SUPPORTED)
+
     counts = register_counts_of(cash_register) if opening_counts is None else opening_counts
+    if cash_register.kind is not CashRegisterKind.CASH:
+        counts = {}
     session = CashSession(
         cash_register_id=cash_register.id,
         session_date=session_date,
@@ -180,7 +203,8 @@ async def close_cash_session(
     db: AsyncSession,
     *,
     session: CashSession,
-    closing_counts: Mapping[str, int],
+    closing_counts: Mapping[str, int] | None,
+    collected_amount_cents: int | None,
     closed_by: uuid.UUID | None,
 ) -> CashRegister:
     """Close a session: its closing count becomes the register's new state."""
@@ -188,10 +212,17 @@ async def close_cash_session(
     ensure_session_is_open(session)
     cash_register = await get_active_cash_register(db, session.cash_register_id, for_update=True)
 
-    for field in DENOMINATION_FIELDS:
-        value = int(closing_counts.get(field, 0))
-        setattr(session, f"closed_{field}", value)
-        setattr(cash_register, field, value)
+    if cash_register.kind is CashRegisterKind.CASH:
+        if closing_counts is None or collected_amount_cents is not None:
+            raise ApiError(*CLOSING_PAYLOAD_MISMATCH)
+        for field in DENOMINATION_FIELDS:
+            value = int(closing_counts.get(field, 0))
+            setattr(session, f"closed_{field}", value)
+            setattr(cash_register, field, value)
+    else:
+        if closing_counts is not None or collected_amount_cents is None:
+            raise ApiError(*CLOSING_PAYLOAD_MISMATCH)
+        session.collected_amount_cents = collected_amount_cents
 
     session.closed_at = datetime.now(UTC)
     session.closed_by = closed_by

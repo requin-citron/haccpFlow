@@ -65,8 +65,8 @@
 
 | Table | Rôle |
 | --- | --- |
-| `cash_registers` | Caisse et son comptage courant par coupure, `deleted_at`. |
-| `cash_sessions` | Suivi : comptage d'ouverture, comptage de clôture, auteurs, `closed_at`, `deleted_at`. |
+| `cash_registers` | Caisse typée (`cash`, `cheque`, `card`) et comptage courant par coupure pour les espèces, `deleted_at`. |
+| `cash_sessions` | Suivi : comptage d'ouverture/clôture pour les espèces, montant encaissé pour chèques/cartes, auteurs, `closed_at`, `deleted_at`. |
 | `cash_expenses` | Frais pro/perso : nom, quantité, prix unitaire en centimes, TVA. |
 
 ### Modèles et documents
@@ -131,6 +131,11 @@ Les révisions vivent dans `backend/alembic/versions/` :
 | `0014_user_auth_version` | Version d'authentification des utilisateurs. |
 | `0015_transport_checkpoints` | Renommage des checkpoints transport en initial et en cours. |
 | `0016_temperature_corrections` | Valeurs originales/corrigées et justification finale dans les relevés. |
+| `0017_cash_register_kinds` | Types de caisse et montant encaissé hors espèces. |
+
+Les caisses existantes sont migrées vers `kind = 'cash'`. Le downgrade de
+`0017_cash_register_kinds` est refusé dès qu'une caisse non-espèces existe,
+afin de ne pas transformer silencieusement son historique.
 
 `users.auth_version` est incrémenté lors d'un changement de rôle, d'une
 désactivation ou d'une réinitialisation de mot de passe. Les access tokens

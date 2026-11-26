@@ -9,6 +9,7 @@ import { ExpenseFormDialog } from "@/components/cash-sessions/expense-form-dialo
 import { ExpenseRow } from "@/components/cash-sessions/expense-row";
 import { BanknoteIcon, CheckIcon, DownloadIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
+import { cashRegisterKindLabelKey, isPhysicalCash } from "@/lib/cash-register";
 import { formatDateTimeUtc, formatDayLabel, formatEuros } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
@@ -47,6 +48,7 @@ export default async function CashSessionPage({
   const user = await apiFetch<CurrentUser>("/api/v1/auth/me");
   const enabledModules = getEnabledModules();
   const isOpen = session.is_open;
+  const isCash = isPhysicalCash(session.cash_register_kind);
 
   return (
     <div className="space-y-8">
@@ -76,6 +78,9 @@ export default async function CashSessionPage({
               {formatDayLabel(locale, session.session_date)}
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-medium text-teal-700 ring-1 ring-inset ring-teal-200">
+                {t(locale, cashRegisterKindLabelKey(session.cash_register_kind))}
+              </span>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
                   isOpen
@@ -109,7 +114,16 @@ export default async function CashSessionPage({
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MoneyCard label={t(locale, "Fond de caisse")} value={formatEuros(locale, session.opening_total_cents)} />
+        <MoneyCard
+          label={isCash ? t(locale, "Fond de caisse") : t(locale, "Encaissement du jour")}
+          value={
+            isCash
+              ? formatEuros(locale, session.opening_total_cents)
+              : session.collected_amount_cents === null
+                ? "—"
+                : formatEuros(locale, session.collected_amount_cents)
+          }
+        />
         <MoneyCard
           label={t(locale, "Frais pro")}
           value={formatEuros(locale, session.expenses_professional_total_cents)}
@@ -124,20 +138,24 @@ export default async function CashSessionPage({
         />
       </section>
 
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-slate-900">{t(locale, "Fond d'ouverture")}</h2>
-          <p className="text-xs text-slate-500">
-            {t(locale, "Le comptage repris de la caisse à l'ouverture du suivi.")}
-          </p>
-        </div>
-        <CountsSummary
-          counts={session.opening_counts}
-          totalCents={session.opening_total_cents}
-          label={t(locale, "Comptage d'ouverture")}
-          locale={locale}
-        />
-      </section>
+      {isCash ? (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">
+              {t(locale, "Fond d'ouverture")}
+            </h2>
+            <p className="text-xs text-slate-500">
+              {t(locale, "Le comptage repris de la caisse à l'ouverture du suivi.")}
+            </p>
+          </div>
+          <CountsSummary
+            counts={session.opening_counts}
+            totalCents={session.opening_total_cents}
+            label={t(locale, "Comptage d'ouverture")}
+            locale={locale}
+          />
+        </section>
+      ) : null}
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -178,23 +196,43 @@ export default async function CashSessionPage({
         <div>
           <h2 className="text-base font-semibold text-slate-900">{t(locale, "Clôture")}</h2>
           <p className="text-xs text-slate-500">
-            {isOpen
-              ? t(locale, "Recompte la caisse en fin de journée : le comptage saisi devient l'état enregistré de la caisse.")
-              : t(locale, "Le comptage de clôture a été enregistré comme nouvel état de la caisse.")}
+            {isCash
+              ? isOpen
+                ? t(
+                    locale,
+                    "Recompte la caisse en fin de journée : le comptage saisi devient l'état enregistré de la caisse.",
+                  )
+                : t(
+                    locale,
+                    "Le comptage de clôture a été enregistré comme nouvel état de la caisse.",
+                  )
+              : isOpen
+                ? t(locale, "Saisis le montant encaissé pour figer ce suivi.")
+                : t(locale, "Le montant encaissé du suivi est enregistré.")}
           </p>
         </div>
 
         {isOpen ? (
-          <CloseSessionForm sessionId={session.id} />
+          <CloseSessionForm session={session} />
         ) : (
           <div className="space-y-3">
-            {session.closing_counts ? (
+            {isCash && session.closing_counts ? (
               <CountsSummary
                 counts={session.closing_counts}
                 totalCents={session.closing_total_cents ?? 0}
                 label={t(locale, "Comptage de clôture")}
                 locale={locale}
               />
+            ) : null}
+            {!isCash && session.collected_amount_cents !== null ? (
+              <div className="rounded-xl bg-emerald-50 px-4 py-3">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-emerald-700">
+                  {t(locale, "Encaissement du jour")}
+                </p>
+                <p className="mt-0.5 text-lg font-semibold tabular-nums text-emerald-900">
+                  {formatEuros(locale, session.collected_amount_cents)}
+                </p>
+              </div>
             ) : null}
             <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
               <CheckIcon className="size-4 text-emerald-600" />

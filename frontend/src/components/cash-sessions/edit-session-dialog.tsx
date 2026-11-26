@@ -6,6 +6,7 @@ import { updateCashSessionAction } from "@/actions/cash-sessions";
 import { DenominationFields } from "@/components/cash-sessions/denomination-fields";
 import { AlertIcon, CloseIcon, PencilIcon } from "@/components/icons";
 import { useI18n } from "@/components/locale-provider";
+import { isPhysicalCash } from "@/lib/cash-register";
 import { countsDraft, draftTotalCents, type CountsDraft } from "@/lib/cash-session";
 import { INITIAL_CASH_SESSION_FORM_STATE } from "@/lib/form-state";
 import { formatEuros } from "@/lib/format";
@@ -22,6 +23,7 @@ import type { CashSession } from "@/lib/types";
 /** Corrects the date or the opening float of a session that is still open. */
 export function EditSessionDialog({ session }: { session: CashSession }) {
   const { locale, t } = useI18n();
+  const isCash = isPhysicalCash(session.cash_register_kind);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CountsDraft>(() => countsDraft(session.opening_counts));
   const [state, formAction, pending] = useActionState(
@@ -84,9 +86,11 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
                   {t("Corriger le suivi")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  {t(
-                    "La date et le fond de caisse restent modifiables tant que le suivi est ouvert.",
-                  )}
+                  {isCash
+                    ? t(
+                        "La date et le fond de caisse restent modifiables tant que le suivi est ouvert.",
+                      )
+                    : t("La date du suivi reste modifiable tant que le suivi est ouvert.")}
                 </p>
               </div>
               <button
@@ -101,6 +105,11 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
 
             <form action={formAction} className="space-y-5 px-6 py-5">
               <input type="hidden" name="session_id" value={session.id} />
+              <input
+                type="hidden"
+                name="cash_register_kind"
+                value={session.cash_register_kind}
+              />
 
               <div className="space-y-1.5">
                 <label htmlFor="session_date_edit" className={LABEL_CLASS}>
@@ -116,18 +125,24 @@ export function EditSessionDialog({ session }: { session: CashSession }) {
                 />
               </div>
 
-              <DenominationFields
-                draft={draft}
-                idPrefix="edit_"
-                onChange={(field, value) => setDraft((current) => ({ ...current, [field]: value }))}
-              />
+              {isCash ? (
+                <>
+                  <DenominationFields
+                    draft={draft}
+                    idPrefix="edit_"
+                    onChange={(field, value) =>
+                      setDraft((current) => ({ ...current, [field]: value }))
+                    }
+                  />
 
-              <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                {t("Fond de caisse :")}{" "}
-                <span className="text-base font-semibold tabular-nums text-slate-900">
-                  {formatEuros(locale, draftTotalCents(draft))}
-                </span>
-              </p>
+                  <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    {t("Fond de caisse :")}{" "}
+                    <span className="text-base font-semibold tabular-nums text-slate-900">
+                      {formatEuros(locale, draftTotalCents(draft))}
+                    </span>
+                  </p>
+                </>
+              ) : null}
 
               {state.status === "error" && state.message ? (
                 <p

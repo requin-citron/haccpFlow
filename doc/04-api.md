@@ -241,6 +241,23 @@ Les anciens noms `departure_*` et `arrival_*` ne sont plus acceptés.
 | `POST` | `/api/v1/cash-sessions/{session_id}/close` | admin, opérateur |
 | `GET` | `/api/v1/cash-sessions/{session_id}/export` | admin, opérateur |
 
+`POST` et `PUT /cash-registers` acceptent `kind` avec `cash`, `cheque` ou
+`card`. Sans `kind`, la création reste compatible et produit `cash`. Le type
+est refusé en modification (`cash_register_kind_immutable`). Une caisse
+`cheque` ou `card` refuse tout compteur de coupure non nul
+(`cash_register_counts_not_supported`).
+
+Pour une caisse espèces, l'ouverture et la modification d'un suivi conservent
+`opening_counts` ; une modification sans comptage retourne
+`cash_session_opening_counts_required`. Pour chèques/cartes, ces champs sont
+interdits (`cash_session_opening_counts_not_supported`).
+
+La clôture espèces conserve son payload complet
+`{"closing_counts": {...}}`. La clôture chèques/cartes utilise
+`{"collected_amount_cents": 12500}`. Un payload qui ne correspond pas au type
+de caisse retourne `cash_session_closing_payload_mismatch`. Les réponses de
+suivi exposent `cash_register_kind` et `collected_amount_cents`.
+
 ## Exports
 
 | Méthode | Route | Accès |
@@ -264,6 +281,10 @@ puis une colonne par nom de variable présent dans les documents exportés.
 Les exports nettoyages, caisses et documents n'exposent pas non plus les
 auteurs ou horodatages techniques. Les filtres `from`/`to` restent disponibles
 et l'audit complet reste accessible via les API d'historique.
+
+L'export `cash-registers` ajoute en fin de ligne le type de caisse et
+l'encaissement du jour. L'extract d'une session chèques/cartes remplace les
+blocs de coupures par un bloc « Encaissement du jour ».
 
 ## Modèles LaTeX
 

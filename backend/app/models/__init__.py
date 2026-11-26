@@ -2,6 +2,7 @@ from app.models.cash_register import (
     DENOMINATION_FIELDS,
     DENOMINATIONS,
     CashRegister,
+    CashRegisterKind,
 )
 from app.models.cash_session import (
     CashExpense,
@@ -50,6 +51,7 @@ __all__ = [
     "CashExpense",
     "CashExpenseKind",
     "CashRegister",
+    "CashRegisterKind",
     "CashSession",
     "CleaningFrequency",
     "CleaningPlan",

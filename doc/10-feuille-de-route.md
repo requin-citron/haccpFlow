@@ -52,6 +52,13 @@
 - Le CSV `documents` ajoute une colonne par variable ; un grand nombre de
   modèles différents peut produire un tableau large et clairsemé.
 
+### Caisses et SumUp
+
+- Les caisses espèces, chèques et cartes sont disponibles.
+- Aucun connecteur SumUp n'est encore implémenté.
+- La future caisse SumUp devra être en lecture seule et synchroniser son
+  historique par l'API, sans devenir une caisse espèces modifiable.
+
 ### Frontend
 
 - `yarn build` peut échouer sur `/_global-error` (`useContext` nul) dans
@@ -77,6 +84,8 @@
 3. Versionnement/suppression des modèles LaTeX et gestion d'assets générique.
 4. Images locales par génération (upload temporaire, expiration, nettoyage).
 5. Export PDF du plan de maîtrise sanitaire.
+6. Caisse SumUp en lecture seule : configuration de la clé API, découverte du
+   compte marchand et synchronisation incrémentale des transactions.
 
 ### Qualité et exploitation
 

@@ -121,6 +121,19 @@ page `/history` filtre ses sources et ses entrées de la même façon.
 | `/history` | Journal d'audit (admin). |
 | `/users` | Gestion des comptes et des rôles (admin). |
 
+## Caisses
+
+- Le formulaire de caisse permet de choisir `Espèces`, `Chèques` ou
+  `Cartes bancaires` uniquement à la création.
+- Pour les espèces, les champs de coupures et le total initial restent
+  affichés. Pour chèques/cartes, ils sont remplacés par une indication que
+  l'encaissement sera saisi à la clôture.
+- L'ouverture d'un suivi chèques/cartes ne propose aucun fond reporté.
+- Le détail masque les comptages d'ouverture et de clôture hors espèces.
+- La clôture espèces conserve le formulaire de recomptage ; la clôture
+  chèques/cartes affiche un unique champ « Montant encaissé (€) ».
+- Les frais pro/perso restent disponibles pour les trois types.
+
 ## Session et appels API
 
 - Cookies `haccp_access_token` et `haccp_refresh_token`, `httpOnly`,

@@ -65,7 +65,7 @@ export default async function CashSessionsPage() {
           <p className="mt-1 max-w-xl text-sm text-slate-500">
             {t(
               locale,
-              "Ouvre un suivi, enregistre les frais pro et perso de la journée, puis clôture en recomptant la caisse : ce comptage devient l'état enregistré.",
+              "Ouvre un suivi, enregistre les frais pro et perso, puis clôture avec un comptage pour les espèces ou un montant encaissé pour les chèques et cartes.",
             )}
           </p>
         </div>
@@ -161,7 +161,10 @@ export default async function CashSessionsPage() {
                 {t(locale, "Suivis clôturés")}
               </h2>
               <p className="text-xs text-slate-500">
-                {t(locale, "Chaque clôture a enregistré le comptage de fin de journée dans la caisse.")}
+                {t(
+                  locale,
+                  "Chaque clôture a enregistré le comptage espèces ou le montant encaissé du suivi.",
+                )}
               </p>
             </div>
 

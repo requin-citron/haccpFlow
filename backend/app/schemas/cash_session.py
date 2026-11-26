@@ -7,13 +7,14 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models.cash_register import DENOMINATION_FIELDS
+from app.models.cash_register import DENOMINATION_FIELDS, CashRegisterKind
 from app.models.cash_session import CashExpenseKind
 from app.schemas.cash_register import CashRegisterCounts
 
 #: Typo guards on a single expense line.
 MAX_QUANTITY = 100_000
 MAX_UNIT_PRICE_CENTS = 100_000_000
+MAX_COLLECTED_AMOUNT_CENTS = 100_000_000
 
 
 class CashSessionFilter(enum.StrEnum):
@@ -42,7 +43,8 @@ class CashSessionWrite(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     session_date: date
-    opening_counts: CashRegisterCounts
+    #: Required for cash registers; omitted by cheque/card registers.
+    opening_counts: CashRegisterCounts | None = None
 
 
 class CashSessionClose(BaseModel):
@@ -50,10 +52,23 @@ class CashSessionClose(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    closing_counts: CashRegisterCounts
+    #: Cash registers provide a complete count; cheque/card provide an amount.
+    closing_counts: CashRegisterCounts | None = None
+    collected_amount_cents: int | None = Field(
+        default=None,
+        ge=0,
+        le=MAX_COLLECTED_AMOUNT_CENTS,
+    )
 
     @model_validator(mode="after")
-    def _require_every_denomination(self) -> CashSessionClose:
+    def _validate_closing_shape(self) -> CashSessionClose:
+        if self.closing_counts is None and self.collected_amount_cents is None:
+            raise ValueError("provide either closing_counts or collected_amount_cents")
+        if self.closing_counts is not None and self.collected_amount_cents is not None:
+            raise ValueError("provide only one of closing_counts or collected_amount_cents")
+        if self.closing_counts is None:
+            return self
+
         # The register is being recounted: every denomination must be given,
         # so a forgotten one can never silently empty the drawer.
         missing = [
@@ -107,10 +122,12 @@ class CashSessionRead(BaseModel):
     id: uuid.UUID
     cash_register_id: uuid.UUID
     cash_register_name: str
+    cash_register_kind: CashRegisterKind
     session_date: date
     opening_counts: CashRegisterCounts
     #: Null while the session is open.
     closing_counts: CashRegisterCounts | None
+    collected_amount_cents: int | None
     opening_total_cents: int
     closing_total_cents: int | None
     expenses_total_cents: int

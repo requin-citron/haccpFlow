@@ -6,6 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -45,6 +46,10 @@ class CashSession(TimestampMixin, Base):
             "cash_register_id",
             unique=True,
             postgresql_where=text("closed_at IS NULL AND deleted_at IS NULL"),
+        ),
+        CheckConstraint(
+            "collected_amount_cents IS NULL OR collected_amount_cents >= 0",
+            name="ck_cash_sessions_collected_amount_nonnegative",
         ),
     )
 
@@ -106,6 +111,9 @@ class CashSession(TimestampMixin, Base):
     closed_notes_10_euro: Mapped[int | None] = mapped_column(Integer, nullable=True)
     closed_notes_20_euro: Mapped[int | None] = mapped_column(Integer, nullable=True)
     closed_notes_50_euro: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    #: Gross amount collected during a cheque/card session, in cents.
+    collected_amount_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     opened_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),

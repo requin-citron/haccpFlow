@@ -241,9 +241,12 @@ export type CashRegisterCounts = {
   notes_50_euro: number;
 };
 
+export type CashRegisterKind = "cash" | "cheque" | "card";
+
 export type CashRegister = CashRegisterCounts & {
   id: string;
   name: string;
+  kind: CashRegisterKind;
   total_cents: number;
   created_at: string;
   updated_at: string;
@@ -268,9 +271,11 @@ export type CashSession = {
   id: string;
   cash_register_id: string;
   cash_register_name: string;
+  cash_register_kind: CashRegisterKind;
   session_date: string;
   opening_counts: CashRegisterCounts;
   closing_counts: CashRegisterCounts | null;
+  collected_amount_cents: number | null;
   opening_total_cents: number;
   closing_total_cents: number | null;
   expenses_total_cents: number;

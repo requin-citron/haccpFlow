@@ -151,21 +151,31 @@ Règles :
 
 ### Enrôlement
 
-- Douze coupures, de 1 centime à 50 euros, stockées en nombre d'unités.
-- Le total est calculé en centimes (entier), jamais en flottant.
+- Trois types immuables : `cash` (espèces), `cheque` et `card`.
+- Une caisse espèces utilise douze coupures, de 1 centime à 50 euros, stockées
+  en nombre d'unités ; son total est calculé en centimes (entier), jamais en
+  flottant.
+- Les caisses chèques et cartes n'ont ni comptage initial ni coupures.
 - Nom unique parmi les caisses actives, sans tenir compte de la casse.
 - Désactivation douce réservée aux admins.
 - Une caisse avec un suivi ouvert ne peut pas être désactivée.
+- Le type d'une caisse ne peut pas être modifié après sa création.
 
 ### Suivi de caisse
 
 - Un seul suivi ouvert à la fois par caisse.
-- À l'ouverture, le fond peut être repris du comptage de la caisse ou forcé.
+- Pour une caisse espèces, le fond peut être repris du comptage de la caisse ou
+  forcé à l'ouverture.
+- Une caisse chèques ou cartes ouvre sans fond et sans report du suivi
+  précédent.
 - Les frais sont de deux natures : `professional` ou `personal`, avec nom,
-  quantité, prix unitaire en centimes et taux de TVA.
+  quantité, prix unitaire en centimes et taux de TVA, quel que soit le type de
+  caisse.
 - Les totaux (généraux, pro, perso) sont calculés.
-- À la clôture, un comptage complet est obligatoire ; il devient le nouvel état
-  de la caisse.
+- À la clôture d'une caisse espèces, un comptage complet est obligatoire ; il
+  devient le nouvel état de la caisse.
+- À la clôture d'une caisse chèques ou cartes, un montant brut encaissé est
+  obligatoire. Il peut être nul et reste distinct des frais enregistrés.
 - Un suivi clôturé est figé (plus de frais ni de modification).
 - Un admin peut supprimer un suivi ; un opérateur peut clôturer mais pas
   supprimer.
@@ -181,7 +191,7 @@ Six jeux de données, filtrables par `from`/`to` :
 | `cleanings` | Déclarations de nettoyage, sans auteur ni horodatage de déclaration. |
 | `pasteurisations` | Lots et trois phases. |
 | `transports` | Transports et checkpoints. |
-| `cash-registers` | États successifs des caisses, sans acteurs ni horodatages d'ouverture, clôture ou suppression. |
+| `cash-registers` | États successifs des caisses, avec leur type, les coupures espèces ou l'encaissement chèques/cartes, sans acteurs ni horodatages d'ouverture, clôture ou suppression. |
 | `documents` | PDF générés : modèle, fichier, taille, SHA-256 et une colonne par variable. |
 
 Format : UTF-8 BOM, séparateur `;`, dates françaises, valeurs texte échappées

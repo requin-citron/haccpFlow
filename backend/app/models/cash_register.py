@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Uuid, text
+from sqlalchemy import DateTime, Enum, Index, Integer, String, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TimestampMixin
+from app.db.base import Base, TimestampMixin, enum_values
 
 #: Counted denominations, as (column name, value in cents). The order is the
 #: one used everywhere, from the columns to the total computation.
@@ -28,8 +29,16 @@ DENOMINATIONS: tuple[tuple[str, int], ...] = (
 DENOMINATION_FIELDS: tuple[str, ...] = tuple(name for name, _ in DENOMINATIONS)
 
 
+class CashRegisterKind(enum.StrEnum):
+    """The payment channel tracked by a register."""
+
+    CASH = "cash"
+    CHEQUE = "cheque"
+    CARD = "card"
+
+
 class CashRegister(TimestampMixin, Base):
-    """A cash register, enrolled with the count of its opening float."""
+    """A payment register, optionally enrolled with a physical cash count."""
 
     __tablename__ = "cash_registers"
     __table_args__ = (
@@ -43,6 +52,17 @@ class CashRegister(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
+    kind: Mapped[CashRegisterKind] = mapped_column(
+        Enum(
+            CashRegisterKind,
+            name="cash_register_kind",
+            native_enum=True,
+            values_callable=enum_values,
+        ),
+        nullable=False,
+        default=CashRegisterKind.CASH,
+        server_default=text("'cash'"),
+    )
 
     coins_1_cent: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default=text("0")

@@ -84,6 +84,19 @@ def _close(
     )
 
 
+def _close_with_amount(
+    api_client: TestClient,
+    headers: dict[str, str],
+    session_id: str,
+    collected_amount_cents: int,
+) -> Any:
+    return api_client.post(
+        f"{CASH_SESSIONS}/{session_id}/close",
+        json={"collected_amount_cents": collected_amount_cents},
+        headers=headers,
+    )
+
+
 def test_opening_a_session_copies_the_register_count(
     api_client: TestClient, admin_headers: dict[str, str]
 ) -> None:
@@ -92,6 +105,7 @@ def test_opening_a_session_copies_the_register_count(
     session = _open_session(api_client, admin_headers, cash_register["id"])
 
     assert session["cash_register_name"] == "Caisse principale"
+    assert session["cash_register_kind"] == "cash"
     assert session["opening_counts"]["coins_1_euro"] == 3
     assert session["opening_counts"]["notes_10_euro"] == 2
     assert session["opening_total_cents"] == 2300
@@ -100,7 +114,155 @@ def test_opening_a_session_copies_the_register_count(
     assert session["closing_total_cents"] is None
     assert session["expenses"] == []
     assert session["closed_at"] is None
+    assert session["collected_amount_cents"] is None
     assert session["opened_by_email"] == "admin@test.local"
+
+
+@pytest.mark.parametrize("kind", ["cheque", "card"])
+def test_a_non_cash_session_opens_without_a_float(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+    kind: str,
+) -> None:
+    cash_register = _create_register(
+        api_client,
+        admin_headers,
+        name=f"Caisse {kind}",
+        kind=kind,
+    )
+
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+
+    assert session["cash_register_kind"] == kind
+    assert session["opening_total_cents"] == 0
+    assert session["opening_counts"] == _counts()
+    assert session["collected_amount_cents"] is None
+    assert session["is_open"] is True
+
+
+def test_opening_counts_are_rejected_for_a_non_cash_register(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = _create_register(
+        api_client,
+        admin_headers,
+        name="Caisse cartes",
+        kind="card",
+    )
+
+    response = api_client.post(
+        CASH_SESSIONS,
+        json={
+            "cash_register_id": cash_register["id"],
+            "opening_counts": _counts(coins_1_euro=1),
+        },
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "cash_session_opening_counts_not_supported"
+
+
+def test_a_non_cash_session_can_be_edited_by_date_and_closed_with_an_amount(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = _create_register(
+        api_client,
+        admin_headers,
+        name="Caisse chèques",
+        kind="cheque",
+    )
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+    yesterday = (_today() - timedelta(days=1)).isoformat()
+
+    updated = api_client.put(
+        f"{CASH_SESSIONS}/{session['id']}",
+        json={"session_date": yesterday},
+        headers=admin_headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["session_date"] == yesterday
+
+    _add_expense(
+        api_client,
+        admin_headers,
+        session["id"],
+        name="Remise de chèque",
+        unit_price_cents=250,
+    )
+    closed = _close_with_amount(api_client, admin_headers, session["id"], 12_500)
+
+    assert closed.status_code == 200, closed.text
+    body = closed.json()
+    assert body["is_open"] is False
+    assert body["collected_amount_cents"] == 12_500
+    assert body["closing_total_cents"] == 12_500
+    assert body["expenses_total_cents"] == 250
+    assert body["closing_counts"] is None
+
+    second = _open_session(api_client, admin_headers, cash_register["id"])
+    assert second["opening_total_cents"] == 0
+    assert second["collected_amount_cents"] is None
+
+
+def test_a_non_cash_session_accepts_a_zero_collection(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = _create_register(
+        api_client,
+        admin_headers,
+        name="Caisse cartes",
+        kind="card",
+    )
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+
+    closed = _close_with_amount(api_client, admin_headers, session["id"], 0)
+
+    assert closed.status_code == 200
+    assert closed.json()["collected_amount_cents"] == 0
+    assert closed.json()["closing_total_cents"] == 0
+
+
+def test_closing_payload_must_match_the_register_kind(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cheque = _create_register(
+        api_client,
+        admin_headers,
+        name="Caisse chèques",
+        kind="cheque",
+    )
+    cheque_session = _open_session(api_client, admin_headers, cheque["id"])
+    wrong_cheque_close = _close(api_client, admin_headers, cheque_session["id"])
+    assert wrong_cheque_close.status_code == 422
+    assert wrong_cheque_close.json()["code"] == "cash_session_closing_payload_mismatch"
+
+    cash = _create_register(api_client, admin_headers, name="Caisse espèces")
+    cash_session = _open_session(api_client, admin_headers, cash["id"])
+    wrong_cash_close = _close_with_amount(
+        api_client,
+        admin_headers,
+        cash_session["id"],
+        100,
+    )
+    assert wrong_cash_close.status_code == 422
+    assert wrong_cash_close.json()["code"] == "cash_session_closing_payload_mismatch"
+
+
+def test_a_cash_session_update_requires_opening_counts(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = _create_register(api_client, admin_headers)
+    session = _open_session(api_client, admin_headers, cash_register["id"])
+
+    response = api_client.put(
+        f"{CASH_SESSIONS}/{session['id']}",
+        json={"session_date": session["session_date"]},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "cash_session_opening_counts_required"
 
 
 def test_the_opening_float_can_be_overridden(

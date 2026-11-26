@@ -16,7 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
-from app.models.cash_register import DENOMINATIONS, CashRegister
+from app.models.cash_register import DENOMINATIONS, CashRegister, CashRegisterKind
 from app.models.cash_session import CashExpense, CashExpenseKind, CashSession
 from app.models.cleaning_plan import CleaningFrequency, CleaningPlan, CleaningRecord
 from app.models.equipment import Equipment, EquipmentType
@@ -87,6 +87,11 @@ _DENOMINATION_LABELS = {field: _CENT_LABELS[cents] for field, cents in DENOMINAT
 _EXPENSE_KIND_LABELS = {
     CashExpenseKind.PROFESSIONAL: "Frais pro",
     CashExpenseKind.PERSONAL: "Frais perso",
+}
+_REGISTER_KIND_LABELS = {
+    CashRegisterKind.CASH: "Espèces",
+    CashRegisterKind.CHEQUE: "Chèques",
+    CashRegisterKind.CARD: "Cartes bancaires",
 }
 
 Extract = tuple[list[str], list[list[str]]]
@@ -461,9 +466,10 @@ async def _cash_registers(db: AsyncSession, start: date | None, end: date | None
         ["Frais pro (€)", "Frais perso (€)", "Total des frais (€)", "Clôture — total (€)"]
     )
     headers.extend(f"Clôture — {_DENOMINATION_LABELS[field]}" for field, _ in DENOMINATIONS)
+    headers.extend(["Type", "Encaissement du jour (€)"])
 
     query = (
-        select(CashSession, CashRegister.name)
+        select(CashSession, CashRegister.name, CashRegister.kind)
         .join(CashRegister, CashRegister.id == CashSession.cash_register_id)
         .order_by(
             func.lower(CashRegister.name),
@@ -477,24 +483,43 @@ async def _cash_registers(db: AsyncSession, start: date | None, end: date | None
         query = query.where(CashSession.session_date <= end)
 
     rows_data = list(await db.execute(query))
-    expenses = await _expenses_by_session(db, [session.id for session, _ in rows_data])
+    expenses = await _expenses_by_session(db, [session.id for session, _, _ in rows_data])
 
     rows: list[list[str]] = []
-    for session, register_name in rows_data:
+    for session, register_name, register_kind in rows_data:
         session_expenses = expenses.get(session.id, [])
-        opening = counts_from(session)
-        closing = closing_counts_of(session)
-        row = [register_name, _date(session.session_date), _euros(opening_total_cents(session))]
-        row.extend(str(opening[field]) for field, _ in DENOMINATIONS)
+        is_cash = register_kind is CashRegisterKind.CASH
+        opening = counts_from(session) if is_cash else None
+        closing = closing_counts_of(session) if is_cash else None
+        row = [
+            register_name,
+            _date(session.session_date),
+            _euros(opening_total_cents(session)) if is_cash else "",
+        ]
+        row.extend("" if opening is None else str(opening[field]) for field, _ in DENOMINATIONS)
         row.extend(
             [
                 _euros(expenses_total_cents(session_expenses, kind=CashExpenseKind.PROFESSIONAL)),
                 _euros(expenses_total_cents(session_expenses, kind=CashExpenseKind.PERSONAL)),
                 _euros(expenses_total_cents(session_expenses)),
-                "" if closing is None else _euros(closing_total_cents(session) or 0),
+                (
+                    ""
+                    if not is_cash or closing is None
+                    else _euros(closing_total_cents(session) or 0)
+                ),
             ]
         )
         row.extend("" if closing is None else str(closing[field]) for field, _ in DENOMINATIONS)
+        row.extend(
+            [
+                _REGISTER_KIND_LABELS[register_kind],
+                (
+                    ""
+                    if session.collected_amount_cents is None
+                    else _euros(session.collected_amount_cents)
+                ),
+            ]
+        )
         rows.append(row)
     return headers, rows
 
@@ -503,17 +528,20 @@ def _session_extract(
     session: CashSession,
     *,
     register_name: str,
+    register_kind: CashRegisterKind,
     expenses: Sequence[CashExpense],
 ) -> Extract:
     """One session as a block-per-block document, readable for a control."""
 
     headers = ["Suivi de caisse", register_name]
     rows: list[list[str]] = [["Date", _date(session.session_date)]]
+    rows.append(["Type", _REGISTER_KIND_LABELS[register_kind]])
 
-    rows.append([])
-    rows.append(["Comptage d'ouverture"])
-    rows.extend(_count_rows(counts_from(session)))
-    rows.append(["Total", "", _euros(opening_total_cents(session))])
+    if register_kind is CashRegisterKind.CASH:
+        rows.append([])
+        rows.append(["Comptage d'ouverture"])
+        rows.extend(_count_rows(counts_from(session)))
+        rows.append(["Total", "", _euros(opening_total_cents(session))])
 
     rows.append([])
     rows.append(["Frais"])
@@ -546,13 +574,20 @@ def _session_extract(
     rows.append(["Total des frais (€)", _euros(expenses_total_cents(expenses))])
 
     rows.append([])
-    rows.append(["Comptage de clôture"])
-    closing = closing_counts_of(session)
-    if closing is None:
-        rows.append(["Suivi en cours — comptage de clôture non saisi"])
+    if register_kind is CashRegisterKind.CASH:
+        rows.append(["Comptage de clôture"])
+        closing = closing_counts_of(session)
+        if closing is None:
+            rows.append(["Suivi en cours — comptage de clôture non saisi"])
+        else:
+            rows.extend(_count_rows(closing))
+            rows.append(["Total", "", _euros(closing_total_cents(session) or 0)])
     else:
-        rows.extend(_count_rows(closing))
-        rows.append(["Total", "", _euros(closing_total_cents(session) or 0)])
+        rows.append(["Encaissement du jour"])
+        if session.collected_amount_cents is None:
+            rows.append(["Suivi en cours — encaissement non saisi"])
+        else:
+            rows.append(["Montant", "", _euros(session.collected_amount_cents)])
     return headers, rows
 
 
@@ -561,7 +596,7 @@ async def build_cash_session_export(db: AsyncSession, session_id: uuid.UUID) -> 
 
     row = (
         await db.execute(
-            select(CashSession, CashRegister.name)
+            select(CashSession, CashRegister.name, CashRegister.kind)
             .join(CashRegister, CashRegister.id == CashSession.cash_register_id)
             .where(
                 CashSession.id == session_id,
@@ -571,11 +606,12 @@ async def build_cash_session_export(db: AsyncSession, session_id: uuid.UUID) -> 
     ).one_or_none()
     if row is None:
         raise ApiError(404, "cash_session_not_found", "Cash session not found")
-    session, register_name = row
+    session, register_name, register_kind = row
 
     headers, rows = _session_extract(
         session,
         register_name=register_name,
+        register_kind=register_kind,
         expenses=list(
             await db.scalars(
                 select(CashExpense)

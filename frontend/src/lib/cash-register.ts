@@ -1,4 +1,8 @@
-import type { CashRegister, CashRegisterCounts } from "@/lib/types";
+import type {
+  CashRegister,
+  CashRegisterCounts,
+  CashRegisterKind,
+} from "@/lib/types";
 
 export type DenominationField = keyof CashRegisterCounts;
 
@@ -31,6 +35,29 @@ export const COIN_DENOMINATIONS = DENOMINATIONS.filter(
 export const NOTE_DENOMINATIONS = DENOMINATIONS.filter(
   (denomination) => denomination.kind === "note",
 );
+
+export const CASH_REGISTER_KINDS: CashRegisterKind[] = ["cash", "cheque", "card"];
+
+export function isCashRegisterKind(value: string): value is CashRegisterKind {
+  return CASH_REGISTER_KINDS.includes(value as CashRegisterKind);
+}
+
+export function isPhysicalCash(kind: CashRegisterKind): boolean {
+  return kind === "cash";
+}
+
+export function cashRegisterKindLabelKey(
+  kind: CashRegisterKind,
+): "Espèces" | "Chèques" | "Cartes bancaires" {
+  switch (kind) {
+    case "cash":
+      return "Espèces";
+    case "cheque":
+      return "Chèques";
+    case "card":
+      return "Cartes bancaires";
+  }
+}
 
 export function emptyCounts(): CashRegisterCounts {
   return Object.fromEntries(

@@ -6,6 +6,7 @@ import { openCashSessionAction } from "@/actions/cash-sessions";
 import { DenominationFields } from "@/components/cash-sessions/denomination-fields";
 import { AlertIcon, CloseIcon, PlusIcon } from "@/components/icons";
 import { useI18n } from "@/components/locale-provider";
+import { isPhysicalCash } from "@/lib/cash-register";
 import { countsDraft, draftTotalCents, type CountsDraft } from "@/lib/cash-session";
 import { INITIAL_CASH_SESSION_FORM_STATE } from "@/lib/form-state";
 import { formatEuros, todayIso } from "@/lib/format";
@@ -52,6 +53,7 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
   }, [open]);
 
   const selected = cashRegisters.find((cashRegister) => cashRegister.id === registerId);
+  const selectedIsCash = selected ? isPhysicalCash(selected.kind) : true;
 
   return (
     <>
@@ -91,9 +93,13 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                   {t("Ouvrir un suivi de caisse")}
                 </h2>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  {t(
-                    "Le fond de caisse est repris de la caisse, puis les frais s'ajoutent au fil de la journée.",
-                  )}
+                  {selectedIsCash
+                    ? t(
+                        "Le fond de caisse est repris de la caisse, puis les frais s'ajoutent au fil de la journée.",
+                      )
+                    : t(
+                        "Aucun fond n'est reporté. Le montant encaissé sera saisi à la clôture.",
+                      )}
                 </p>
               </div>
               <button
@@ -107,6 +113,7 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
             </header>
 
             <form action={formAction} className="space-y-5 px-6 py-5">
+              <input type="hidden" name="cash_register_kind" value={selected?.kind ?? "cash"} />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="cash_register_id" className={LABEL_CLASS}>
@@ -116,7 +123,17 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                     id="cash_register_id"
                     name="cash_register_id"
                     value={registerId}
-                    onChange={(event) => setRegisterId(event.target.value)}
+                    onChange={(event) => {
+                      const nextId = event.target.value;
+                      const next = cashRegisters.find(
+                        (cashRegister) => cashRegister.id === nextId,
+                      );
+                      setRegisterId(nextId);
+                      if (next && !isPhysicalCash(next.kind)) {
+                        setOverride(false);
+                        setDraft(countsDraft());
+                      }
+                    }}
                     className={FIELD_CLASS}
                   >
                     {cashRegisters.map((cashRegister) => (
@@ -141,7 +158,11 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                 </div>
               </div>
 
-              {override ? (
+              {!selectedIsCash ? (
+                <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  {t("Cette caisse enregistre un montant encaissé, sans fond de caisse.")}
+                </p>
+              ) : override ? (
                 <>
                   <DenominationFields
                     draft={draft}
@@ -164,27 +185,29 @@ export function OpenSessionDialog({ cashRegisters }: { cashRegisters: CashRegist
                 </p>
               )}
 
-              <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 px-3.5 py-3 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  name="override_opening"
-                  value="1"
-                  checked={override}
-                  onChange={(event) => {
-                    setOverride(event.target.checked);
-                    if (!event.target.checked) {
-                      setDraft(countsDraft());
-                    }
-                  }}
-                  className="mt-0.5 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500/30"
-                />
-                <span>
-                  {t("Forcer le fond de caisse")}
-                  <span className="mt-0.5 block text-xs text-slate-500">
-                    {t("À cocher si le comptage enregistré ne correspond pas au contenu réel.")}
+              {selectedIsCash ? (
+                <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 px-3.5 py-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    name="override_opening"
+                    value="1"
+                    checked={override}
+                    onChange={(event) => {
+                      setOverride(event.target.checked);
+                      if (!event.target.checked) {
+                        setDraft(countsDraft());
+                      }
+                    }}
+                    className="mt-0.5 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500/30"
+                  />
+                  <span>
+                    {t("Forcer le fond de caisse")}
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      {t("À cocher si le comptage enregistré ne correspond pas au contenu réel.")}
+                    </span>
                   </span>
-                </span>
-              </label>
+                </label>
+              ) : null}
 
               {state.status === "error" && state.message ? (
                 <p

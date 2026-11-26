@@ -39,6 +39,10 @@ const ERROR_CODE_KEYS: Record<string, MessageKey> = {
   vehicle_conflict: "Un véhicule actif utilise déjà ce nom ou cette plaque.",
   cash_register_not_found: "Cette caisse n'existe plus.",
   cash_register_name_conflict: "Une caisse active porte déjà ce nom.",
+  cash_register_counts_not_supported:
+    "Une caisse chèques ou cartes ne peut pas contenir de comptage de coupures.",
+  cash_register_kind_immutable:
+    "Le type d'une caisse ne peut plus être modifié après sa création.",
   cash_session_not_found: "Ce suivi de caisse n'existe plus.",
   cash_expense_not_found: "Frais introuvable.",
   user_not_found: "Ce compte n'existe plus.",
@@ -49,6 +53,12 @@ const ERROR_CODE_KEYS: Record<string, MessageKey> = {
     "Impossible d'enregistrer un suivi à plus d'un jour dans le futur.",
   cash_register_has_open_session:
     "Cette caisse a un suivi ouvert : clôture-le d'abord.",
+  cash_session_opening_counts_not_supported:
+    "Cette caisse ne reprend pas de fond de caisse à l'ouverture.",
+  cash_session_opening_counts_required:
+    "Une caisse espèces doit fournir son comptage d'ouverture.",
+  cash_session_closing_payload_mismatch:
+    "La clôture doit contenir soit un comptage, soit un montant encaissé selon le type de caisse.",
   cleaning_date_out_of_range:
     "Impossible de déclarer un nettoyage à plus d'un jour dans le futur.",
   reading_date_out_of_range:

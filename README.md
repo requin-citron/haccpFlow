@@ -23,12 +23,13 @@ sanitaire :
   archiver ; un suivi de caisse peut aussi être sorti seul, en un petit CSV.
   Les exports contiennent les données métier mais pas les auteurs ou
   horodatages techniques, qui restent disponibles dans l'audit.
-- **Caisses** — enrôlement d'une caisse avec son comptage initial, coupure par
-  coupure, des pièces de 1 centime aux billets de 50 euros.
-- **Suivi de caisse** — ouverture d'un suivi sur une caisse (fond repris de son
-  état en base ou forcé), frais professionnels et personnels enregistrés au fil
-  de la journée, puis clôture : le comptage de fin de journée devient le nouvel
-  état de la caisse. Un seul suivi peut être ouvert à la fois par caisse.
+- **Caisses** — caisses espèces, chèques et cartes. Les espèces conservent le
+  comptage initial coupure par coupure ; les deux autres types servent à noter
+  les encaissements sans comptage de pièces.
+- **Suivi de caisse** — ouverture d'un suivi, frais professionnels et
+  personnels enregistrés au fil de la journée, puis clôture. Les espèces sont
+  recomptées ; chèques et cartes enregistrent un montant brut encaissé. Un seul
+  suivi peut être ouvert à la fois par caisse.
 - **Modèles LaTeX** — import sécurisé réservé aux administrateurs, avec liste
   et téléchargement. Les sources `.tex` sont stockées sur disque sous un nom
   UUID ; la base ne conserve que les métadonnées.
@@ -327,7 +328,7 @@ inaccessibles.
 | Consulter les véhicules et les transports                                  |     ✅     |       ✅       |
 | Créer un véhicule et déclarer un transport                               |     ✅     |       ✅       |
 | Désactiver un véhicule ou un transport                                    |     ❌     |       ✅       |
-| Enrôler une caisse et corriger son comptage                                |     ✅     |       ✅       |
+| Enrôler une caisse, choisir son type et corriger un comptage espèces        |     ✅     |       ✅       |
 | Désactiver une caisse                                                      |     ❌     |       ✅       |
 | Ouvrir un suivi de caisse, saisir les frais et clôturer                    |     ✅     |       ✅       |
 | Supprimer un suivi de caisse                                                |     ❌     |       ✅       |

@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { BanknoteIcon } from "@/components/icons";
+import { cashRegisterKindLabelKey, isPhysicalCash } from "@/lib/cash-register";
 import { formatDayLabel, formatEuros } from "@/lib/format";
 import { plural, t, type Locale } from "@/lib/i18n";
 import { SECONDARY_TRIGGER_CLASS } from "@/lib/ui";
 import type { CashSession } from "@/lib/types";
 
 export function SessionCard({ session, locale }: { session: CashSession; locale: Locale }) {
+  const isCash = isPhysicalCash(session.cash_register_kind);
   return (
     <article className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
       <header className="flex items-start gap-3">
@@ -26,6 +28,9 @@ export function SessionCard({ session, locale }: { session: CashSession; locale:
           <p className="mt-0.5 text-xs capitalize text-slate-500">
             {formatDayLabel(locale, session.session_date)}
           </p>
+          <p className="mt-1 text-[11px] font-medium text-teal-700">
+            {t(locale, cashRegisterKindLabelKey(session.cash_register_kind))}
+          </p>
         </div>
         <span
           className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
@@ -41,10 +46,14 @@ export function SessionCard({ session, locale }: { session: CashSession; locale:
       <dl className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-slate-50 px-3.5 py-2.5">
           <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            {t(locale, "Fond")}
+            {isCash ? t(locale, "Fond") : t(locale, "Encaissement")}
           </dt>
           <dd className="mt-0.5 font-semibold tabular-nums text-slate-900">
-            {formatEuros(locale, session.opening_total_cents)}
+            {isCash
+              ? formatEuros(locale, session.opening_total_cents)
+              : session.collected_amount_cents === null
+                ? "—"
+                : formatEuros(locale, session.collected_amount_cents)}
           </dd>
         </div>
         <div className="rounded-xl bg-slate-50 px-3.5 py-2.5">
@@ -55,7 +64,7 @@ export function SessionCard({ session, locale }: { session: CashSession; locale:
             {formatEuros(locale, session.expenses_total_cents)}
           </dd>
         </div>
-        {session.closing_total_cents !== null ? (
+        {isCash && session.closing_total_cents !== null ? (
           <div className="col-span-2 rounded-xl bg-emerald-50 px-3.5 py-2.5">
             <dt className="text-[11px] font-medium uppercase tracking-wide text-emerald-700">
               {t(locale, "Comptage de clôture")}

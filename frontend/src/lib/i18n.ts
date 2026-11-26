@@ -388,8 +388,22 @@ const FR_MESSAGES = {
   "Annuler la suppression": "Annuler la suppression",
   "Nouvelle caisse": "Nouvelle caisse",
   "Modifier la caisse": "Modifier la caisse",
+  "Type de caisse": "Type de caisse",
+  "Espèces": "Espèces",
+  "Chèques": "Chèques",
+  "Cartes bancaires": "Cartes bancaires",
+  "Choisis un type de caisse.": "Choisis un type de caisse.",
+  "Type de caisse introuvable.": "Type de caisse introuvable.",
   "Saisis le comptage initial, coupure par coupure.":
     "Saisis le comptage initial, coupure par coupure.",
+  "Les encaissements de cette caisse seront saisis à la clôture de chaque suivi.":
+    "Les encaissements de cette caisse seront saisis à la clôture de chaque suivi.",
+  "Le type d'une caisse ne peut plus être modifié après sa création.":
+    "Le type d'une caisse ne peut plus être modifié après sa création.",
+  "Une caisse chèques ou cartes ne peut pas contenir de comptage de coupures.":
+    "Une caisse chèques ou cartes ne peut pas contenir de comptage de coupures.",
+  "Aucun comptage initial. Le montant encaissé sera saisi à la clôture du suivi.":
+    "Aucun comptage initial. Le montant encaissé sera saisi à la clôture du suivi.",
   "Nom de la caisse": "Nom de la caisse",
   "Pièces": "Pièces",
   "Billets": "Billets",
@@ -638,6 +652,14 @@ const FR_MESSAGES = {
   "Ouvrir un suivi de caisse": "Ouvrir un suivi de caisse",
   "Le fond de caisse est repris de la caisse, puis les frais s'ajoutent au fil de la journée.":
     "Le fond de caisse est repris de la caisse, puis les frais s'ajoutent au fil de la journée.",
+  "Aucun fond n'est reporté. Le montant encaissé sera saisi à la clôture.":
+    "Aucun fond n'est reporté. Le montant encaissé sera saisi à la clôture.",
+  "Cette caisse enregistre un montant encaissé, sans fond de caisse.":
+    "Cette caisse enregistre un montant encaissé, sans fond de caisse.",
+  "Cette caisse ne reprend pas de fond de caisse à l'ouverture.":
+    "Cette caisse ne reprend pas de fond de caisse à l'ouverture.",
+  "Une caisse espèces doit fournir son comptage d'ouverture.":
+    "Une caisse espèces doit fournir son comptage d'ouverture.",
   "Date du suivi": "Date du suivi",
   "Fond saisi :": "Fond saisi :",
   "Fond repris de la caisse :": "Fond repris de la caisse :",
@@ -649,6 +671,8 @@ const FR_MESSAGES = {
   "Corriger le suivi": "Corriger le suivi",
   "La date et le fond de caisse restent modifiables tant que le suivi est ouvert.":
     "La date et le fond de caisse restent modifiables tant que le suivi est ouvert.",
+  "La date du suivi reste modifiable tant que le suivi est ouvert.":
+    "La date du suivi reste modifiable tant que le suivi est ouvert.",
   "Fond de caisse :": "Fond de caisse :",
   "Ajouter un frais": "Ajouter un frais",
   "Modifier le frais": "Modifier le frais",
@@ -673,7 +697,19 @@ const FR_MESSAGES = {
   "Clôturer le suivi": "Clôturer le suivi",
   "Recompte le contenu de la caisse : ce comptage remplace l'état enregistré et le suivi devient définitif. Laisser une coupure vide revient à zéro.":
     "Recompte le contenu de la caisse : ce comptage remplace l'état enregistré et le suivi devient définitif. Laisser une coupure vide revient à zéro.",
+  "Saisis le montant brut encaissé pendant ce suivi. Cette valeur devient définitive à la clôture.":
+    "Saisis le montant brut encaissé pendant ce suivi. Cette valeur devient définitive à la clôture.",
+  "Montant encaissé (€)": "Montant encaissé (€)",
+  "Montant brut, avant déduction des frais enregistrés.":
+    "Montant brut, avant déduction des frais enregistrés.",
+  "Le montant encaissé doit être un prix en euros.":
+    "Le montant encaissé doit être un prix en euros.",
+  "La clôture doit contenir soit un comptage, soit un montant encaissé selon le type de caisse.":
+    "La clôture doit contenir soit un comptage, soit un montant encaissé selon le type de caisse.",
   "Total recompté :": "Total recompté :",
+  "Encaissement du jour :": "Encaissement du jour :",
+  "Encaissement du jour": "Encaissement du jour",
+  "Encaissement": "Encaissement",
   "Clôture…": "Clôture…",
   "Confirmer {amount}": "Confirmer {amount}",
   "Clôturé": "Clôturé",
@@ -686,6 +722,8 @@ const FR_MESSAGES = {
   "Voir le détail": "Voir le détail",
   "Ouvre un suivi, enregistre les frais pro et perso de la journée, puis clôture en recomptant la caisse : ce comptage devient l'état enregistré.":
     "Ouvre un suivi, enregistre les frais pro et perso de la journée, puis clôture en recomptant la caisse : ce comptage devient l'état enregistré.",
+  "Ouvre un suivi, enregistre les frais pro et perso, puis clôture avec un comptage pour les espèces ou un montant encaissé pour les chèques et cartes.":
+    "Ouvre un suivi, enregistre les frais pro et perso, puis clôture avec un comptage pour les espèces ou un montant encaissé pour les chèques et cartes.",
   "Chaque caisse a déjà un suivi ouvert : clôture-en un pour en ouvrir un autre.":
     "Chaque caisse a déjà un suivi ouvert : clôture-en un pour en ouvrir un autre.",
   "Aucune caisse enrôlée": "Aucune caisse enrôlée",
@@ -704,6 +742,8 @@ const FR_MESSAGES = {
   "Suivis clôturés": "Suivis clôturés",
   "Chaque clôture a enregistré le comptage de fin de journée dans la caisse.":
     "Chaque clôture a enregistré le comptage de fin de journée dans la caisse.",
+  "Chaque clôture a enregistré le comptage espèces ou le montant encaissé du suivi.":
+    "Chaque clôture a enregistré le comptage espèces ou le montant encaissé du suivi.",
   "Aucun suivi clôturé pour l'instant.": "Aucun suivi clôturé pour l'instant.",
   "Retour aux suivis de caisse": "Retour aux suivis de caisse",
   "Ouvert par {email}": "Ouvert par {email}",
@@ -724,6 +764,10 @@ const FR_MESSAGES = {
     "Recompte la caisse en fin de journée : le comptage saisi devient l'état enregistré de la caisse.",
   "Le comptage de clôture a été enregistré comme nouvel état de la caisse.":
     "Le comptage de clôture a été enregistré comme nouvel état de la caisse.",
+  "Saisis le montant encaissé pour figer ce suivi.":
+    "Saisis le montant encaissé pour figer ce suivi.",
+  "Le montant encaissé du suivi est enregistré.":
+    "Le montant encaissé du suivi est enregistré.",
   "Clôturé par {email}": "Clôturé par {email}",
   "le {date}": "le {date}",
   "Voir la caisse dans le matériel": "Voir la caisse dans le matériel",
@@ -1319,8 +1363,22 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Annuler la suppression": "Cancel deletion",
   "Nouvelle caisse": "New cash register",
   "Modifier la caisse": "Edit cash register",
+  "Type de caisse": "Register type",
+  "Espèces": "Cash",
+  "Chèques": "Cheques",
+  "Cartes bancaires": "Bank cards",
+  "Choisis un type de caisse.": "Choose a register type.",
+  "Type de caisse introuvable.": "Register type not found.",
   "Saisis le comptage initial, coupure par coupure.":
     "Enter the initial count for each denomination.",
+  "Les encaissements de cette caisse seront saisis à la clôture de chaque suivi.":
+    "Collections for this register will be entered when each tracking session is closed.",
+  "Le type d'une caisse ne peut plus être modifié après sa création.":
+    "A register type cannot be changed after creation.",
+  "Une caisse chèques ou cartes ne peut pas contenir de comptage de coupures.":
+    "A cheque or card register cannot contain denomination counts.",
+  "Aucun comptage initial. Le montant encaissé sera saisi à la clôture du suivi.":
+    "No initial count. The collected amount will be entered when tracking is closed.",
   "Nom de la caisse": "Cash register name",
   "Pièces": "Coins",
   "Billets": "Banknotes",
@@ -1569,6 +1627,14 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Ouvrir un suivi de caisse": "Open cash tracking",
   "Le fond de caisse est repris de la caisse, puis les frais s'ajoutent au fil de la journée.":
     "The float is copied from the cash register, then expenses are added during the day.",
+  "Aucun fond n'est reporté. Le montant encaissé sera saisi à la clôture.":
+    "No float is carried over. The collected amount will be entered when closing.",
+  "Cette caisse enregistre un montant encaissé, sans fond de caisse.":
+    "This register records a collected amount without a cash float.",
+  "Cette caisse ne reprend pas de fond de caisse à l'ouverture.":
+    "This register does not carry a cash float into a tracking session.",
+  "Une caisse espèces doit fournir son comptage d'ouverture.":
+    "A cash register must provide its opening count.",
   "Date du suivi": "Tracking date",
   "Fond saisi :": "Entered float:",
   "Fond repris de la caisse :": "Float copied from register:",
@@ -1580,6 +1646,8 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Corriger le suivi": "Correct tracking",
   "La date et le fond de caisse restent modifiables tant que le suivi est ouvert.":
     "The date and float remain editable while tracking is open.",
+  "La date du suivi reste modifiable tant que le suivi est ouvert.":
+    "The tracking date remains editable while tracking is open.",
   "Fond de caisse :": "Cash float:",
   "Ajouter un frais": "Add expense",
   "Modifier le frais": "Edit expense",
@@ -1603,7 +1671,19 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Clôturer le suivi": "Close tracking",
   "Recompte le contenu de la caisse : ce comptage remplace l'état enregistré et le suivi devient définitif. Laisser une coupure vide revient à zéro.":
     "Recount the cash register: this count replaces the recorded state and tracking becomes final. An empty denomination counts as zero.",
+  "Saisis le montant brut encaissé pendant ce suivi. Cette valeur devient définitive à la clôture.":
+    "Enter the gross amount collected during this tracking session. The value is final once closed.",
+  "Montant encaissé (€)": "Collected amount (€)",
+  "Montant brut, avant déduction des frais enregistrés.":
+    "Gross amount, before deducting recorded expenses.",
+  "Le montant encaissé doit être un prix en euros.":
+    "The collected amount must be a price in euros.",
+  "La clôture doit contenir soit un comptage, soit un montant encaissé selon le type de caisse.":
+    "Closing must contain either a count or a collected amount, depending on the register type.",
   "Total recompté :": "Recounted total:",
+  "Encaissement du jour :": "Daily collection:",
+  "Encaissement du jour": "Daily collection",
+  "Encaissement": "Collection",
   "Clôture…": "Closing…",
   "Confirmer {amount}": "Confirm {amount}",
   "Clôturé": "Closed",
@@ -1616,6 +1696,8 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Voir le détail": "View details",
   "Ouvre un suivi, enregistre les frais pro et perso de la journée, puis clôture en recomptant la caisse : ce comptage devient l'état enregistré.":
     "Open tracking, record business and personal expenses for the day, then close by recounting the register: that count becomes the recorded state.",
+  "Ouvre un suivi, enregistre les frais pro et perso, puis clôture avec un comptage pour les espèces ou un montant encaissé pour les chèques et cartes.":
+    "Open tracking, record business and personal expenses, then close with a cash count or a collected amount for cheques and cards.",
   "Chaque caisse a déjà un suivi ouvert : clôture-en un pour en ouvrir un autre.":
     "Every cash register already has open tracking: close one to open another.",
   "Aucune caisse enrôlée": "No cash registers registered",
@@ -1634,6 +1716,8 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Suivis clôturés": "Closed tracking",
   "Chaque clôture a enregistré le comptage de fin de journée dans la caisse.":
     "Each close recorded the end-of-day count in the cash register.",
+  "Chaque clôture a enregistré le comptage espèces ou le montant encaissé du suivi.":
+    "Each close recorded the cash count or collected amount for the tracking session.",
   "Aucun suivi clôturé pour l'instant.": "No closed tracking yet.",
   "Retour aux suivis de caisse": "Back to cash tracking",
   "Ouvert par {email}": "Opened by {email}",
@@ -1654,6 +1738,10 @@ const EN_MESSAGES: Record<MessageKey, string> = {
     "Recount the cash register at the end of the day: the entered count becomes its recorded state.",
   "Le comptage de clôture a été enregistré comme nouvel état de la caisse.":
     "The closing count was recorded as the cash register's new state.",
+  "Saisis le montant encaissé pour figer ce suivi.":
+    "Enter the collected amount to finalize this tracking session.",
+  "Le montant encaissé du suivi est enregistré.":
+    "The collected amount for this tracking session is recorded.",
   "Clôturé par {email}": "Closed by {email}",
   "le {date}": "on {date}",
   "Voir la caisse dans le matériel": "View cash register in equipment",

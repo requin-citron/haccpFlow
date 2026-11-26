@@ -86,3 +86,14 @@ def test_an_open_session_has_no_closing_total() -> None:
     session = CashSession(session_date=None, **_counts(coins_1_cent=7))
 
     assert closing_total_cents(session) is None
+
+
+def test_a_non_cash_closing_total_is_the_collected_amount() -> None:
+    session = CashSession(
+        session_date=None,
+        collected_amount_cents=12_500,
+        **_counts(),
+        **{f"closed_{field}": None for field in DENOMINATION_FIELDS},
+    )
+
+    assert closing_total_cents(session) == 12_500

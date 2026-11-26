@@ -5,6 +5,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.models.cash_register import CashRegisterKind
+
 #: A typo guard: no register holds a million of a single denomination.
 MAX_DENOMINATION_COUNT = 1_000_000
 
@@ -32,6 +34,8 @@ class CashRegisterWrite(CashRegisterCounts):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1, max_length=120)
+    #: Existing API clients omit it and keep creating physical cash registers.
+    kind: CashRegisterKind = CashRegisterKind.CASH
 
     @field_validator("name")
     @classmethod
@@ -45,6 +49,7 @@ class CashRegisterWrite(CashRegisterCounts):
 class CashRegisterRead(CashRegisterCounts):
     id: uuid.UUID
     name: str
+    kind: CashRegisterKind
     #: Sum of the counters, in cents: exact, the client formats it.
     total_cents: int
     created_at: datetime

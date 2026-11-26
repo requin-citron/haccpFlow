@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 
 import { ApiError, apiFetch } from "@/lib/api";
 import { translateApiError } from "@/lib/api-errors";
-import { DENOMINATIONS } from "@/lib/cash-register";
+import {
+  DENOMINATIONS,
+  isCashRegisterKind,
+  isPhysicalCash,
+} from "@/lib/cash-register";
 import type { CashRegisterFormState } from "@/lib/form-state";
 import { t, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
@@ -26,8 +30,16 @@ type PayloadResult =
 
 function buildPayload(formData: FormData, locale: Locale): PayloadResult {
   const name = String(formData.get("name") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "").trim();
   if (!name) {
     return { ok: false, error: t(locale, "Le nom de la caisse est obligatoire.") };
+  }
+  if (!isCashRegisterKind(kind)) {
+    return { ok: false, error: t(locale, "Choisis un type de caisse.") };
+  }
+
+  if (!isPhysicalCash(kind)) {
+    return { ok: true, payload: { name, kind } };
   }
 
   const counts: Record<string, number> = {};
@@ -44,7 +56,7 @@ function buildPayload(formData: FormData, locale: Locale): PayloadResult {
     counts[denomination.field] = count;
   }
 
-  return { ok: true, payload: { name, ...counts } };
+  return { ok: true, payload: { name, kind, ...counts } };
 }
 
 export async function createCashRegisterAction(

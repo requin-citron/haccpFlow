@@ -32,6 +32,7 @@ def test_a_register_can_be_enrolled_with_its_opening_count(
     )
 
     assert cash_register["name"] == "Caisse principale"
+    assert cash_register["kind"] == "cash"
     assert cash_register["coins_1_cent"] == 12
     assert cash_register["coins_50_cent"] == 2
     assert cash_register["notes_50_euro"] == 1
@@ -62,6 +63,54 @@ def test_a_register_without_any_count_is_allowed(
     cash_register = _create(api_client, admin_headers, name="Caisse vide")
 
     assert cash_register["total_cents"] == 0
+
+
+@pytest.mark.parametrize("kind", ["cheque", "card"])
+def test_a_non_cash_register_is_created_without_denomination_counts(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+    kind: str,
+) -> None:
+    cash_register = _create(api_client, admin_headers, name=f"Caisse {kind}", kind=kind)
+
+    assert cash_register["kind"] == kind
+    assert cash_register["total_cents"] == 0
+    assert all(
+        cash_register[field] == 0
+        for field in (
+            "coins_1_cent",
+            "coins_1_euro",
+            "notes_50_euro",
+        )
+    )
+
+
+def test_a_non_cash_register_rejects_denomination_counts(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = api_client.post(
+        CASH_REGISTERS,
+        json={"name": "Caisse cartes", "kind": "card", "coins_1_euro": 1},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "cash_register_counts_not_supported"
+
+
+def test_the_register_kind_is_immutable(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    cash_register = _create(api_client, admin_headers, kind="cheque")
+
+    response = api_client.put(
+        f"{CASH_REGISTERS}/{cash_register['id']}",
+        json={"name": "Caisse chèques", "kind": "card"},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "cash_register_kind_immutable"
 
 
 def test_registers_are_listed_by_name(
