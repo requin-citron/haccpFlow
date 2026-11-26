@@ -5,6 +5,7 @@ import {
 } from "@/lib/modules";
 
 const MODULE_ENV_VARS: Record<ModuleKey, string> = {
+  dashboard: "MODULE_DASHBOARD",
   equipment: "MODULE_EQUIPMENT",
   readings: "MODULE_READINGS",
   cleaning: "MODULE_CLEANING",

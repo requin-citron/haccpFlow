@@ -8,6 +8,8 @@ export const LOCALE_STORAGE_KEY = "haccpflow.locale";
 export const LOCALE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 const FR_MESSAGES = {
+  "Tableau de bord": "Tableau de bord",
+  "Vue d'ensemble": "Vue d'ensemble",
   "Matériel": "Matériel",
   "Relevés": "Relevés",
   "Nettoyage": "Nettoyage",
@@ -21,6 +23,28 @@ const FR_MESSAGES = {
   "Historique": "Historique",
   "Utilisateurs": "Utilisateurs",
   "Navigation principale": "Navigation principale",
+  "Choisir une période": "Choisir une période",
+  "Période": "Période",
+  "Choisis un raccourci ou une plage personnalisée.":
+    "Choisis un raccourci ou une plage personnalisée.",
+  "Hier": "Hier",
+  "7 derniers jours": "7 derniers jours",
+  "30 derniers jours": "30 derniers jours",
+  "Ce mois-ci": "Ce mois-ci",
+  "Mois précédent": "Mois précédent",
+  "Plage personnalisée": "Plage personnalisée",
+  "Les dates sont interprétées en UTC.": "Les dates sont interprétées en UTC.",
+  "Les deux dates sont obligatoires.": "Les deux dates sont obligatoires.",
+  "Plage active : du {from} au {to}.": "Plage active : du {from} au {to}.",
+  "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.":
+    "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.",
+  "Timeline": "Timeline",
+  "Axe temporel": "Axe temporel",
+  "Graduations de la timeline": "Graduations de la timeline",
+  "Zone des futurs widgets": "Zone des futurs widgets",
+  "Aucun widget configuré": "Aucun widget configuré",
+  "Les futurs widgets utiliseront cette période et cet axe temporel.":
+    "Les futurs widgets utiliseront cette période et cet axe temporel.",
   "Ouvrir le menu": "Ouvrir le menu",
   "Fermer le menu": "Fermer le menu",
   "Réduire la navigation": "Réduire la navigation",
@@ -1002,6 +1026,8 @@ const FR_MESSAGES = {
 export type MessageKey = keyof typeof FR_MESSAGES;
 
 const EN_MESSAGES: Record<MessageKey, string> = {
+  "Tableau de bord": "Dashboard",
+  "Vue d'ensemble": "Overview",
   "Matériel": "Equipment",
   "Relevés": "Readings",
   "Nettoyage": "Cleaning",
@@ -1015,6 +1041,28 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Historique": "History",
   "Utilisateurs": "Users",
   "Navigation principale": "Main navigation",
+  "Choisir une période": "Choose a time range",
+  "Période": "Time range",
+  "Choisis un raccourci ou une plage personnalisée.":
+    "Choose a shortcut or a custom range.",
+  "Hier": "Yesterday",
+  "7 derniers jours": "Last 7 days",
+  "30 derniers jours": "Last 30 days",
+  "Ce mois-ci": "This month",
+  "Mois précédent": "Previous month",
+  "Plage personnalisée": "Custom range",
+  "Les dates sont interprétées en UTC.": "Dates are interpreted in UTC.",
+  "Les deux dates sont obligatoires.": "Both dates are required.",
+  "Plage active : du {from} au {to}.": "Active range: {from} to {to}.",
+  "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.":
+    "Explore a time range to prepare a consolidated activity view. Widgets will be added progressively.",
+  "Timeline": "Timeline",
+  "Axe temporel": "Time axis",
+  "Graduations de la timeline": "Timeline tick marks",
+  "Zone des futurs widgets": "Future widgets area",
+  "Aucun widget configuré": "No widgets configured",
+  "Les futurs widgets utiliseront cette période et cet axe temporel.":
+    "Future widgets will use this time range and time axis.",
   "Ouvrir le menu": "Open menu",
   "Fermer le menu": "Close menu",
   "Réduire la navigation": "Collapse navigation",

@@ -1,6 +1,7 @@
 import type { MessageKey } from "@/lib/i18n";
 
 export const MODULE_KEYS = [
+  "dashboard",
   "equipment",
   "readings",
   "cleaning",
@@ -25,6 +26,7 @@ export type ModuleNavItem = {
 };
 
 export const MODULE_NAV_ITEMS: readonly ModuleNavItem[] = [
+  { key: "dashboard", href: "/", labelKey: "Tableau de bord" },
   { key: "equipment", href: "/equipment", labelKey: "Matériel" },
   { key: "readings", href: "/readings", labelKey: "Relevés" },
   { key: "cleaning", href: "/cleaning", labelKey: "Nettoyage" },

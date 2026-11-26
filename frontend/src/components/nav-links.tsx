@@ -7,6 +7,7 @@ import {
   BanknoteIcon,
   CheckIcon,
   ClipboardIcon,
+  DashboardIcon,
   DropletIcon,
   DownloadIcon,
   FileDownIcon,
@@ -23,6 +24,7 @@ import type { ModuleNavItem } from "@/lib/modules";
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 const NAV_ICONS: Record<string, IconComponent> = {
+  "/": DashboardIcon,
   "/equipment": GridIcon,
   "/readings": ClipboardIcon,
   "/cleaning": CheckIcon,

@@ -4,6 +4,9 @@ Plateforme open source de gestion HACCP, pensée pour être installée **une
 instance par client**. Elle couvre aujourd'hui deux volets du plan de maîtrise
 sanitaire :
 
+- **Tableau de bord** — page d'accueil avec sélection de période et timeline
+  graduée, prête à recevoir des widgets consolidés dans les prochaines
+  versions.
 - **Chaîne du froid** — parc de matériel (frigos, congélateurs) avec seuils
   réglementaires, relevés matin et soir, corrections justifiées, détail
   original/corrigé et journal d'audit consolidé.
@@ -280,6 +283,7 @@ est actif, car il porte leurs configurations.
 
 | Variable | Défaut | Entrées contrôlées |
 | --- | --- | --- |
+| `MODULE_DASHBOARD` | `1` | Tableau de bord |
 | `MODULE_EQUIPMENT` | `1` | Matériel |
 | `MODULE_READINGS` | `1` | Relevés |
 | `MODULE_CLEANING` | `1` | Nettoyage, Plan de nettoyage |
@@ -290,6 +294,9 @@ est actif, car il porte leurs configurations.
 | `MODULE_DOCUMENTS` | `1` | Modèles LaTeX, Documents générés |
 | `MODULE_HISTORY` | `1` | Historique |
 | `MODULE_USERS` | `1` | Utilisateurs |
+
+`MODULE_DASHBOARD=1` fait de `/` la page d'accueil. Quand il vaut `0`, `/`
+redirige de nouveau vers le premier module actif.
 
 Sur la page Matériel, ces réglages masquent également le bloc Véhicules quand
 Transport est désactivé, le bloc Caisses quand Suivi de caisse est désactivé,
@@ -333,6 +340,7 @@ inaccessibles.
 | Ouvrir un suivi de caisse, saisir les frais et clôturer                    |     ✅     |       ✅       |
 | Supprimer un suivi de caisse                                                |     ❌     |       ✅       |
 | Télécharger les exports CSV, y compris l'extract d'un suivi               |     ✅     |       ✅       |
+| Utiliser le tableau de bord et choisir sa période                         |     ✅     |       ✅       |
 | Consulter les modèles LaTeX                                                |     ✅     |       ✅       |
 | Générer un PDF depuis un modèle                                          |     ✅     |       ✅       |
 | Consulter l'historique des documents générés                             |     ✅     |       ✅       |

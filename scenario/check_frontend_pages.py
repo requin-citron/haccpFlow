@@ -8,6 +8,7 @@ from common import API_V1, Report, call, fetch_page, login, read_env, require_en
 
 #: chemin, texte attendu uniquement quand la page est rendue avec une session
 PAGES: list[tuple[str, str]] = [
+    ("/", "Tableau de bord"),
     ("/equipment", "Matériel"),
     ("/readings", "Relevés de température"),
     ("/cleaning", "Nettoyage"),
@@ -22,6 +23,7 @@ PAGES: list[tuple[str, str]] = [
 ]
 
 ENGLISH_PAGES: list[tuple[str, str]] = [
+    ("/", "Dashboard"),
     ("/equipment", "Equipment"),
     ("/readings", "Temperature readings"),
     ("/cleaning", "Cleaning"),
@@ -36,6 +38,7 @@ ENGLISH_PAGES: list[tuple[str, str]] = [
 ]
 
 NAV_MODULES: list[tuple[str, str]] = [
+    ("MODULE_DASHBOARD", "Tableau de bord"),
     ("MODULE_EQUIPMENT", "Matériel"),
     ("MODULE_READINGS", "Relevés"),
     ("MODULE_CLEANING", "Nettoyage"),
@@ -51,6 +54,7 @@ NAV_MODULES: list[tuple[str, str]] = [
 ]
 
 ENGLISH_NAV_MODULES: list[tuple[str, str]] = [
+    ("MODULE_DASHBOARD", "Dashboard"),
     ("MODULE_EQUIPMENT", "Equipment"),
     ("MODULE_READINGS", "Readings"),
     ("MODULE_CLEANING", "Cleaning"),
@@ -217,6 +221,18 @@ def main() -> None:
             f"page Matériel : « {label} » {'rendu' if expected else 'masqué'}",
             visible == expected,
         )
+
+    status, html = fetch_page("/?from=2025-12-01&to=2025-12-31", cookie=cookie)
+    report.status("tableau de bord avec période personnalisée", status)
+    for label in (
+        "Aujourd",
+        "Timeline",
+        "Axe temporel",
+        "Aucun widget configuré",
+        "01/12",
+        "31/12",
+    ):
+        report.check(f"tableau de bord : « {label} » rendu", label in html)
 
     status, html = fetch_page("/users", cookie=cookie)
     for label in ("Nouvel utilisateur", "Comptes", "Administrateur", "Supprimer"):

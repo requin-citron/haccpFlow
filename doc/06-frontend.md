@@ -44,13 +44,14 @@ role.
 
 ## Modules visibles
 
-Les entrées du menu sont contrôlées par dix variables d'environnement :
-`MODULE_EQUIPMENT`, `MODULE_READINGS`, `MODULE_CLEANING`,
+Les entrées du menu sont contrôlées par onze variables d'environnement :
+`MODULE_DASHBOARD`, `MODULE_EQUIPMENT`, `MODULE_READINGS`, `MODULE_CLEANING`,
 `MODULE_PASTEURISATION`, `MODULE_TRANSPORT`, `MODULE_CASH_SESSIONS`,
 `MODULE_EXPORT`, `MODULE_DOCUMENTS`, `MODULE_HISTORY` et `MODULE_USERS`.
 
 - `1` affiche les entrées du module, `0` les masque ; une valeur absente vaut
   `1`, toute autre valeur provoque une erreur de configuration.
+- `MODULE_DASHBOARD` contrôle la page d'accueil `/` et son entrée de menu.
 - `MODULE_CLEANING` contrôle à la fois `/cleaning` et `/cleaning/plans`.
 - `MODULE_DOCUMENTS` contrôle à la fois `/templates` et `/documents`.
 - Matériel est un prérequis de Relevés, Transport et Suivi de caisse. Son
@@ -61,9 +62,9 @@ Les entrées du menu sont contrôlées par dix variables d'environnement :
   `MODULE_READINGS` masque l'historique et l'action de saisie des relevés.
 - Les pages ne sont pas bloquées individuellement : une URL directe reste
   accessible, conformément au choix de désactivation visuelle.
-- La racine `/` et la connexion redirigent vers le premier module actif visible
-  pour le rôle. Si aucun module n'est visible, le shell affiche « Aucun module
-  actif ».
+- Avec `MODULE_DASHBOARD=1`, la racine `/` affiche le tableau de bord. Quand
+  il vaut `0`, `/` redirige vers le premier module actif visible pour le rôle.
+  Si aucun module n'est visible, le shell affiche « Aucun module actif ».
 - Les indicateurs sont lus uniquement côté serveur puis transmis à
   `NavLinks`; ils ne sont pas exposés via `NEXT_PUBLIC_*`.
 
@@ -102,6 +103,7 @@ page `/history` filtre ses sources et ses entrées de la même façon.
 
 | Route | Contenu |
 | --- | --- |
+| `/` | Tableau de bord, sélecteur de période et timeline vide graduée. |
 | `/equipment` | Parc matériel, véhicules et caisses. |
 | `/equipment/[id]` | Détail d'un matériel. |
 | `/readings` | Relevés de température par jour. |
@@ -120,6 +122,21 @@ page `/history` filtre ses sources et ses entrées de la même façon.
 | `/documents` | Historique des PDF générés. |
 | `/history` | Journal d'audit (admin). |
 | `/users` | Gestion des comptes et des rôles (admin). |
+
+## Tableau de bord
+
+- La page `/` est le tableau de bord d'accueil lorsqu'il est activé.
+- Le sélecteur de période reprend les principes de Grafana/ELK : raccourcis
+  Aujourd'hui, Hier, 7 derniers jours, 30 derniers jours, Ce mois-ci, Mois
+  précédent et plage personnalisée.
+- La période par défaut est la journée UTC courante. Les dates choisies sont
+  conservées dans l'URL avec `from` et `to`, ce qui rend la vue partageable.
+- La timeline est une coque vide : elle affiche un axe gradué mais aucun widget
+  ni valeur métier pour l'instant.
+- L'axe utilise des repères horaires pour une journée, quotidiens jusqu'à
+  quatorze jours, hebdomadaires jusqu'à quatre-vingt-dix jours, puis mensuels.
+- Sur mobile, la timeline peut défiler horizontalement pour conserver des
+  graduations lisibles.
 
 ## Caisses
 
