@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 
-import { DashboardTimeline } from "@/components/dashboard/dashboard-timeline";
+import { ConfigurableDashboard } from "@/components/dashboard/configurable-dashboard";
 import { DashboardTimeRangePicker } from "@/components/dashboard/time-range-picker";
 import { AlertIcon, DashboardIcon } from "@/components/icons";
+import { apiFetch } from "@/lib/api";
 import { requireCurrentUser } from "@/lib/current-user";
 import { resolveDashboardRange } from "@/lib/dashboard";
 import { todayIso } from "@/lib/format";
@@ -10,6 +11,7 @@ import { getEnabledModules } from "@/lib/module-settings";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { firstEnabledModuleHref } from "@/lib/modules";
+import type { DashboardLayout, DashboardRevenue } from "@/lib/types";
 
 export default async function HomePage({
   searchParams,
@@ -47,11 +49,22 @@ export default async function HomePage({
   const params = await searchParams;
   const today = todayIso();
   const range = resolveDashboardRange(params, today);
+  const layout = await apiFetch<DashboardLayout>("/api/v1/dashboard/layout");
+  const revenueQuery = new URLSearchParams({
+    from: range.from,
+    to: range.to,
+  });
+  const includesRevenue = layout.widgets.some((widget) => widget.key === "revenue");
+  const revenue = includesRevenue
+    ? await apiFetch<DashboardRevenue>(
+        `/api/v1/dashboard/revenue?${revenueQuery.toString()}`,
+      )
+    : null;
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-5">
-        <div className="flex items-start gap-4">
+      <header className="flex flex-wrap items-start justify-end gap-5 sm:justify-between">
+        <div className="hidden items-start gap-4 sm:flex">
           <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
             <DashboardIcon className="size-6" />
           </span>
@@ -71,7 +84,13 @@ export default async function HomePage({
         <DashboardTimeRangePicker range={range} today={today} />
       </header>
 
-      <DashboardTimeline range={range} locale={locale} />
+      <ConfigurableDashboard
+        initialLayout={layout}
+        initialRevenue={revenue}
+        periodFrom={range.from}
+        periodTo={range.to}
+        locale={locale}
+      />
     </div>
   );
 }

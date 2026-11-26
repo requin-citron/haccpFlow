@@ -8,6 +8,7 @@ from app.api.v1 import (
     cash_sessions,
     cleaning_plans,
     cleaning_schedule,
+    dashboard,
     documents,
     equipment,
     exports,
@@ -27,6 +28,7 @@ api_router.include_router(cash_registers.router)
 api_router.include_router(cash_sessions.router)
 api_router.include_router(cleaning_plans.router)
 api_router.include_router(cleaning_schedule.router)
+api_router.include_router(dashboard.router)
 api_router.include_router(documents.router)
 api_router.include_router(equipment.router)
 api_router.include_router(exports.router)

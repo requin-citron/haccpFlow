@@ -46,6 +46,124 @@ body {
   animation: haccp-drawer-in 180ms ease-out;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 4rem;
+  gap: 1rem;
+}
+
+.dashboard-widget {
+  grid-column: var(--widget-start) / span var(--widget-width);
+  grid-row: span var(--widget-rows);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.dashboard-widget[data-editing="true"] {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.dashboard-widget-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.revenue-widget {
+  container-type: inline-size;
+}
+
+.revenue-widget-breakdown {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 18rem) {
+  .revenue-widget-breakdown {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dashboard-resize-handle {
+  position: absolute;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+}
+
+.dashboard-resize-handle::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  content: "";
+  background: var(--color-teal-500);
+  border-radius: 9999px;
+  opacity: 0.7;
+  transform: translate(-50%, -50%);
+}
+
+.dashboard-resize-handle-left,
+.dashboard-resize-handle-right {
+  top: 0;
+  bottom: 0;
+  width: 0.75rem;
+  cursor: ew-resize;
+}
+
+.dashboard-resize-handle-left::after,
+.dashboard-resize-handle-right::after {
+  width: 0.25rem;
+  height: 2.5rem;
+}
+
+.dashboard-resize-handle-left {
+  left: -0.625rem;
+}
+
+.dashboard-resize-handle-right {
+  right: -0.625rem;
+}
+
+.dashboard-resize-handle-top,
+.dashboard-resize-handle-bottom {
+  right: 0;
+  left: 0;
+  height: 0.75rem;
+  cursor: ns-resize;
+}
+
+.dashboard-resize-handle-top::after,
+.dashboard-resize-handle-bottom::after {
+  width: 2.5rem;
+  height: 0.25rem;
+}
+
+.dashboard-resize-handle-top {
+  top: -0.625rem;
+}
+
+.dashboard-resize-handle-bottom {
+  bottom: -0.625rem;
+}
+
+.dashboard-resize-handle:focus-visible {
+  outline: 2px solid var(--color-teal-500);
+  outline-offset: 2px;
+}
+
+.dashboard-resizing {
+  user-select: none;
+}
+
+.dashboard-resizing-horizontal {
+  cursor: ew-resize;
+}
+
+.dashboard-resizing-vertical {
+  cursor: ns-resize;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-drawer-in {

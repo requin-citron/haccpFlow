@@ -1,45 +1,54 @@
-> **BLUF:** Calculer le chiffre d'affaires dans un endpoint backend dédié, avec la formule espèces `clôture - ouverture + frais`, puis afficher le résultat dans un widget KPI au-dessus de la timeline.
+> **BLUF:** La configuration sera stockée côté backend par utilisateur : un document de disposition contient les widgets actifs et leur largeur sur la grille. Le navigateur ne conserve plus l'état de référence.
 
 # Alternatives Considered
 
-## Source du calcul
+## Périmètre de la configuration
 
-### Retenu : endpoint backend agrégé
+### Retenu : grille de widgets éditable avec poignées
 
-Un endpoint `GET /api/v1/dashboard/revenue?from=...&to=...` calcule le total et
-la ventilation espèces/chèques/cartes. La règle métier est testable directement
-et les futurs widgets pourront réutiliser des agrégats cohérents.
+Le tableau de bord propose un mode modification. L'utilisateur ouvre une liste
+de widgets disponibles, ajoute ou retire le widget Chiffre d'affaires, puis le
+déplace et modifie sa largeur ou sa hauteur en tirant les poignées des quatre
+côtés. Le placement s'accroche à une grille de douze colonnes et à des rangées
+régulières. Le bouton de retrait est placé au-dessus de la carte pour ne pas
+interférer avec les poignées.
 
-### Écarté : calcul dans le composant Next.js
+### Écarté : options internes uniquement
 
-Le frontend pourrait charger toutes les sessions via `/cash-sessions` et
-additionner leurs champs. Cette approche évite une route backend, mais place une
-règle comptable importante dans du code frontend sans test métier dédié et
-transfère inutilement l'historique complet des sessions.
+Un simple bouton d'édition sur le widget permettrait de masquer certains
+montants, mais le widget resterait toujours présent et à une position fixe.
+Cela ne correspond qu'imparfaitement à une configuration de dashboard.
 
-## Formule des espèces
+### Écarté : configuration globale par fichier d'environnement
 
-### Retenu : variation de caisse avec réintégration des frais
+Une configuration `.env` serait simple à déployer, mais identique pour tous les
+utilisateurs et sans interaction directe dans le dashboard.
 
-`chiffre d'affaires = clôture - ouverture + frais pro + frais perso`.
+## Moteur de grille
 
-Cette formule mesure l'argent entré pendant le suivi. Réintégrer les frais
-compense les sorties utilisées pour payer des achats ou des prélèvements.
+### Retenu : grille CSS et Pointer Events natifs
 
-### Écarté : somme du contenu de clôture
+Une grille CSS de douze colonnes, complétée par les Pointer Events du navigateur,
+suffit pour le redimensionnement horizontal et évite une dépendance pour un
+seul widget.
 
-Additionner directement le comptage de clôture compte à nouveau le fond présent
-à l'ouverture. Sur plusieurs jours, le même fond serait répété dans le chiffre
-d'affaires.
+### Écarté : bibliothèque de grille
 
-## Périmètre des sessions
+Une bibliothèque dédiée apporterait le déplacement et des interactions déjà
+éprouvées, mais ajouterait une dépendance, du JavaScript client et des
+adaptations SSR disproportionnés pour une grille à un widget dans ce premier lot.
 
-### Retenu : suivis clôturés, non supprimés, dates incluses
+## Persistance
 
-Seules les sessions dont `closed_at` est renseigné et `deleted_at` est nul sont
-comptées. Le filtre porte sur `session_date`, bornes incluses, en UTC.
+### Retenu : disposition backend par utilisateur
 
-### Écarté : inclure les suivis ouverts ou supprimés
+Une table `dashboard_layouts` conserve un document JSONB de widgets par
+utilisateur. Les routes `GET` et `PUT /api/v1/dashboard/layout` permettent de
+charger et remplacer cette disposition. La configuration suit donc le compte sur
+tous ses appareils.
 
-Un suivi ouvert n'a pas de résultat définitif. Un suivi supprimé ne doit pas
-alimenter le tableau de bord opérationnel.
+### Écarté : `localStorage`
+
+Le stockage local aurait évité une migration, mais la configuration ne serait
+pas partagée entre les appareils et serait perdue lors d'un nettoyage du
+navigateur.

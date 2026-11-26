@@ -258,6 +258,31 @@ La clôture espèces conserve son payload complet
 de caisse retourne `cash_session_closing_payload_mismatch`. Les réponses de
 suivi exposent `cash_register_kind` et `collected_amount_cents`.
 
+## Tableau de bord
+
+| Méthode | Route | Accès |
+| --- | --- | --- |
+| `GET` | `/api/v1/dashboard/revenue?from=YYYY-MM-DD&to=YYYY-MM-DD` | admin, opérateur |
+| `GET` | `/api/v1/dashboard/layout` | admin, opérateur |
+| `PUT` | `/api/v1/dashboard/layout` | admin, opérateur |
+
+`revenue` calcule le chiffre d'affaires des suivis clôturés, non supprimés et
+compris dans la période inclusive. Les bornes inversées retournent
+`422 dashboard_range_invalid`. La réponse contient `from`, `to`,
+`total_cents`, `cash_cents`, `cheque_cents`, `card_cents`,
+`cash_expenses_cents` et `closed_session_count`.
+
+Pour les espèces, le calcul est
+`clôture - ouverture + frais professionnels + frais personnels`. Pour les
+chèques et cartes, le montant encaissé est utilisé directement.
+
+`layout` retourne la disposition personnelle du compte. Sans sauvegarde, la
+réponse virtuelle contient le widget `revenue` sur toute la largeur. Le `PUT`
+remplace toute la disposition par une liste `widgets`. Chaque widget contient
+`key`, `column_start`, `width_columns` et `row_span`; la grille utilise douze
+colonnes et les clés sont uniques. Une liste vide est une disposition valide et
+persistée.
+
 ## Exports
 
 | Méthode | Route | Accès |

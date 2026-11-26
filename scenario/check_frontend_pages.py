@@ -226,9 +226,8 @@ def main() -> None:
     report.status("tableau de bord avec période personnalisée", status)
     for label in (
         "Aujourd",
-        "Timeline",
-        "Axe temporel",
-        "Aucun widget configuré",
+        "Chiffre d",
+        "Modifier le dashboard",
         "01/12",
         "31/12",
     ):

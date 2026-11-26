@@ -6,7 +6,7 @@ import {
   isIsoDate,
   todayIso,
 } from "@/lib/format";
-import { formatLocale, type Locale, type MessageKey } from "@/lib/i18n";
+import type { Locale, MessageKey } from "@/lib/i18n";
 
 export type DashboardRange = {
   from: string;
@@ -19,7 +19,8 @@ export type DashboardPreset =
   | "last_7_days"
   | "last_30_days"
   | "this_month"
-  | "previous_month";
+  | "previous_month"
+  | "this_year";
 
 export type DashboardPresetOption = {
   value: DashboardPreset;
@@ -33,6 +34,7 @@ export const DASHBOARD_PRESETS: readonly DashboardPresetOption[] = [
   { value: "last_30_days", labelKey: "30 derniers jours" },
   { value: "this_month", labelKey: "Ce mois-ci" },
   { value: "previous_month", labelKey: "Mois précédent" },
+  { value: "this_year", labelKey: "Année courante" },
 ];
 
 function firstDayOfMonth(isoDate: string): string {
@@ -71,6 +73,11 @@ export function dashboardPresetRange(
         from: previousMonthStart(today),
         to: lastDayOfPreviousMonth(today),
       };
+    case "this_year":
+      return {
+        from: `${today.slice(0, 4)}-01-01`,
+        to: today,
+      };
   }
 }
 
@@ -91,80 +98,6 @@ export function sameDashboardRange(
   second: DashboardRange,
 ): boolean {
   return first.from === second.from && first.to === second.to;
-}
-
-export type TimelineTick = {
-  key: string;
-  label: string;
-};
-
-function monthTickLabel(locale: Locale, isoDate: string): string {
-  return new Intl.DateTimeFormat(formatLocale(locale), {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${isoDate}T12:00:00Z`));
-}
-
-function monthlyStarts(from: string, to: string): string[] {
-  const dates: string[] = [];
-  const cursor = new Date(`${firstDayOfMonth(from)}T12:00:00Z`);
-  const end = Date.parse(`${to}T12:00:00Z`);
-
-  while (cursor.getTime() <= end) {
-    const isoDate = cursor.toISOString().slice(0, 10);
-    if (isoDate >= from) {
-      dates.push(isoDate);
-    }
-    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
-  }
-  return dates;
-}
-
-export function buildTimelineTicks(
-  range: DashboardRange,
-  locale: Locale,
-): TimelineTick[] {
-  const days = daysBetween(range.from, range.to);
-
-  if (days === 0) {
-    return ["00:00", "06:00", "12:00", "18:00", "24:00"].map((label) => ({
-      key: label,
-      label,
-    }));
-  }
-
-  if (days <= 14) {
-    return Array.from({ length: days + 1 }, (_, index) => {
-      const isoDate = addDays(range.from, index);
-      return { key: isoDate, label: formatShortDay(locale, isoDate) };
-    });
-  }
-
-  if (days <= 90) {
-    const dates: string[] = [];
-    for (let offset = 0; offset <= days; offset += 7) {
-      dates.push(addDays(range.from, offset));
-    }
-    if (dates.at(-1) !== range.to) {
-      dates.push(range.to);
-    }
-    return dates.map((isoDate) => ({
-      key: isoDate,
-      label: formatShortDay(locale, isoDate),
-    }));
-  }
-
-  const dates = [range.from, ...monthlyStarts(range.from, range.to)];
-  if (dates.at(-1) !== range.to) {
-    dates.push(range.to);
-  }
-  return [...new Set(dates)].map((isoDate) => ({
-    key: isoDate,
-    label: isoDate === range.from || isoDate === range.to
-      ? formatShortDay(locale, isoDate)
-      : monthTickLabel(locale, isoDate),
-  }));
 }
 
 export function dashboardRangeLabel(

@@ -181,6 +181,19 @@ Règles :
   supprimer.
 - Chaque suivi peut être exporté seul en CSV.
 
+### Chiffre d'affaires du tableau de bord
+
+- Le chiffre d'affaires additionne les suivis clôturés et non supprimés dont
+  `session_date` est comprise dans la période, bornes incluses, en UTC.
+- Caisse espèces :
+  `clôture - ouverture + frais professionnels + frais personnels`.
+  Les frais sont réintégrés parce qu'ils ont été payés avec l'argent encaissé.
+- Caisses chèques et cartes : montant brut encaissé à la clôture.
+- Un suivi ouvert ou supprimé est exclu. Une caisse désactivée après la
+  clôture continue d'alimenter l'historique.
+- Un résultat négatif est conservé : il peut signaler une incohérence entre le
+  fond, les frais et le comptage de clôture.
+
 ## Exports CSV
 
 Six jeux de données, filtrables par `from`/`to` :

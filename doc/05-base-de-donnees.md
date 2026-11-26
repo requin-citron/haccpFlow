@@ -78,6 +78,12 @@
 | `template_variable_assets` | Image unique d'une variable `image` (JPEG/PNG). |
 | `generated_documents` | PDF généré : modèle, auteur, snapshot JSONB des valeurs, fichier, taille, SHA-256. |
 
+### Tableau de bord
+
+| Table | Rôle |
+| --- | --- |
+| `dashboard_layouts` | Disposition JSONB des widgets du dashboard, une ligne par utilisateur, supprimée avec le compte. |
+
 ## Relations principales
 
 ```mermaid
@@ -132,6 +138,7 @@ Les révisions vivent dans `backend/alembic/versions/` :
 | `0015_transport_checkpoints` | Renommage des checkpoints transport en initial et en cours. |
 | `0016_temperature_corrections` | Valeurs originales/corrigées et justification finale dans les relevés. |
 | `0017_cash_register_kinds` | Types de caisse et montant encaissé hors espèces. |
+| `0018_dashboard_layouts` | Dispositions personnelles des widgets du tableau de bord. |
 
 Les caisses existantes sont migrées vers `kind = 'cash'`. Le downgrade de
 `0017_cash_register_kinds` est refusé dès qu'une caisse non-espèces existe,

@@ -290,6 +290,30 @@ export type CashSession = {
   updated_at: string;
 };
 
+export type DashboardWidgetKey = "revenue";
+
+export type DashboardWidgetConfig = {
+  key: DashboardWidgetKey;
+  column_start: number;
+  width_columns: number;
+  row_span: number;
+};
+
+export type DashboardLayout = {
+  widgets: DashboardWidgetConfig[];
+};
+
+export type DashboardRevenue = {
+  from: string;
+  to: string;
+  total_cents: number;
+  cash_cents: number;
+  cheque_cents: number;
+  card_cents: number;
+  cash_expenses_cents: number;
+  closed_session_count: number;
+};
+
 export type LatexTemplate = {
   id: string;
   name: string;

@@ -17,6 +17,7 @@ from app.models.cleaning_plan import (
     CleaningRecordEditAction,
     CleaningStatus,
 )
+from app.models.dashboard_layout import DashboardLayout
 from app.models.equipment import Equipment, EquipmentType
 from app.models.generated_document import GeneratedDocument
 from app.models.latex_template import LatexTemplate
@@ -59,6 +60,7 @@ __all__ = [
     "CleaningRecordEdit",
     "CleaningRecordEditAction",
     "CleaningStatus",
+    "DashboardLayout",
     "Equipment",
     "EquipmentType",
     "GeneratedDocument",

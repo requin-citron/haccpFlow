@@ -4,9 +4,10 @@ Plateforme open source de gestion HACCP, pensée pour être installée **une
 instance par client**. Elle couvre aujourd'hui deux volets du plan de maîtrise
 sanitaire :
 
-- **Tableau de bord** — page d'accueil avec sélection de période et timeline
-  graduée, prête à recevoir des widgets consolidés dans les prochaines
-  versions.
+- **Tableau de bord** — page d'accueil avec sélection de période et widgets
+  configurables. Le premier widget affiche le chiffre d'affaires avec sa
+  ventilation par moyen de paiement ; sa taille et sa présence sont
+  enregistrées par utilisateur.
 - **Chaîne du froid** — parc de matériel (frigos, congélateurs) avec seuils
   réglementaires, relevés matin et soir, corrections justifiées, détail
   original/corrigé et journal d'audit consolidé.
@@ -340,7 +341,7 @@ inaccessibles.
 | Ouvrir un suivi de caisse, saisir les frais et clôturer                    |     ✅     |       ✅       |
 | Supprimer un suivi de caisse                                                |     ❌     |       ✅       |
 | Télécharger les exports CSV, y compris l'extract d'un suivi               |     ✅     |       ✅       |
-| Utiliser le tableau de bord et choisir sa période                         |     ✅     |       ✅       |
+| Utiliser le tableau de bord, choisir sa période et configurer ses widgets  |     ✅     |       ✅       |
 | Consulter les modèles LaTeX                                                |     ✅     |       ✅       |
 | Générer un PDF depuis un modèle                                          |     ✅     |       ✅       |
 | Consulter l'historique des documents générés                             |     ✅     |       ✅       |

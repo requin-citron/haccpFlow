@@ -103,7 +103,7 @@ page `/history` filtre ses sources et ses entrées de la même façon.
 
 | Route | Contenu |
 | --- | --- |
-| `/` | Tableau de bord, sélecteur de période et timeline vide graduée. |
+| `/` | Tableau de bord configurable et sélecteur de période. |
 | `/equipment` | Parc matériel, véhicules et caisses. |
 | `/equipment/[id]` | Détail d'un matériel. |
 | `/readings` | Relevés de température par jour. |
@@ -128,15 +128,27 @@ page `/history` filtre ses sources et ses entrées de la même façon.
 - La page `/` est le tableau de bord d'accueil lorsqu'il est activé.
 - Le sélecteur de période reprend les principes de Grafana/ELK : raccourcis
   Aujourd'hui, Hier, 7 derniers jours, 30 derniers jours, Ce mois-ci, Mois
-  précédent et plage personnalisée.
+  précédent, Année courante et plage personnalisée.
 - La période par défaut est la journée UTC courante. Les dates choisies sont
   conservées dans l'URL avec `from` et `to`, ce qui rend la vue partageable.
-- La timeline est une coque vide : elle affiche un axe gradué mais aucun widget
-  ni valeur métier pour l'instant.
+- Le widget « Chiffre d'affaires » affiche le total de la période, la
+  ventilation espèces/chèques/cartes et le nombre de suivis clôturés.
+- Le tableau de bord possède un mode modification. Il permet d'ajouter le
+  widget depuis un catalogue, de le retirer et de modifier sa largeur ou sa
+  hauteur avec les poignées des quatre côtés. La taille s'accroche à une grille
+  de douze colonnes et à des rangées régulières. Le bouton de retrait reste
+  au-dessus de la carte afin de ne pas perturber les poignées ni le centrage
+  du widget.
+- La disposition est enregistrée côté backend par utilisateur et reste
+  identique après reconnexion ou changement d'appareil.
+- La largeur et la hauteur configurées s'appliquent à tous les formats
+  d'écran ; les quatre poignées restent disponibles sur téléphone. Le bloc de
+  présentation du tableau de bord est masqué sur téléphone pour afficher
+  directement le sélecteur et les widgets.
+- Chaque modification est optimiste : en cas d'échec, la dernière disposition
+  sauvegardée est restaurée et un message d'erreur est affiché.
 - L'axe utilise des repères horaires pour une journée, quotidiens jusqu'à
   quatorze jours, hebdomadaires jusqu'à quatre-vingt-dix jours, puis mensuels.
-- Sur mobile, la timeline peut défiler horizontalement pour conserver des
-  graduations lisibles.
 
 ## Caisses
 

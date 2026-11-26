@@ -32,19 +32,50 @@ const FR_MESSAGES = {
   "30 derniers jours": "30 derniers jours",
   "Ce mois-ci": "Ce mois-ci",
   "Mois précédent": "Mois précédent",
+  "Année courante": "Année courante",
   "Plage personnalisée": "Plage personnalisée",
   "Les dates sont interprétées en UTC.": "Les dates sont interprétées en UTC.",
   "Les deux dates sont obligatoires.": "Les deux dates sont obligatoires.",
   "Plage active : du {from} au {to}.": "Plage active : du {from} au {to}.",
   "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.":
     "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.",
-  "Timeline": "Timeline",
-  "Axe temporel": "Axe temporel",
-  "Graduations de la timeline": "Graduations de la timeline",
-  "Zone des futurs widgets": "Zone des futurs widgets",
-  "Aucun widget configuré": "Aucun widget configuré",
-  "Les futurs widgets utiliseront cette période et cet axe temporel.":
-    "Les futurs widgets utiliseront cette période et cet axe temporel.",
+  "Widgets du dashboard": "Widgets du dashboard",
+  "Ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.":
+    "Ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.",
+  "Ta disposition est synchronisée avec ton compte.":
+    "Ta disposition est synchronisée avec ton compte.",
+  "Ajouter un widget": "Ajouter un widget",
+  "Terminer": "Terminer",
+  "Modifier le dashboard": "Modifier le dashboard",
+  "Widgets disponibles": "Widgets disponibles",
+  "Total et ventilation par moyen de paiement.":
+    "Total et ventilation par moyen de paiement.",
+  "Ajouté": "Ajouté",
+  "Ajouter": "Ajouter",
+  "La disposition du dashboard n'a pas pu être enregistrée.":
+    "La disposition du dashboard n'a pas pu être enregistrée.",
+  "Les données du widget n'ont pas pu être chargées.":
+    "Les données du widget n'ont pas pu être chargées.",
+  "Enregistrement de la disposition…": "Enregistrement de la disposition…",
+  "Aucun widget sur le dashboard": "Aucun widget sur le dashboard",
+  "Passe en mode modification pour ajouter un widget.":
+    "Passe en mode modification pour ajouter un widget.",
+  "Retirer le widget Chiffre d'affaires": "Retirer le widget Chiffre d'affaires",
+  "Redimensionner le widget depuis la gauche":
+    "Redimensionner le widget depuis la gauche",
+  "Redimensionner le widget depuis la droite":
+    "Redimensionner le widget depuis la droite",
+  "Redimensionner le widget depuis le haut":
+    "Redimensionner le widget depuis le haut",
+  "Redimensionner le widget depuis le bas":
+    "Redimensionner le widget depuis le bas",
+  "Chiffre d'affaires": "Chiffre d'affaires",
+  "Toutes les caisses clôturées sur la période sélectionnée.":
+    "Toutes les caisses clôturées sur la période sélectionnée.",
+  "Suivis clôturés : {count}": "Suivis clôturés : {count}",
+  "Total encaissé": "Total encaissé",
+  "Aucun suivi clôturé ne correspond à cette période.":
+    "Aucun suivi clôturé ne correspond à cette période.",
   "Ouvrir le menu": "Ouvrir le menu",
   "Fermer le menu": "Fermer le menu",
   "Réduire la navigation": "Réduire la navigation",
@@ -1050,19 +1081,46 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "30 derniers jours": "Last 30 days",
   "Ce mois-ci": "This month",
   "Mois précédent": "Previous month",
+  "Année courante": "Current year",
   "Plage personnalisée": "Custom range",
   "Les dates sont interprétées en UTC.": "Dates are interpreted in UTC.",
   "Les deux dates sont obligatoires.": "Both dates are required.",
   "Plage active : du {from} au {to}.": "Active range: {from} to {to}.",
   "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.":
     "Explore a time range to prepare a consolidated activity view. Widgets will be added progressively.",
-  "Timeline": "Timeline",
-  "Axe temporel": "Time axis",
-  "Graduations de la timeline": "Timeline tick marks",
-  "Zone des futurs widgets": "Future widgets area",
-  "Aucun widget configuré": "No widgets configured",
-  "Les futurs widgets utiliseront cette période et cet axe temporel.":
-    "Future widgets will use this time range and time axis.",
+  "Widgets du dashboard": "Dashboard widgets",
+  "Ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.":
+    "Add, remove or resize widgets. Changes are saved automatically.",
+  "Ta disposition est synchronisée avec ton compte.":
+    "Your layout is synchronized with your account.",
+  "Ajouter un widget": "Add widget",
+  "Terminer": "Done",
+  "Modifier le dashboard": "Edit dashboard",
+  "Widgets disponibles": "Available widgets",
+  "Total et ventilation par moyen de paiement.":
+    "Revenue total and payment-method breakdown.",
+  "Ajouté": "Added",
+  "Ajouter": "Add",
+  "La disposition du dashboard n'a pas pu être enregistrée.":
+    "The dashboard layout could not be saved.",
+  "Les données du widget n'ont pas pu être chargées.":
+    "The widget data could not be loaded.",
+  "Enregistrement de la disposition…": "Saving layout…",
+  "Aucun widget sur le dashboard": "No widgets on the dashboard",
+  "Passe en mode modification pour ajouter un widget.":
+    "Switch to edit mode to add a widget.",
+  "Retirer le widget Chiffre d'affaires": "Remove the Revenue widget",
+  "Redimensionner le widget depuis la gauche": "Resize widget from the left",
+  "Redimensionner le widget depuis la droite": "Resize widget from the right",
+  "Redimensionner le widget depuis le haut": "Resize widget from the top",
+  "Redimensionner le widget depuis le bas": "Resize widget from the bottom",
+  "Chiffre d'affaires": "Revenue",
+  "Toutes les caisses clôturées sur la période sélectionnée.":
+    "All registers closed during the selected period.",
+  "Suivis clôturés : {count}": "Closed tracking sessions: {count}",
+  "Total encaissé": "Total collected",
+  "Aucun suivi clôturé ne correspond à cette période.":
+    "No closed tracking session matches this period.",
   "Ouvrir le menu": "Open menu",
   "Fermer le menu": "Close menu",
   "Réduire la navigation": "Collapse navigation",

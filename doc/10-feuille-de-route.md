@@ -65,8 +65,8 @@
   l'environnement local ; le problème a été reproduit sur HEAD.
 - Certaines listes n'ont pas de pagination explicite (historique plafonné,
   documents limités à 50 dans l'interface).
-- Le tableau de bord d'accueil fournit le sélecteur de période et l'axe
-  temporel, mais aucun widget métier n'est encore disponible.
+- Le tableau de bord fournit le sélecteur de période et un premier widget de
+  chiffre d'affaires configurable. Les autres widgets restent à ajouter.
 
 ### Audit
 
