@@ -5,9 +5,9 @@ instance par client**. Elle couvre aujourd'hui deux volets du plan de maîtrise
 sanitaire :
 
 - **Tableau de bord** — page d'accueil avec sélection de période et widgets
-  configurables. Le premier widget affiche le chiffre d'affaires avec sa
-  ventilation par moyen de paiement ; sa taille et sa présence sont
-  enregistrées par utilisateur.
+  configurables. Les widgets affichent le chiffre d'affaires ventilé par moyen
+  de paiement et les relevés de température manquants. Leur taille et leur
+  présence sont enregistrées par utilisateur.
 - **Chaîne du froid** — parc de matériel (frigos, congélateurs) avec seuils
   réglementaires, relevés matin et soir, corrections justifiées, détail
   original/corrigé et journal d'audit consolidé.

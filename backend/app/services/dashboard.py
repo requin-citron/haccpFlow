@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.cash_register import CashRegister, CashRegisterKind
 from app.models.cash_session import CashExpense, CashExpenseKind, CashSession
 from app.models.dashboard_layout import DashboardLayout
+from app.models.equipment import Equipment
+from app.models.temperature_reading import TemperatureReading
 from app.services.cash_session import (
     closing_total_cents,
     expenses_total_cents,
@@ -21,6 +23,7 @@ DEFAULT_DASHBOARD_WIDGETS: tuple[dict[str, object], ...] = (
     {
         "key": "revenue",
         "column_start": 1,
+        "row_start": 1,
         "width_columns": 12,
         "row_span": 6,
     },
@@ -35,6 +38,14 @@ class DashboardRevenue:
     card_cents: int
     cash_expenses_cents: int
     closed_session_count: int
+
+
+@dataclass(frozen=True)
+class DashboardMissingReadings:
+    missing_slots: int
+    filled_slots: int
+    total_slots: int
+    equipment_count: int
 
 
 async def dashboard_revenue(
@@ -98,6 +109,59 @@ async def dashboard_revenue(
         card_cents=card_cents,
         cash_expenses_cents=cash_expenses_cents,
         closed_session_count=len(rows),
+    )
+
+
+async def dashboard_missing_readings(
+    db: AsyncSession,
+    *,
+    from_date: date,
+    to_date: date,
+) -> DashboardMissingReadings:
+    """Count expected and filled reading slots for active equipment."""
+
+    end_date = min(to_date, datetime.now(UTC).date())
+    if end_date < from_date:
+        return DashboardMissingReadings(
+            missing_slots=0,
+            filled_slots=0,
+            total_slots=0,
+            equipment_count=0,
+        )
+
+    equipment = list(
+        await db.scalars(
+            select(Equipment)
+            .where(Equipment.deleted_at.is_(None))
+            .order_by(Equipment.created_at, Equipment.id)
+        )
+    )
+    eligible_equipment = [
+        item for item in equipment if max(from_date, item.created_at.date()) <= end_date
+    ]
+    total_slots = sum(
+        (end_date - max(from_date, item.created_at.date())).days * 2 + 2
+        for item in eligible_equipment
+    )
+
+    filled_slots = 0
+    if eligible_equipment:
+        filled_slots = int(
+            await db.scalar(
+                select(func.count(TemperatureReading.id)).where(
+                    TemperatureReading.equipment_id.in_([item.id for item in eligible_equipment]),
+                    TemperatureReading.reading_date >= from_date,
+                    TemperatureReading.reading_date <= end_date,
+                )
+            )
+            or 0
+        )
+
+    return DashboardMissingReadings(
+        missing_slots=max(0, total_slots - filled_slots),
+        filled_slots=filled_slots,
+        total_slots=total_slots,
+        equipment_count=len(eligible_equipment),
     )
 
 

@@ -29,6 +29,7 @@ EXPECTED_PATHS = {
     f"{API_V1_PREFIX}/cleaning-schedule",
     f"{API_V1_PREFIX}/cleaning-schedule/overdue",
     f"{API_V1_PREFIX}/dashboard/layout",
+    f"{API_V1_PREFIX}/dashboard/missing-readings",
     f"{API_V1_PREFIX}/dashboard/revenue",
     f"{API_V1_PREFIX}/documents",
     f"{API_V1_PREFIX}/documents/{{document_id}}/download",

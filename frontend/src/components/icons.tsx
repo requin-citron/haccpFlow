@@ -161,6 +161,19 @@ export function DashboardIcon(props: IconProps) {
   );
 }
 
+export function DragHandleIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="7" r="1" />
+      <circle cx="16" cy="7" r="1" />
+      <circle cx="8" cy="12" r="1" />
+      <circle cx="16" cy="12" r="1" />
+      <circle cx="8" cy="17" r="1" />
+      <circle cx="16" cy="17" r="1" />
+    </Icon>
+  );
+}
+
 export function LogOutIcon(props: IconProps) {
   return (
     <Icon {...props}>

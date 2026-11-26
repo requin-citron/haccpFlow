@@ -40,8 +40,8 @@ const FR_MESSAGES = {
   "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.":
     "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.",
   "Widgets du dashboard": "Widgets du dashboard",
-  "Ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.":
-    "Ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.",
+  "Déplace, ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.":
+    "Déplace, ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.",
   "Ta disposition est synchronisée avec ton compte.":
     "Ta disposition est synchronisée avec ton compte.",
   "Ajouter un widget": "Ajouter un widget",
@@ -60,7 +60,7 @@ const FR_MESSAGES = {
   "Aucun widget sur le dashboard": "Aucun widget sur le dashboard",
   "Passe en mode modification pour ajouter un widget.":
     "Passe en mode modification pour ajouter un widget.",
-  "Retirer le widget Chiffre d'affaires": "Retirer le widget Chiffre d'affaires",
+  "Retirer le widget {name}": "Retirer le widget {name}",
   "Redimensionner le widget depuis la gauche":
     "Redimensionner le widget depuis la gauche",
   "Redimensionner le widget depuis la droite":
@@ -69,6 +69,7 @@ const FR_MESSAGES = {
     "Redimensionner le widget depuis le haut",
   "Redimensionner le widget depuis le bas":
     "Redimensionner le widget depuis le bas",
+  "Déplacer le widget {name}": "Déplacer le widget {name}",
   "Chiffre d'affaires": "Chiffre d'affaires",
   "Toutes les caisses clôturées sur la période sélectionnée.":
     "Toutes les caisses clôturées sur la période sélectionnée.",
@@ -76,6 +77,19 @@ const FR_MESSAGES = {
   "Total encaissé": "Total encaissé",
   "Aucun suivi clôturé ne correspond à cette période.":
     "Aucun suivi clôturé ne correspond à cette période.",
+  "Relevés manquants": "Relevés manquants",
+  "Créneaux de température non renseignés.":
+    "Créneaux de température non renseignés.",
+  "Deux créneaux par jour et par équipement.":
+    "Deux créneaux par jour et par équipement.",
+  "{filled} / {total} saisis": "{filled} / {total} saisis",
+  "créneaux à compléter": "créneaux à compléter",
+  "{count} équipements suivis": "{count} équipements suivis",
+  "Tous les relevés sont complets.": "Tous les relevés sont complets.",
+  "Des relevés restent à saisir sur cette période.":
+    "Des relevés restent à saisir sur cette période.",
+  "Les jours futurs et les équipements supprimés sont exclus.":
+    "Les jours futurs et les équipements supprimés sont exclus.",
   "Ouvrir le menu": "Ouvrir le menu",
   "Fermer le menu": "Fermer le menu",
   "Réduire la navigation": "Réduire la navigation",
@@ -1089,8 +1103,8 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Explore une période pour préparer une vue consolidée de l'activité. Les widgets seront ajoutés progressivement.":
     "Explore a time range to prepare a consolidated activity view. Widgets will be added progressively.",
   "Widgets du dashboard": "Dashboard widgets",
-  "Ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.":
-    "Add, remove or resize widgets. Changes are saved automatically.",
+  "Déplace, ajoute, retire ou redimensionne les widgets. Les changements sont enregistrés automatiquement.":
+    "Move, add, remove or resize widgets. Changes are saved automatically.",
   "Ta disposition est synchronisée avec ton compte.":
     "Your layout is synchronized with your account.",
   "Ajouter un widget": "Add widget",
@@ -1109,11 +1123,12 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Aucun widget sur le dashboard": "No widgets on the dashboard",
   "Passe en mode modification pour ajouter un widget.":
     "Switch to edit mode to add a widget.",
-  "Retirer le widget Chiffre d'affaires": "Remove the Revenue widget",
+  "Retirer le widget {name}": "Remove the {name} widget",
   "Redimensionner le widget depuis la gauche": "Resize widget from the left",
   "Redimensionner le widget depuis la droite": "Resize widget from the right",
   "Redimensionner le widget depuis le haut": "Resize widget from the top",
   "Redimensionner le widget depuis le bas": "Resize widget from the bottom",
+  "Déplacer le widget {name}": "Move the {name} widget",
   "Chiffre d'affaires": "Revenue",
   "Toutes les caisses clôturées sur la période sélectionnée.":
     "All registers closed during the selected period.",
@@ -1121,6 +1136,19 @@ const EN_MESSAGES: Record<MessageKey, string> = {
   "Total encaissé": "Total collected",
   "Aucun suivi clôturé ne correspond à cette période.":
     "No closed tracking session matches this period.",
+  "Relevés manquants": "Missing readings",
+  "Créneaux de température non renseignés.":
+    "Unfilled temperature reading slots.",
+  "Deux créneaux par jour et par équipement.":
+    "Two slots per day and per equipment unit.",
+  "{filled} / {total} saisis": "{filled} / {total} entered",
+  "créneaux à compléter": "slots to complete",
+  "{count} équipements suivis": "{count} equipment units tracked",
+  "Tous les relevés sont complets.": "All readings are complete.",
+  "Des relevés restent à saisir sur cette période.":
+    "Some readings still need to be entered for this period.",
+  "Les jours futurs et les équipements supprimés sont exclus.":
+    "Future days and deleted equipment are excluded.",
   "Ouvrir le menu": "Open menu",
   "Fermer le menu": "Close menu",
   "Réduire la navigation": "Collapse navigation",

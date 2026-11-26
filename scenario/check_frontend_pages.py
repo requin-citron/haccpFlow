@@ -3,6 +3,7 @@
 import re
 import sys
 import uuid
+from datetime import UTC, datetime
 
 from common import API_V1, Report, call, fetch_page, login, read_env, require_env
 
@@ -232,6 +233,56 @@ def main() -> None:
         "31/12",
     ):
         report.check(f"tableau de bord : « {label} » rendu", label in html)
+
+    today = datetime.now(UTC).date().isoformat()
+    status, original_layout = call("GET", f"{API_V1}/dashboard/layout", token=token)
+    report.status("disposition du dashboard chargée", status)
+    if isinstance(original_layout, dict) and isinstance(original_layout.get("widgets"), list):
+        widgets = [
+            widget
+            for widget in original_layout["widgets"]
+            if widget.get("key") != "missing_readings"
+        ]
+        widgets.append(
+            {
+                "key": "missing_readings",
+                "column_start": 1,
+                "width_columns": 6,
+                "row_span": 6,
+            }
+        )
+        try:
+            status, _ = call(
+                "PUT",
+                f"{API_V1}/dashboard/layout",
+                token=token,
+                body={"widgets": widgets},
+            )
+            report.status("widget relevés manquants ajouté au dashboard", status)
+            status, summary = call(
+                "GET",
+                f"{API_V1}/dashboard/missing-readings?from={today}&to={today}",
+                token=token,
+            )
+            report.status("agrégat des relevés manquants", status)
+            report.check(
+                "agrégat des relevés manquants structuré",
+                isinstance(summary, dict)
+                and "missing_slots" in summary
+                and "total_slots" in summary,
+            )
+            status, html = fetch_page(f"/?from={today}&to={today}", cookie=cookie)
+            report.status("dashboard avec relevés manquants", status)
+            for label in ("Relevés manquants", "créneaux à compléter", "équipements suivis"):
+                report.check(f"widget relevés : « {label} » rendu", label in html)
+        finally:
+            status, _ = call(
+                "PUT",
+                f"{API_V1}/dashboard/layout",
+                token=token,
+                body=original_layout,
+            )
+            report.status("disposition du dashboard restaurée", status)
 
     status, html = fetch_page("/users", cookie=cookie)
     for label in ("Nouvel utilisateur", "Comptes", "Administrateur", "Supprimer"):

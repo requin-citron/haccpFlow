@@ -55,7 +55,7 @@ body {
 
 .dashboard-widget {
   grid-column: var(--widget-start) / span var(--widget-width);
-  grid-row: span var(--widget-rows);
+  grid-row: var(--widget-row-start) / span var(--widget-rows);
   display: grid;
   grid-template-rows: minmax(0, 1fr);
 }
@@ -67,6 +67,16 @@ body {
 .dashboard-widget-card {
   height: 100%;
   min-height: 0;
+}
+
+.dashboard-move-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.dashboard-moving,
+.dashboard-moving .dashboard-move-handle {
+  cursor: grabbing;
 }
 
 .dashboard-resize-handle {

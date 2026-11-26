@@ -133,12 +133,17 @@ page `/history` filtre ses sources et ses entrées de la même façon.
   conservées dans l'URL avec `from` et `to`, ce qui rend la vue partageable.
 - Le widget « Chiffre d'affaires » affiche le total de la période, la
   ventilation espèces/chèques/cartes et le nombre de suivis clôturés.
+- Le widget « Relevés manquants » affiche le nombre de créneaux non saisis, la
+  progression, le nombre d'équipements suivis et signale une période complète
+  lorsque le compteur vaut zéro.
 - Le tableau de bord possède un mode modification. Il permet d'ajouter le
-  widget depuis un catalogue, de le retirer et de modifier sa largeur ou sa
-  hauteur avec les poignées des quatre côtés. La taille s'accroche à une grille
-  de douze colonnes et à des rangées régulières. Le bouton de retrait reste
-  au-dessus de la carte afin de ne pas perturber les poignées ni le centrage
-  du widget.
+  widget Chiffre d'affaires ou Relevés manquants depuis un catalogue, de les
+  déplacer, de les retirer et de modifier leur largeur ou leur hauteur avec les
+  poignées des quatre côtés. La position et la taille s'accrochent à une grille
+  de douze colonnes et à des rangées régulières. Un widget déplacé est poussé
+  vers la première position libre s'il chevauche une autre carte. Le bouton de
+  retrait reste au-dessus de la carte afin de ne pas perturber les poignées ni
+  le centrage du widget.
 - La disposition est enregistrée côté backend par utilisateur et reste
   identique après reconnexion ou changement d'appareil.
 - La largeur et la hauteur configurées s'appliquent à tous les formats

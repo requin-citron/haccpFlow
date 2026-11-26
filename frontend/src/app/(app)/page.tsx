@@ -11,7 +11,11 @@ import { getEnabledModules } from "@/lib/module-settings";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { firstEnabledModuleHref } from "@/lib/modules";
-import type { DashboardLayout, DashboardRevenue } from "@/lib/types";
+import type {
+  DashboardLayout,
+  DashboardMissingReadings,
+  DashboardRevenue,
+} from "@/lib/types";
 
 export default async function HomePage({
   searchParams,
@@ -55,11 +59,21 @@ export default async function HomePage({
     to: range.to,
   });
   const includesRevenue = layout.widgets.some((widget) => widget.key === "revenue");
-  const revenue = includesRevenue
-    ? await apiFetch<DashboardRevenue>(
-        `/api/v1/dashboard/revenue?${revenueQuery.toString()}`,
-      )
-    : null;
+  const includesMissingReadings = layout.widgets.some(
+    (widget) => widget.key === "missing_readings",
+  );
+  const [revenue, missingReadings] = await Promise.all([
+    includesRevenue
+      ? apiFetch<DashboardRevenue>(
+          `/api/v1/dashboard/revenue?${revenueQuery.toString()}`,
+        )
+      : Promise.resolve(null),
+    includesMissingReadings
+      ? apiFetch<DashboardMissingReadings>(
+          `/api/v1/dashboard/missing-readings?${revenueQuery.toString()}`,
+        )
+      : Promise.resolve(null),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -87,6 +101,7 @@ export default async function HomePage({
       <ConfigurableDashboard
         initialLayout={layout}
         initialRevenue={revenue}
+        initialMissingReadings={missingReadings}
         periodFrom={range.from}
         periodTo={range.to}
         locale={locale}

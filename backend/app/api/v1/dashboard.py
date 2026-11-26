@@ -11,9 +11,11 @@ from app.models.user import User, UserRole
 from app.schemas.dashboard import (
     DashboardLayoutRead,
     DashboardLayoutWrite,
+    DashboardMissingReadingsRead,
     DashboardRevenueRead,
 )
 from app.services.dashboard import (
+    dashboard_missing_readings,
     dashboard_revenue,
     get_dashboard_widgets,
     save_dashboard_widgets,
@@ -51,6 +53,35 @@ async def revenue(
         card_cents=summary.card_cents,
         cash_expenses_cents=summary.cash_expenses_cents,
         closed_session_count=summary.closed_session_count,
+    )
+
+
+@router.get("/missing-readings", response_model=DashboardMissingReadingsRead)
+async def missing_readings(
+    db: DbSession,
+    _: DashboardUser,
+    from_date: Annotated[date, Query(alias="from")],
+    to_date: Annotated[date, Query(alias="to")],
+) -> DashboardMissingReadingsRead:
+    if from_date > to_date:
+        raise ApiError(
+            422,
+            "dashboard_range_invalid",
+            "The start date must be before the end date",
+        )
+
+    summary = await dashboard_missing_readings(
+        db,
+        from_date=from_date,
+        to_date=to_date,
+    )
+    return DashboardMissingReadingsRead(
+        from_date=from_date,
+        to_date=to_date,
+        missing_slots=summary.missing_slots,
+        filled_slots=summary.filled_slots,
+        total_slots=summary.total_slots,
+        equipment_count=summary.equipment_count,
     )
 
 

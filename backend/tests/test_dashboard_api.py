@@ -15,8 +15,10 @@ pytestmark = pytest.mark.integration
 
 CASH_REGISTERS = "/api/v1/cash-registers"
 CASH_SESSIONS = "/api/v1/cash-sessions"
+DASHBOARD_MISSING_READINGS = "/api/v1/dashboard/missing-readings"
 DASHBOARD_REVENUE = "/api/v1/dashboard/revenue"
 DASHBOARD_LAYOUT = "/api/v1/dashboard/layout"
+EQUIPMENT = "/api/v1/equipment"
 
 
 def _counts(**overrides: int) -> dict[str, int]:
@@ -112,6 +114,42 @@ def _expense(
     assert response.status_code == 201, response.text
 
 
+def _equipment(
+    api_client: TestClient,
+    headers: dict[str, str],
+    name: str,
+) -> dict[str, Any]:
+    response = api_client.post(
+        EQUIPMENT,
+        json={"name": name, "type": "fridge"},
+        headers=headers,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def _reading(
+    api_client: TestClient,
+    headers: dict[str, str],
+    equipment_id: str,
+    reading_date: date,
+    *,
+    morning: float | None = None,
+    evening: float | None = None,
+) -> None:
+    payload: dict[str, float] = {}
+    if morning is not None:
+        payload["morning_celsius"] = morning
+    if evening is not None:
+        payload["evening_celsius"] = evening
+    response = api_client.put(
+        f"{EQUIPMENT}/{equipment_id}/readings/{reading_date.isoformat()}",
+        json=payload,
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+
+
 def _revenue(
     api_client: TestClient,
     headers: dict[str, str],
@@ -120,6 +158,20 @@ def _revenue(
 ) -> dict[str, Any]:
     response = api_client.get(
         f"{DASHBOARD_REVENUE}?from={from_date.isoformat()}&to={to_date.isoformat()}",
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def _missing_readings(
+    api_client: TestClient,
+    headers: dict[str, str],
+    from_date: date,
+    to_date: date,
+) -> dict[str, Any]:
+    response = api_client.get(
+        f"{DASHBOARD_MISSING_READINGS}?from={from_date.isoformat()}&to={to_date.isoformat()}",
         headers=headers,
     )
     assert response.status_code == 200, response.text
@@ -274,6 +326,98 @@ def test_an_empty_period_returns_zero_revenue(
     }
 
 
+def test_missing_readings_count_each_active_equipment_and_slot(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    first = _equipment(api_client, admin_headers, "Frigo manquant 1")
+    second = _equipment(api_client, admin_headers, "Frigo manquant 2")
+    _reading(api_client, admin_headers, first["id"], _today(), morning=2)
+    _reading(api_client, admin_headers, second["id"], _today(), evening=3)
+
+    result = _missing_readings(api_client, admin_headers, _today(), _today())
+
+    assert result == {
+        "from": _today().isoformat(),
+        "to": _today().isoformat(),
+        "missing_slots": 2,
+        "filled_slots": 2,
+        "total_slots": 4,
+        "equipment_count": 2,
+    }
+
+
+def test_missing_readings_exclude_future_days_and_new_equipment_history(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    _equipment(api_client, admin_headers, "Frigo récent")
+    today = _today()
+
+    future = _missing_readings(
+        api_client,
+        admin_headers,
+        today + timedelta(days=1),
+        today + timedelta(days=3),
+    )
+    before_creation = _missing_readings(
+        api_client,
+        admin_headers,
+        today - timedelta(days=2),
+        today - timedelta(days=1),
+    )
+
+    assert future["total_slots"] == 0
+    assert future["missing_slots"] == 0
+    assert before_creation["total_slots"] == 0
+    assert before_creation["equipment_count"] == 0
+
+
+def test_missing_readings_exclude_deleted_equipment(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    equipment = _equipment(api_client, admin_headers, "Frigo supprimé")
+    assert (
+        api_client.delete(f"{EQUIPMENT}/{equipment['id']}", headers=admin_headers).status_code
+        == 204
+    )
+
+    result = _missing_readings(api_client, admin_headers, _today(), _today())
+
+    assert result["total_slots"] == 0
+    assert result["missing_slots"] == 0
+    assert result["equipment_count"] == 0
+
+
+def test_an_invalid_missing_readings_range_is_rejected(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    today = _today()
+    yesterday = today - timedelta(days=1)
+    response = api_client.get(
+        f"{DASHBOARD_MISSING_READINGS}?from={today.isoformat()}&to={yesterday.isoformat()}",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "dashboard_range_invalid"
+
+
+def test_an_operator_can_read_missing_readings(
+    api_client: TestClient,
+    admin_headers: dict[str, str],
+    operator_headers: dict[str, str],
+) -> None:
+    _equipment(api_client, admin_headers, "Frigo opérateur")
+    today = _today()
+
+    response = api_client.get(
+        f"{DASHBOARD_MISSING_READINGS}?from={today.isoformat()}&to={today.isoformat()}",
+        headers=operator_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["missing_slots"] == 2
+
+
 def test_an_invalid_revenue_range_is_rejected(
     api_client: TestClient, admin_headers: dict[str, str]
 ) -> None:
@@ -301,6 +445,7 @@ def test_the_default_layout_is_virtual(
             {
                 "key": "revenue",
                 "column_start": 1,
+                "row_start": 1,
                 "width_columns": 12,
                 "row_span": 6,
             }
@@ -326,6 +471,7 @@ def test_a_layout_can_be_saved_reloaded_and_emptied(
                 {
                     "key": "revenue",
                     "column_start": 4,
+                    "row_start": 2,
                     "width_columns": 6,
                     "row_span": 7,
                 }
@@ -335,6 +481,7 @@ def test_a_layout_can_be_saved_reloaded_and_emptied(
     )
     assert saved.status_code == 200, saved.text
     assert saved.json()["widgets"][0]["width_columns"] == 6
+    assert saved.json()["widgets"][0]["row_start"] == 2
     assert saved.json()["widgets"][0]["row_span"] == 7
 
     loaded = api_client.get(DASHBOARD_LAYOUT, headers=admin_headers)
@@ -356,6 +503,7 @@ def test_layouts_are_isolated_per_user(
             {
                 "key": "revenue",
                 "column_start": 1,
+                "row_start": 1,
                 "width_columns": 5,
                 "row_span": 6,
             }
@@ -366,6 +514,7 @@ def test_layouts_are_isolated_per_user(
             {
                 "key": "revenue",
                 "column_start": 3,
+                "row_start": 1,
                 "width_columns": 8,
                 "row_span": 8,
             }
@@ -397,6 +546,7 @@ def test_layouts_are_isolated_per_user(
         {"key": "revenue", "column_start": 1, "width_columns": 2},
         {"key": "revenue", "column_start": 1, "width_columns": 13},
         {"key": "revenue", "column_start": 1, "width_columns": 6, "row_span": 2},
+        {"key": "revenue", "column_start": 1, "row_start": 0, "width_columns": 6},
     ],
 )
 def test_an_invalid_layout_widget_is_rejected(
@@ -426,9 +576,63 @@ def test_duplicate_layout_widgets_are_rejected(
     assert response.status_code == 422
 
 
+def test_overlapping_layout_widgets_are_rejected(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = api_client.put(
+        DASHBOARD_LAYOUT,
+        json={
+            "widgets": [
+                {
+                    "key": "revenue",
+                    "column_start": 1,
+                    "row_start": 1,
+                    "width_columns": 6,
+                    "row_span": 6,
+                },
+                {
+                    "key": "missing_readings",
+                    "column_start": 4,
+                    "row_start": 3,
+                    "width_columns": 6,
+                    "row_span": 6,
+                },
+            ]
+        },
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_missing_readings_widget_key_is_accepted(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = api_client.put(
+        DASHBOARD_LAYOUT,
+        json={
+            "widgets": [
+                {
+                    "key": "missing_readings",
+                    "column_start": 1,
+                    "width_columns": 6,
+                    "row_span": 6,
+                }
+            ]
+        },
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["widgets"][0]["key"] == "missing_readings"
+
+
 def test_dashboard_routes_require_authentication(api_client: TestClient) -> None:
     today = _today().isoformat()
 
     assert api_client.get(f"{DASHBOARD_REVENUE}?from={today}&to={today}").status_code == 401
+    assert (
+        api_client.get(f"{DASHBOARD_MISSING_READINGS}?from={today}&to={today}").status_code == 401
+    )
     assert api_client.get(DASHBOARD_LAYOUT).status_code == 401
     assert api_client.put(DASHBOARD_LAYOUT, json={"widgets": []}).status_code == 401

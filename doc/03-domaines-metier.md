@@ -194,6 +194,14 @@ Règles :
 - Un résultat négatif est conservé : il peut signaler une incohérence entre le
   fond, les frais et le comptage de clôture.
 
+### Relevés manquants du tableau de bord
+
+- Le compteur considère deux créneaux, matin et soir, pour chaque équipement
+  actif et chaque jour de la période.
+- Les jours postérieurs à aujourd'hui sont exclus.
+- Un équipement ne produit pas de créneaux attendus avant sa date de création.
+- Les équipements désactivés sont exclus du décompte.
+
 ## Exports CSV
 
 Six jeux de données, filtrables par `from`/`to` :

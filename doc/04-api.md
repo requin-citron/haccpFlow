@@ -263,6 +263,7 @@ suivi exposent `cash_register_kind` et `collected_amount_cents`.
 | Méthode | Route | Accès |
 | --- | --- | --- |
 | `GET` | `/api/v1/dashboard/revenue?from=YYYY-MM-DD&to=YYYY-MM-DD` | admin, opérateur |
+| `GET` | `/api/v1/dashboard/missing-readings?from=YYYY-MM-DD&to=YYYY-MM-DD` | admin, opérateur |
 | `GET` | `/api/v1/dashboard/layout` | admin, opérateur |
 | `PUT` | `/api/v1/dashboard/layout` | admin, opérateur |
 
@@ -276,12 +277,18 @@ Pour les espèces, le calcul est
 `clôture - ouverture + frais professionnels + frais personnels`. Pour les
 chèques et cartes, le montant encaissé est utilisé directement.
 
+`missing-readings` retourne `missing_slots`, `filled_slots`, `total_slots` et
+`equipment_count`. Chaque équipement actif attend deux créneaux par jour depuis
+sa date de création, sans compter les jours futurs ni les équipements
+désactivés.
+
 `layout` retourne la disposition personnelle du compte. Sans sauvegarde, la
 réponse virtuelle contient le widget `revenue` sur toute la largeur. Le `PUT`
 remplace toute la disposition par une liste `widgets`. Chaque widget contient
-`key`, `column_start`, `width_columns` et `row_span`; la grille utilise douze
-colonnes et les clés sont uniques. Une liste vide est une disposition valide et
-persistée.
+`key`, `column_start`, `row_start`, `width_columns` et `row_span`; la grille
+utilise douze colonnes et les clés sont uniques. Les widgets disponibles sont
+`revenue` et `missing_readings` et ne peuvent pas se chevaucher. Une liste vide
+est une disposition valide et persistée.
 
 ## Exports
 
