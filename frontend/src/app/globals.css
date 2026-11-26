@@ -69,20 +69,6 @@ body {
   min-height: 0;
 }
 
-.revenue-widget {
-  container-type: inline-size;
-}
-
-.revenue-widget-breakdown {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-@container (min-width: 18rem) {
-  .revenue-widget-breakdown {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 .dashboard-resize-handle {
   position: absolute;
   display: block;

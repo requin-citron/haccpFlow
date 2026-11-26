@@ -3,24 +3,25 @@ import { formatEuros } from "@/lib/format";
 import { t, type Locale } from "@/lib/i18n";
 import type { DashboardRevenue } from "@/lib/types";
 
-function BreakdownCard({
+function BreakdownRow({
   label,
   value,
-  tone,
+  dotClassName,
 }: {
   label: string;
   value: string;
-  tone: string;
+  dotClassName: string;
 }) {
   return (
-    <div className="min-w-0 rounded-lg bg-slate-50 px-2 py-2">
-      <p className="text-[10px] font-medium leading-4 text-slate-500">
-        {label}
-      </p>
-      <p className={`mt-0.5 truncate text-sm font-semibold tabular-nums ${tone}`}>
+    <li className="flex min-w-0 items-center justify-between gap-3 py-2">
+      <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-slate-600">
+        <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} />
+        <span className="truncate">{label}</span>
+      </span>
+      <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900">
         {value}
-      </p>
-    </div>
+      </span>
+    </li>
   );
 }
 
@@ -32,7 +33,7 @@ export function RevenueWidget({
   locale: Locale;
 }) {
   return (
-    <section className="revenue-widget flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <header className="flex shrink-0 flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
@@ -67,23 +68,23 @@ export function RevenueWidget({
           </p>
         </div>
 
-        <div className="revenue-widget-breakdown grid min-h-0 gap-1.5">
-          <BreakdownCard
+        <ul className="min-h-0 divide-y divide-slate-100 border-y border-slate-100">
+          <BreakdownRow
             label={t(locale, "Espèces")}
             value={formatEuros(locale, revenue.cash_cents)}
-            tone="text-emerald-800"
+            dotClassName="bg-emerald-500"
           />
-          <BreakdownCard
+          <BreakdownRow
             label={t(locale, "Chèques")}
             value={formatEuros(locale, revenue.cheque_cents)}
-            tone="text-indigo-800"
+            dotClassName="bg-indigo-500"
           />
-          <BreakdownCard
+          <BreakdownRow
             label={t(locale, "Cartes bancaires")}
             value={formatEuros(locale, revenue.card_cents)}
-            tone="text-sky-800"
+            dotClassName="bg-sky-500"
           />
-        </div>
+        </ul>
       </div>
 
       {revenue.closed_session_count === 0 ? (
