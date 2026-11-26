@@ -35,6 +35,8 @@ role.
   navigation et lorsque le drawer est ouvert.
 - Les mêmes règles de modules activés et de rôle admin s'appliquent à la
   sidebar et au drawer.
+- La sidebar desktop garde ses en-têtes et actions fixes ; seule sa liste de
+  navigation défile. La zone de contenu possède un scroll indépendant.
 - L'entrée active suit le préfixe le plus long : `/cleaning/plans` prévaut sur
   `/cleaning`, et `/equipment/{id}` active Matériel.
 - Le drawer ferme au clic sur un lien, sur l'overlay ou avec `Échap`. Il

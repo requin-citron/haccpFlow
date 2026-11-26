@@ -30,7 +30,7 @@ export function MissingReadingsWidget({
             </h2>
           </div>
         </div>
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+        <span className="inline-flex min-h-6 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-center text-[11px] font-medium leading-none text-slate-600">
           {t(locale, "{filled} / {total} saisis", {
             filled: readings.filled_slots,
             total: readings.total_slots,

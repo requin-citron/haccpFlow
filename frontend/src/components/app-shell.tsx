@@ -192,14 +192,14 @@ export function AppShell({
   };
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex h-dvh overflow-hidden">
       <aside
-        className={`sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-slate-800 bg-slate-900 px-3 py-5 transition-[width] duration-200 lg:flex ${
+        className={`hidden h-dvh shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900 px-3 py-5 transition-[width] duration-200 lg:flex ${
           sidebarCollapsed ? "w-20" : "w-64"
         }`}
       >
         <div
-          className={`mb-8 flex items-center ${
+          className={`mb-8 flex shrink-0 items-center ${
             sidebarCollapsed ? "flex-col gap-3" : "justify-between gap-2"
           }`}
         >
@@ -242,14 +242,16 @@ export function AppShell({
           </button>
         </div>
 
-        <NavLinks
-          items={items}
-          activeHref={activeHref}
-          variant="sidebar"
-          showLabels={!sidebarCollapsed}
-        />
+        <div className="app-sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+          <NavLinks
+            items={items}
+            activeHref={activeHref}
+            variant="sidebar"
+            showLabels={!sidebarCollapsed}
+          />
+        </div>
 
-        <div className="mt-auto space-y-3 border-t border-slate-800 pt-4">
+        <div className="mt-auto shrink-0 space-y-3 border-t border-slate-800 pt-4">
           {!sidebarCollapsed ? (
             <div className="px-1">
               <p className="truncate text-sm font-medium text-slate-200">{user.email}</p>
@@ -275,7 +277,7 @@ export function AppShell({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="app-content-scroll flex h-dvh min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
         <header
           data-mobile-header
           aria-hidden={!mobileHeaderVisible}
