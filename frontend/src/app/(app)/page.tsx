@@ -12,8 +12,10 @@ import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/locale";
 import { firstEnabledModuleHref } from "@/lib/modules";
 import type {
+  CleaningScheduleEntry,
   DashboardLayout,
   DashboardMissingReadings,
+  DashboardOverdueCleanings,
   DashboardRevenue,
 } from "@/lib/types";
 
@@ -62,7 +64,10 @@ export default async function HomePage({
   const includesMissingReadings = layout.widgets.some(
     (widget) => widget.key === "missing_readings",
   );
-  const [revenue, missingReadings] = await Promise.all([
+  const includesOverdueCleanings = layout.widgets.some(
+    (widget) => widget.key === "overdue_cleanings",
+  );
+  const [revenue, missingReadings, overdueCleanings] = await Promise.all([
     includesRevenue
       ? apiFetch<DashboardRevenue>(
           `/api/v1/dashboard/revenue?${revenueQuery.toString()}`,
@@ -71,6 +76,15 @@ export default async function HomePage({
     includesMissingReadings
       ? apiFetch<DashboardMissingReadings>(
           `/api/v1/dashboard/missing-readings?${revenueQuery.toString()}`,
+        )
+      : Promise.resolve(null),
+    includesOverdueCleanings
+      ? apiFetch<CleaningScheduleEntry[]>("/api/v1/cleaning-schedule/overdue").then(
+          (entries) =>
+            ({
+              count: entries.length,
+              as_of: today,
+            }) satisfies DashboardOverdueCleanings,
         )
       : Promise.resolve(null),
   ]);
@@ -102,6 +116,7 @@ export default async function HomePage({
         initialLayout={layout}
         initialRevenue={revenue}
         initialMissingReadings={missingReadings}
+        initialOverdueCleanings={overdueCleanings}
         periodFrom={range.from}
         periodTo={range.to}
         locale={locale}

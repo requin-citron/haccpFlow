@@ -82,6 +82,12 @@ const FR_MESSAGES = {
     "Créneaux de température non renseignés.",
   "{filled} / {total} saisis": "{filled} / {total} saisis",
   "créneaux à compléter": "créneaux à compléter",
+  "Nettoyages en retard": "Nettoyages en retard",
+  "État actuel, non affecté par la période sélectionnée.":
+    "État actuel, non affecté par la période sélectionnée.",
+  "plans en retard": "plans en retard",
+  "Plans de nettoyage dont l'échéance est dépassée.":
+    "Plans de nettoyage dont l'échéance est dépassée.",
   "Tous les relevés sont complets.": "Tous les relevés sont complets.",
   "Ouvrir le menu": "Ouvrir le menu",
   "Fermer le menu": "Fermer le menu",
@@ -1134,6 +1140,12 @@ const EN_MESSAGES: Record<MessageKey, string> = {
     "Unfilled temperature reading slots.",
   "{filled} / {total} saisis": "{filled} / {total} entered",
   "créneaux à compléter": "slots to complete",
+  "Nettoyages en retard": "Overdue cleaning",
+  "État actuel, non affecté par la période sélectionnée.":
+    "Current status, not affected by the selected period.",
+  "plans en retard": "plans overdue",
+  "Plans de nettoyage dont l'échéance est dépassée.":
+    "Cleaning plans whose due date has passed.",
   "Tous les relevés sont complets.": "All readings are complete.",
   "Ouvrir le menu": "Open menu",
   "Fermer le menu": "Close menu",

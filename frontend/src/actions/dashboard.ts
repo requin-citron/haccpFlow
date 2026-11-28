@@ -3,10 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import { apiFetch } from "@/lib/api";
+import { todayIso } from "@/lib/format";
 import type {
   DashboardMissingReadings,
+  DashboardOverdueCleanings,
   DashboardRevenue,
   DashboardWidgetConfig,
+  CleaningScheduleEntry,
 } from "@/lib/types";
 
 export async function fetchDashboardRevenueAction(
@@ -25,6 +28,16 @@ export async function fetchDashboardMissingReadingsAction(
   return apiFetch<DashboardMissingReadings>(
     `/api/v1/dashboard/missing-readings?${query.toString()}`,
   );
+}
+
+export async function fetchDashboardOverdueCleaningsAction(): Promise<DashboardOverdueCleanings> {
+  const entries = await apiFetch<CleaningScheduleEntry[]>(
+    "/api/v1/cleaning-schedule/overdue",
+  );
+  return {
+    count: entries.length,
+    as_of: todayIso(),
+  };
 }
 
 export async function saveDashboardLayoutAction(

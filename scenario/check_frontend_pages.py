@@ -241,14 +241,31 @@ def main() -> None:
         widgets = [
             widget
             for widget in original_layout["widgets"]
-            if widget.get("key") != "missing_readings"
+            if widget.get("key") not in {"missing_readings", "overdue_cleanings"}
         ]
+        next_row = max(
+            (
+                widget["row_start"] + widget["row_span"]
+                for widget in widgets
+            ),
+            default=1,
+        )
         widgets.append(
             {
                 "key": "missing_readings",
                 "column_start": 1,
+                "row_start": next_row,
                 "width_columns": 6,
                 "row_span": 6,
+            }
+        )
+        widgets.append(
+            {
+                "key": "overdue_cleanings",
+                "column_start": 1,
+                "row_start": next_row + 6,
+                "width_columns": 6,
+                "row_span": 3,
             }
         )
         try:
@@ -271,10 +288,25 @@ def main() -> None:
                 and "missing_slots" in summary
                 and "total_slots" in summary,
             )
+            status, overdue = call(
+                "GET",
+                f"{API_V1}/cleaning-schedule/overdue",
+                token=token,
+            )
+            report.status("nettoyages en retard chargés", status)
+            report.check(
+                "liste des nettoyages en retard structurée",
+                isinstance(overdue, list),
+            )
             status, html = fetch_page(f"/?from={today}&to={today}", cookie=cookie)
-            report.status("dashboard avec relevés manquants", status)
+            report.status("dashboard avec widgets de suivi", status)
             for label in ("Relevés manquants", "créneaux à compléter"):
                 report.check(f"widget relevés : « {label} » rendu", label in html)
+            for label in (
+                "Nettoyages en retard",
+                "non affecté par la période sélectionnée",
+            ):
+                report.check(f"widget nettoyages : « {label} » rendu", label in html)
         finally:
             status, _ = call(
                 "PUT",

@@ -137,6 +137,9 @@ page `/history` filtre ses sources et ses entrées de la même façon.
   ventilation espèces/chèques/cartes et le nombre de suivis clôturés.
 - Le widget « Relevés manquants » affiche le nombre de créneaux non saisis, la
   progression sous forme de ratio saisi/total.
+- Le widget « Nettoyages en retard » affiche le nombre de plans dont
+  l'échéance est strictement dépassée aujourd'hui. Sa description rappelle
+  qu'il n'est pas affecté par la période sélectionnée.
 - Le tableau de bord possède un mode modification. Il permet d'ajouter le
   widget Chiffre d'affaires ou Relevés manquants depuis un catalogue, de les
   déplacer, de les retirer et de modifier leur largeur ou leur hauteur avec les

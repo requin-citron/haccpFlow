@@ -97,6 +97,10 @@ désactivés.
 - Les créations, corrections et suppressions de déclarations sont auditées.
 - Les endpoints de prévisionnel et de retard sont globaux.
 
+Le widget « Nettoyages en retard » du tableau de bord compte les plans
+strictement en retard à la date UTC courante. Il ne dépend pas de la période
+sélectionnée dans le dashboard.
+
 ## Pasteurisation
 
 ### Lot

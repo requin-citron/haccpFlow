@@ -11,6 +11,7 @@ class DashboardWidgetKey(enum.StrEnum):
 
     REVENUE = "revenue"
     MISSING_READINGS = "missing_readings"
+    OVERDUE_CLEANINGS = "overdue_cleanings"
 
 
 class DashboardWidgetConfig(BaseModel):

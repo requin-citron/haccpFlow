@@ -287,8 +287,10 @@ réponse virtuelle contient le widget `revenue` sur toute la largeur. Le `PUT`
 remplace toute la disposition par une liste `widgets`. Chaque widget contient
 `key`, `column_start`, `row_start`, `width_columns` et `row_span`; la grille
 utilise douze colonnes et les clés sont uniques. Les widgets disponibles sont
-`revenue` et `missing_readings` et ne peuvent pas se chevaucher. Une liste vide
-est une disposition valide et persistée.
+`revenue`, `missing_readings` et `overdue_cleanings`, et ne peuvent pas se
+chevaucher. Une liste vide est une disposition valide et persistée. Le widget
+`overdue_cleanings` réutilise `/api/v1/cleaning-schedule/overdue` et ne dépend
+pas de la période globale.
 
 ## Exports
 

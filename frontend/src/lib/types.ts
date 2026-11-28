@@ -290,7 +290,10 @@ export type CashSession = {
   updated_at: string;
 };
 
-export type DashboardWidgetKey = "revenue" | "missing_readings";
+export type DashboardWidgetKey =
+  | "revenue"
+  | "missing_readings"
+  | "overdue_cleanings";
 
 export type DashboardWidgetConfig = {
   key: DashboardWidgetKey;
@@ -322,6 +325,11 @@ export type DashboardMissingReadings = {
   filled_slots: number;
   total_slots: number;
   equipment_count: number;
+};
+
+export type DashboardOverdueCleanings = {
+  count: number;
+  as_of: string;
 };
 
 export type LatexTemplate = {

@@ -6,8 +6,9 @@ sanitaire :
 
 - **Tableau de bord** — page d'accueil avec sélection de période et widgets
   configurables. Les widgets affichent le chiffre d'affaires ventilé par moyen
-  de paiement et les relevés de température manquants. Leur taille et leur
-  présence sont enregistrées par utilisateur.
+  de paiement, les relevés de température manquants et les nettoyages en
+  retard. Leur taille, leur position et leur présence sont enregistrées par
+  utilisateur.
 - **Chaîne du froid** — parc de matériel (frigos, congélateurs) avec seuils
   réglementaires, relevés matin et soir, corrections justifiées, détail
   original/corrigé et journal d'audit consolidé.

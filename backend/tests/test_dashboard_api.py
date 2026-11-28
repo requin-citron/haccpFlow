@@ -628,6 +628,29 @@ def test_missing_readings_widget_key_is_accepted(
     assert response.json()["widgets"][0]["key"] == "missing_readings"
 
 
+def test_overdue_cleanings_widget_key_accepts_three_rows(
+    api_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = api_client.put(
+        DASHBOARD_LAYOUT,
+        json={
+            "widgets": [
+                {
+                    "key": "overdue_cleanings",
+                    "column_start": 1,
+                    "row_start": 1,
+                    "width_columns": 6,
+                    "row_span": 3,
+                }
+            ]
+        },
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["widgets"][0]["key"] == "overdue_cleanings"
+
+
 def test_dashboard_routes_require_authentication(api_client: TestClient) -> None:
     today = _today().isoformat()
 

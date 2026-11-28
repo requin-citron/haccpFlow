@@ -10,6 +10,7 @@ import {
 
 import {
   fetchDashboardMissingReadingsAction,
+  fetchDashboardOverdueCleaningsAction,
   fetchDashboardRevenueAction,
   saveDashboardLayoutAction,
 } from "@/actions/dashboard";
@@ -23,11 +24,13 @@ import {
 } from "@/components/icons";
 import { useI18n } from "@/components/locale-provider";
 import { MissingReadingsWidget } from "@/components/dashboard/missing-readings-widget";
+import { OverdueCleaningsWidget } from "@/components/dashboard/overdue-cleanings-widget";
 import { RevenueWidget } from "@/components/dashboard/revenue-widget";
 import type { Locale } from "@/lib/i18n";
 import type {
   DashboardMissingReadings,
   DashboardLayout,
+  DashboardOverdueCleanings,
   DashboardRevenue,
   DashboardWidgetConfig,
 } from "@/lib/types";
@@ -104,6 +107,7 @@ export function ConfigurableDashboard({
   initialLayout,
   initialRevenue,
   initialMissingReadings,
+  initialOverdueCleanings,
   periodFrom,
   periodTo,
   locale,
@@ -111,6 +115,7 @@ export function ConfigurableDashboard({
   initialLayout: DashboardLayout;
   initialRevenue: DashboardRevenue | null;
   initialMissingReadings: DashboardMissingReadings | null;
+  initialOverdueCleanings: DashboardOverdueCleanings | null;
   periodFrom: string;
   periodTo: string;
   locale: Locale;
@@ -119,6 +124,9 @@ export function ConfigurableDashboard({
   const [layout, setLayout] = useState(() => normalizeLayout(initialLayout.widgets));
   const [revenue, setRevenue] = useState(initialRevenue);
   const [missingReadings, setMissingReadings] = useState(initialMissingReadings);
+  const [overdueCleanings, setOverdueCleanings] = useState(
+    initialOverdueCleanings,
+  );
   const [editing, setEditing] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -131,11 +139,21 @@ export function ConfigurableDashboard({
     // component instance stays mounted. Keep the widget in sync with it.
     setRevenue(initialRevenue);
     setMissingReadings(initialMissingReadings);
-  }, [initialMissingReadings, initialRevenue, periodFrom, periodTo]);
+    setOverdueCleanings(initialOverdueCleanings);
+  }, [
+    initialMissingReadings,
+    initialOverdueCleanings,
+    initialRevenue,
+    periodFrom,
+    periodTo,
+  ]);
 
   const revenueWidget = layout.find((widget) => widget.key === "revenue");
   const missingReadingsWidget = layout.find(
     (widget) => widget.key === "missing_readings",
+  );
+  const overdueCleaningsWidget = layout.find(
+    (widget) => widget.key === "overdue_cleanings",
   );
 
   const persist = async (next: DashboardWidgetConfig[]) => {
@@ -175,6 +193,16 @@ export function ConfigurableDashboard({
         setMissingReadings(
           await fetchDashboardMissingReadingsAction(periodFrom, periodTo),
         );
+      } catch {
+        setError(translate("Les données du widget n'ont pas pu être chargées."));
+        setSaving(false);
+        return;
+      }
+    }
+    if (key === "overdue_cleanings" && !overdueCleanings) {
+      try {
+        setSaving(true);
+        setOverdueCleanings(await fetchDashboardOverdueCleaningsAction());
       } catch {
         setError(translate("Les données du widget n'ont pas pu être chargées."));
         setSaving(false);
@@ -423,6 +451,24 @@ export function ConfigurableDashboard({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-slate-800">
+                  {translate("Nettoyages en retard")}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {translate("Plans de nettoyage dont l'échéance est dépassée.")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => addWidget("overdue_cleanings")}
+                disabled={Boolean(overdueCleaningsWidget) || saving}
+                className="rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {overdueCleaningsWidget ? translate("Ajouté") : translate("Ajouter")}
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-slate-800">
                   {translate("Relevés manquants")}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -473,12 +519,19 @@ export function ConfigurableDashboard({
             const widgetName =
               widget.key === "revenue"
                 ? translate("Chiffre d'affaires")
-                : translate("Relevés manquants");
+                : widget.key === "missing_readings"
+                  ? translate("Relevés manquants")
+                  : translate("Nettoyages en retard");
             const content =
               widget.key === "revenue" && revenue ? (
                 <RevenueWidget revenue={revenue} locale={locale} />
               ) : widget.key === "missing_readings" && missingReadings ? (
                 <MissingReadingsWidget readings={missingReadings} locale={locale} />
+              ) : widget.key === "overdue_cleanings" && overdueCleanings ? (
+                <OverdueCleaningsWidget
+                  cleanings={overdueCleanings}
+                  locale={locale}
+                />
               ) : null;
             if (!content) {
               return null;
